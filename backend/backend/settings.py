@@ -77,12 +77,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'spaara_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
-        'HOST': 'localhost',
-        'PORT': '5432',
-
+        'NAME':'dev',
+        'USER':'dev',
+        'PASSWORD':'Team33Admin',
+        'HOST':'spaara-dev.cd2e4qwko0n0.us-east-2.rds.amazonaws.com',
+        'PORT':'5432'
     }
 }
 
