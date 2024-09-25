@@ -49,7 +49,3 @@ class LoginSerializer(serializers.ModelSerializer):
         if errorDict is not None:
             raise serializers.ValidationError(errorDict)
         return data
-    def create(self, validated_data):
-        # This simply creates the user using validated data
-        user = User.objects.create_user(**validated_data)
-        return user
