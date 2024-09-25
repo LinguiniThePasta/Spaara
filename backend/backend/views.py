@@ -11,20 +11,25 @@ class RegisterView(APIView):
         serializer = serializers.RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         else:
-            return str(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class LoginView(APIView):
     def post(self, request):
         serializer = serializers.LoginSerializer(data=request.data)
-        if not serializer.is_valid(raise_exception=True):
-            Response({'errors': e.detail}, status=status.HTTP_401_UNAUTHORIZED)
-        user = authenticate(request, email=serializer.data['email'], password=serializer.data['password'])
+
+        # Check if the serializer is valid and return errors if not
+        if not serializer.is_valid():
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Authenticate using username and password
+        user = authenticate(request, username=serializer.data['username'], password=serializer.data['password'])
+
         if user is not None:
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
                 'refresh': str(refresh)
             })
-        else:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        return str(serializer.errors)
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)

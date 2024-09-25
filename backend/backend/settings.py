@@ -38,6 +38,7 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+AUTH_USER_MODEL = 'backend.User'  # Replace 'backend.User' with the correct app and model name
 
 INSTALLED_APPS = [
     'django.contrib.admin',

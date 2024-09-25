@@ -18,10 +18,13 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
 from .views import *
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
-    path('api/login/', LoginView.as_view(), name='login')
+    path('api/login/', LoginView.as_view(), name='login'),
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # TODO: We need a catch-all here in case a user enters a random string
 ]
