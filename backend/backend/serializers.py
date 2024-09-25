@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from backend.backend.models import User
+from .models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
