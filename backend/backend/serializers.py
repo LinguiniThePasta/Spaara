@@ -93,9 +93,8 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errorDict)
         return data
     def update(self, instance, validated_data):
-        instance_username = validated_data.get('username', instance.username)
-        instance_email = validated_data.get('email', instance.email)
-
+        validated_data.get('username', instance.username)
+        validated_data.get('email', instance.email)
         password = validated_data.get('password', None)
         if password:
             instance.set_password(password)
