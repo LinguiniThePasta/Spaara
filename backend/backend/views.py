@@ -41,7 +41,7 @@ class UpdateInfoView(APIView):
     def post(self, request):
         user = request.user
 
-        serializer = serializers.UpdateInfoSerializer(user, data=request.data)
+        serializer = serializers.UpdateInfoSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)

@@ -23,7 +23,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
         if password == email:
             errorDict['password'] += 'Password cannot be the same as email.'
-        if not validate_email(email):
+        try:
+            validate_email(email)
+        except serializers.ValidationError:
             errorDict['email'] = "email is invalid."
         if errorDict:
             raise serializers.ValidationError(errorDict)
@@ -48,7 +50,9 @@ class LoginSerializer(serializers.Serializer):
         # Check if password is okay
         if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
             errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
-        if not validate_email(email):
+        try:
+            validate_email(email)
+        except serializers.ValidationError:
             errorDict['email'] = "email is invalid."
         if errorDict:
             raise serializers.ValidationError(errorDict)
@@ -59,33 +63,42 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'password']
+        extra_kwargs = {
+            'username': {'required': False},
+            'email': {'required': False, 'validators': []},
+            'password': {'write_only': True, 'required': False},
+        }
     def validate(self, data):
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         errorDict = collections.defaultdict(str)
-        # Check if the username contains special characters
-        if not re.match("^[a-zA-Z0-9_]*$", username):
-            errorDict['username'] = 'Username can only contain alphanumeric characters.'
-        # Check if password is okay
-        if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
+        if username:
+            if not re.match("^[a-zA-Z0-9_]*$", username):
+                errorDict['username'] = 'Username can only contain alphanumeric characters.'
+        if password:
+            # Check if password is okay
+            if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
+                errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
         if password == email:
             errorDict['password'] += 'Password cannot be the same as email.'
-        if not validate_email(email):
-            errorDict['email'] = "email is invalid."
+        if email:
+            try:
+                validate_email(email)
+            except serializers.ValidationError:
+                errorDict['email'] = "email is invalid."
+            if User.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
+                errorDict['email'] += "Email already exists."
         if errorDict:
             raise serializers.ValidationError(errorDict)
         return data
     def update(self, instance, validated_data):
         instance_username = validated_data.get('username', instance.username)
         instance_email = validated_data.get('email', instance.email)
-        instance_password = validated_data.get('password', instance.password)
-        password = validated_data.get('password', None)
 
+        password = validated_data.get('password', None)
         if password:
             instance.set_password(password)
-
         # Save the updated user instance
         instance.save()
         return instance
