@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, GroceryList, GroceryItem
+from .models import User, ShoppingList
 from django.core.validators import validate_email
 
 
@@ -101,13 +101,26 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         # Save the updated user instance
         instance.save()
         return instance
-    
-class GroceryListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroceryList
-        fields = ['id', 'name', 'creation_time', 'user']
 
-class GroceryItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroceryItem
-        fields = ['id', 'name', 'price', 'store', 'grocery_list']
+class SaveShoppingListSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    content = serializers.JSONField()
+    id = serializers.IntegerField(required=False)
+
+    # def validate(self, data):
+    def create(self, instance, validated_data):
+        id = validated_data.get('id')
+        name = validated_data.get('name')
+        content = validated_data.get('content')
+        if id:
+            # update instead of create
+            validated_data.get('id')
+            validated_data.get('name', name)
+            validated_data.get('content', content)
+            instance.save()
+            return instance
+        shoppingList = ShoppingList.objects.create(
+            name = name,
+            content = content
+        )
+        return shoppingList
