@@ -37,11 +37,23 @@ class LoginView(APIView):
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         user = request.user
 
         serializer = serializers.UpdateInfoSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SaveShoppingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        serializer = serializers.SaveShoppingListSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
