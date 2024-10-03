@@ -51,7 +51,7 @@ class UpdateInfoView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SaveShoppingListView(APIView):
+class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -69,8 +69,19 @@ class SaveShoppingListView(APIView):
             return Response({'message': 'Saved List successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        shopping_list_id = request.query_params.get('id', None)
+        user = request.user
 
-class SaveRecipeView(APIView):
+        if shopping_list_id:
+            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
+            serializer = SaveShoppingListSerializer(shoppingList)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            shoppingLists = user.shoppingLists.all()
+            serializer = SaveShoppingListSerializer(shoppingLists, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -88,3 +99,15 @@ class SaveRecipeView(APIView):
             return Response({'message': 'Saved Recipe successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        recipeID = request.query_params.get('id', None)
+        user = request.user
+
+        if recipeID:
+            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
+            serializer = SaveRecipeSerializer(recipe)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            recipes = user.recipes.all()
+            serializer = SaveRecipeSerializer(recipes, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
