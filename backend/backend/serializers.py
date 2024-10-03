@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User
+from .models import User, GroceryList, GroceryItem
 from django.core.validators import validate_email
 
 
@@ -101,3 +101,13 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         # Save the updated user instance
         instance.save()
         return instance
+    
+class GroceryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryList
+        fields = ['id', 'name', 'creation_time', 'user']
+
+class GroceryItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryItem
+        fields = ['id', 'name', 'price', 'store', 'grocery_list']
