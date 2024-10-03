@@ -1,13 +1,17 @@
 import collections
 
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, GroceryList, GroceryItem
+from .models import User, ShoppingList
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
+
+from .serializers import SaveShoppingListSerializer
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -52,9 +56,13 @@ class SaveShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-
-        serializer = serializers.SaveShoppingListSerializer(user, data=request.data, partial=True)
+        data = request.data
+        shopping_list_id = data.get('id', None)
+        if shopping_list_id:
+            shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id, user=request.user)
+            serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
+        else:
+            serializer = SaveShoppingListSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)

@@ -102,25 +102,18 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class SaveShoppingListSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    content = serializers.JSONField()
-    id = serializers.IntegerField(required=False)
-
-    # def validate(self, data):
-    def create(self, instance, validated_data):
-        id = validated_data.get('id')
-        name = validated_data.get('name')
-        content = validated_data.get('content')
-        if id:
-            # update instead of create
-            validated_data.get('id')
-            validated_data.get('name', name)
-            validated_data.get('content', content)
-            instance.save()
-            return instance
-        shoppingList = ShoppingList.objects.create(
-            name = name,
-            content = content
-        )
+class SaveShoppingListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingList
+        fields = ['id', 'name', 'content']
+        extra_kwargs = {
+            'id': {'read_only': True, 'required': False},
+        }
+    def create(self, validated_data):
+        shoppingList = ShoppingList.objects.create(**validated_data)
         return shoppingList
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.content = validated_data.get('content', content)
+        instance.save()
+        return instance
