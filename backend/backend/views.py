@@ -6,10 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, ShoppingList
+from .models import User, ShoppingList, Recipe
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import SaveShoppingListSerializer
+from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer
 
 
 class RegisterView(APIView):
@@ -56,14 +56,35 @@ class SaveShoppingListView(APIView):
 
     def post(self, request):
         data = request.data
+        user = request.user
         shopping_list_id = data.get('id', None)
         if shopping_list_id:
-            shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id, user=request.user)
+            shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id)
             serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
         else:
             serializer = SaveShoppingListSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
+            shopping_list = serializer.save()
+            user.shoppingLists.add(shopping_list)
+            return Response({'message': 'Saved List successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SaveRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        user = request.user
+        recipeListID = data.get('id', None)
+        if recipeListID:
+            recipe = get_object_or_404(Recipe, id=recipeListID)
+            serializer = SaveRecipeSerializer(recipe, data=data, partial=True)
+        else:
+            serializer = SaveRecipeSerializer(data=data)
+        if serializer.is_valid():
+            recipe = serializer.save()
+            user.recipes.add(recipe)
+            return Response({'message': 'Saved Recipe successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
