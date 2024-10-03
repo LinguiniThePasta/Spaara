@@ -27,5 +27,6 @@ urlpatterns = [
     path('api/register', RegisterView.as_view(), name='register'),
     path('api/change_information', UpdateInfoView.as_view(), name='update_information'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/loadlist', LoadListView.as_view(), name='load_list'),
     # TODO: We need a catch-all here in case a user enters a random string
 ]
