@@ -74,10 +74,13 @@ const router = useRouter();
 
 
 
-const pushLogin = () => router.push("/login")
-//const pushLogin = alert("I wanna push!!!!");
 
-export default function WelcomeScreen() {
+//const goBack = () => router.back
+//router.push
+//const goBack = () => router.push("/index")
+const goBack = () => router.dismissAll()
+
+export default function LoginScreen() {
   return (
     <View style={styles.container}>
 
@@ -90,11 +93,7 @@ export default function WelcomeScreen() {
 
         <View style={styles.logInButtonsContainer}>
           <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary" onPress={pushLogin}/>
-            <Button label="Sign up" theme="primary" onPress={pushLogin}/>
-          </View>
-          <View style={styles.logInButtonsRow}>
-            <Button label="or continue as Guest" theme="secondary" onPress={pushLogin}/>
+            <Button label="GET YOUR ASS BACK THERE" theme="secondary" onPress={() => goBack}/>
           </View>
         </View>
 

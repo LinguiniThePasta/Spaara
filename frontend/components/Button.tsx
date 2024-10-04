@@ -1,10 +1,16 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 
-export default function Button({ label, theme }) {
+type props = {
+    label: string;
+    theme?: string;
+    onPress?: () => void;
+}
+
+export default function Button({ label, theme, onPress }: props) {
     if (theme === "primary") {
         return (
             <View style={primaryStyles.buttonContainer}>
-                <Pressable style={primaryStyles.button} onPress={() => alert('You pressed a button.')}>
+                <Pressable style={primaryStyles.button} onPress={onPress}>
                     <Text style={primaryStyles.buttonLabel}>{label}</Text>
                 </Pressable>
             </View>
@@ -13,7 +19,7 @@ export default function Button({ label, theme }) {
     else if (theme === "secondary") {
         return (
             <View style={secondaryStyles.buttonContainer}>
-                <Pressable style={secondaryStyles.button} onPress={() => alert('You pressed a button.')}>
+                <Pressable style={secondaryStyles.button} onPress={onPress}>
                     <Text style={secondaryStyles.buttonLabel}>{label}</Text>
                 </Pressable>
             </View>
