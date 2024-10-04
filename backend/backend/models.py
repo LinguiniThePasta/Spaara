@@ -6,26 +6,12 @@ class User(AbstractUser):
     username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
+    shoppingLists = models.ManyToManyField("ShoppingList", related_name='shoppingLists')
+    recipes = models.ManyToManyField("Recipe", related_name='recipes')
 
     def __str__(self):
         return self.email
-
-'''
-GROCERY LIST MODEL
-
-DATA FLOWDOWN
-USER -> one to many -> GROCERYLIST -> one to many -> GROCERYITEM -> 1-2-1 -> NUTRITIONFACTS -> 1-2-1 -> (Fat, Carbohydrate, ServingInfo)
-'''
-# The grocery list
-class GroceryList(models.Model):
-    name = models.CharField(max_length = 20)
-    creation_time = models.DateTimeField(auto_now_add=True)
-    # Define a many-to-one relationship between users and grocery lists, cascade deletion upon account removal
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lists")
-
-    def __str__(self):
-        return self.name
-    
+'''    
 # A grocery item
 class GroceryItem(models.Model):
     name = models.CharField()
@@ -36,7 +22,7 @@ class GroceryItem(models.Model):
 
     def __str__(self):
         return self.name
-
+'''
 '''
 NUTRITION DATA
 If we can reliably find this data, maybe we should attach it to items for the user. Commented for now.
@@ -85,3 +71,19 @@ class Carbohydrates(models.Model):
     total_sugar = models.DecimalField(max_digits=10, decimal_places=2)
     added_sugar = models.DecimalField(max_digits=10, decimal_places=2)
 '''
+class ListBase(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    creation_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    content = models.JSONField()
+
+    class Meta:
+        abstract = True  # This makes the model abstract and not create a table for it
+
+    def __str__(self):
+        return self.name
+class ShoppingList(ListBase):
+    pass
+class Recipe(ListBase):
+    pass

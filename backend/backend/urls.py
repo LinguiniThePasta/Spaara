@@ -23,10 +23,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 urlpatterns = [
     path('accounts', include('allauth.urls')),
     path('admin', admin.site.urls),
-    path('api/login', LoginView.as_view(), name='login'),
-    path('api/register', RegisterView.as_view(), name='register'),
-    path('api/change_information', UpdateInfoView.as_view(), name='update_information'),
+    path('api/user/login', LoginView.as_view(), name='login'),
+    path('api/user/register', RegisterView.as_view(), name='register'),
+    path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
+    path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
+    path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
+    path('api/recipe/create', RecipeView.as_view(), name='save_recipe'),
+    path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/loadlist', LoadListView.as_view(), name='load_list'),
-    # TODO: We need a catch-all here in case a user enters a random string
 ]
+
