@@ -1,13 +1,17 @@
 import collections
 
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, GroceryList, GroceryItem
+from .models import User, ShoppingList, Recipe
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
+
+from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -38,7 +42,6 @@ class LoginView(APIView):
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         user = request.user
 
@@ -48,52 +51,63 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# GROCERY LIST SAVING AND LOADING
-class SaveListView(APIView):
+class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # Save list
-    def get(self, request):
-        grocery_list_data = request.data.get('grocery_list')
-        grocery_list_serializer = serializers.GroceryListSerializer(data=grocery_list_data)
-
-        if grocery_list_serializer.is_valid():
-            grocery_list = grocery_list_serializer.save(user = request.user)
-
-            items_data = request.data.get('items', [])
-            for item_data in items_data:
-                item_serializer = serializers.GroceryItemSerializer(data=item_data)
-                if item_serializer.is_valid():
-                    item_serializer.save(grocery_list=grocery_list)  # Associate item with the grocery list
-                else:
-                    return Response(item_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                    
-            return Response(grocery_list_serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(grocery_list_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class LoadListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    # Load list
     def post(self, request):
-        def get(self, request, name):
-            try:
-                # Load the grocery list by name
-                grocery_list = GroceryList.objects.get(name=name, user=request.user)  # Ensure it belongs to the logged-in user
-                items = grocery_list.items.all()  # Get all items associated with this list
-                
-                # Serialize the data
-                grocery_list_data = {
-                    'name': grocery_list.name,
-                    'created_at': grocery_list.created_at,
-                    'items': [{'name': item.name, 'price': item.price, 'store': item.store} for item in items]
-                }
-                return Response(grocery_list_data, status=status.HTTP_200_OK)
-            except GroceryList.DoesNotExist:
-                return Response({'error': 'Grocery list not found'}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data
+        user = request.user
+        shopping_list_id = data.get('id', None)
+        if shopping_list_id:
+            shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id)
+            serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
+        else:
+            serializer = SaveShoppingListSerializer(data=data)
+        if serializer.is_valid():
+            shopping_list = serializer.save()
+            user.shoppingLists.add(shopping_list)
+            return Response({'message': 'Saved List successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        shopping_list_id = request.query_params.get('id', None)
+        user = request.user
 
+        if shopping_list_id:
+            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
+            serializer = SaveShoppingListSerializer(shoppingList)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            shoppingLists = user.shoppingLists.all()
+            serializer = SaveShoppingListSerializer(shoppingLists, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+class RecipeView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        data = request.data
+        user = request.user
+        recipeListID = data.get('id', None)
+        if recipeListID:
+            recipe = get_object_or_404(Recipe, id=recipeListID)
+            serializer = SaveRecipeSerializer(recipe, data=data, partial=True)
+        else:
+            serializer = SaveRecipeSerializer(data=data)
+        if serializer.is_valid():
+            recipe = serializer.save()
+            user.recipes.add(recipe)
+            return Response({'message': 'Saved Recipe successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        recipeID = request.query_params.get('id', None)
+        user = request.user
 
+        if recipeID:
+            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
+            serializer = SaveRecipeSerializer(recipe)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            recipes = user.recipes.all()
+            serializer = SaveRecipeSerializer(recipes, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)

@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, GroceryList, GroceryItem
+from .models import User, ShoppingList, Recipe
 from django.core.validators import validate_email
 
 
@@ -101,13 +101,35 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         # Save the updated user instance
         instance.save()
         return instance
-    
-class GroceryListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroceryList
-        fields = ['id', 'name', 'creation_time', 'user']
 
-class GroceryItemSerializer(serializers.ModelSerializer):
+class SaveShoppingListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GroceryItem
-        fields = ['id', 'name', 'price', 'store', 'grocery_list']
+        model = ShoppingList
+        fields = ['id', 'name', 'content']
+        extra_kwargs = {
+            'id': {'read_only': True, 'required': False},
+        }
+    def create(self, validated_data):
+        shoppingList = ShoppingList.objects.create(**validated_data)
+        return shoppingList
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.content = validated_data.get('content', instance.content)
+        instance.save()
+        return instance
+
+class SaveRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ['id', 'name', 'content']
+        extra_kwargs = {
+            'id': {'read_only': True, 'required': False},
+        }
+    def create(self, validated_data):
+        recipe = Recipe.objects.create(**validated_data)
+        return recipe
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.content = validated_data.get('content', instance.content)
+        instance.save()
+        return instance
