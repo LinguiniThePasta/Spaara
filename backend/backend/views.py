@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, ShoppingList, Recipe
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.decorators import login_required
 
 from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer
 
@@ -50,7 +51,6 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
