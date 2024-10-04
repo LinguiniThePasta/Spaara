@@ -95,7 +95,7 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        <StatusBar style="auto"/>
+        <StatusBar style='auto'/>
       </View>
   );
 }
