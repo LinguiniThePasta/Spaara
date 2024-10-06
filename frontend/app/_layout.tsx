@@ -31,18 +31,16 @@ export default function RootLayout() {
 
 // Import gesture handler root view
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {StatusBar, View, StyleSheet, Text} from 'react-native';
-import {ThemeProvider, theme} from "react-native-design-system";
+import {StyleSheet} from 'react-native';
 import React from "react";
 import "react-native-get-random-values";
-import {TodoList} from "@/app/TodoList";
+import TenTap from "@/app/TenTap";
+
 
 export default function RootLayout({children}) {
     return (
         <GestureHandlerRootView style={styles.container}>
-            <ThemeProvider theme={theme}>
-                <TodoList/>
-            </ThemeProvider>
+            <TenTap/>
         </GestureHandlerRootView>
     );
 }
