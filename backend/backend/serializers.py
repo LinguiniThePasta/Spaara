@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, ShoppingList, Recipe
+from .models import User, ShoppingList, Recipe, FavoriteItem
 from django.core.validators import validate_email
 
 
@@ -133,3 +133,11 @@ class SaveRecipeSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get('content', instance.content)
         instance.save()
         return instance
+    
+class FavoriteItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteItem
+        fields = ['id', 'name', 'price', 'store']
+        extra_kwargs = {
+            'id': {'read_only': True, 'required': False},
+        }
