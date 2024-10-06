@@ -42,6 +42,7 @@ class LoginView(APIView):
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
 
@@ -51,7 +52,6 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -31,4 +31,5 @@ urlpatterns = [
     path('api/recipe/create', RecipeView.as_view(), name='save_recipe'),
     path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    # TODO: We need a catch-all here in case a user enters a random string
 ]
