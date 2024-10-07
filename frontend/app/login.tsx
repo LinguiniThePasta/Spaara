@@ -14,87 +14,31 @@ import Button from '@/components/Button';
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 //const Stack = createNativeStackNavigator();
-const router = useRouter();
+//const router = useRouter();
 //router.navigate("/login");
 
 
 
 
 
-/*export default function Index() {
-  return (
-    <NavigationContainer>
-      <View style={styles.container}>
+//const pushLogin = () => router.push("/login")
+//const pushLogin = () => alert("I wanna push!!!!");
 
-        <View style={styles.logoImageContainer}>
-          <Image
-            style={styles.logoImage}
-            source={spaaraLogoImage}
-          />
+export default function LogInScreen() {
+  //const pushLogin = () => router.push("/login")
+  const pushLogin = () => alert("I wanna push!!!!");
+  return (
+    <View style={loginStyles.container}>
+
+        <View style={loginStyles.headerContainer}>
+          <Text style={loginStyles.headerLabel}>Log in</Text>
         </View>
 
-        <View style={styles.logInButtonsContainer}>
-          <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary"/>
-            <Button label="Sign up" theme="primary"/>
-          </View>
-          <View style={styles.logInButtonsRow}>
-            <Button label="or continue as Guest" theme="secondary"/>
-          </View>
-        </View>
-
-        <StatusBar style="auto"/>
-      </View>
-    </NavigationContainer>
-  );
-}*/
-
-
-
-
-
-/*export default function Index() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Welcome"
-          component={WelcomeScreen}
-          options={{title: "Welcome"}}
-        />
-        <Stack.Screen
-          name="LogIn"
-          component={LogInScreen}
-          options={{title: "Log in"}}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}*/
-
-
-
-
-//const goBack = () => router.back
-//router.push
-//const goBack = () => router.push("/index")
-const goBack = () => router.dismissAll()
-
-export default function LoginScreen() {
-  return (
-    <View style={styles.container}>
-
-        <View style={styles.logoImageContainer}>
-          <Image
-            style={styles.logoImage}
-            source={spaaraLogoImage}
-          />
-        </View>
-
-        <View style={styles.logInButtonsContainer}>
-          <View style={styles.logInButtonsRow}>
-            <Button label="GET YOUR ASS BACK THERE" theme="secondary" onPress={() => goBack}/>
-          </View>
+        <View style={loginStyles.contentContainer}>
+          <Button label="Log in with Google" theme="secondary" onPress={pushLogin}/>
+          <Button label="Username" theme="primary" onPress={pushLogin}/>
+          <Button label="Password" theme="primary" onPress={pushLogin}/>
+          <Button label="Log in" theme="primary" onPress={pushLogin}/>
         </View>
 
         <StatusBar style='auto'/>
@@ -104,37 +48,7 @@ export default function LoginScreen() {
 
 
 
-
-
-/*
-function LogInScreen() {
-  return (
-    <View style={styles.container}>
-
-        <View style={styles.logoImageContainer}>
-          <Image
-            style={styles.logoImage}
-            source={spaaraLogoImage}
-          />
-        </View>
-
-        <View style={styles.logInButtonsContainer}>
-          <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary"/>
-          </View>
-        </View>
-
-        <StatusBar style="auto"/>
-      </View>
-  );
-}
-*/
-
-
-
-
-
-const styles = StyleSheet.create({
+const loginStyles = StyleSheet.create({
 
   container: {
     flex: 1,
@@ -142,22 +56,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  logoImageContainer: {
-    paddingVertical: 110,
+  headerContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    height: 100,
+    backgroundColor: '#F6AA1C',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  logoImage: {
-    width: 300,
-    height: 84,
+  headerLabel: {
+    marginTop: 50,
+    marginBottom: 10,
+    color: '#232528',
+    fontSize: 28,
   },
 
-  logInButtonsContainer: {
+  contentContainer: {
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
+    marginTop: 110,
   },
 
-  logInButtonsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
 });
