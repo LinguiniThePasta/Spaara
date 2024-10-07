@@ -2,10 +2,11 @@
 
 
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, FlatList } from "react-native";
 //import { Stack } from 'expo-router';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from 'react';
 
 
 
@@ -73,7 +74,6 @@ const Stack = createNativeStackNavigator();
 
 
 
-
 export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
@@ -126,6 +126,59 @@ function LogInScreen() {
   );
 }
 
+// Define an interface for items in list
+interface Item {
+  id: number;
+  name: string;
+  price: number;
+  store: string;
+}
+
+// Update the ViewListsScreen component
+function ViewListsScreen() {
+  const [items, setItems] = React.useState<Item[]>([]); // Try to set output into array of Item
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        // Call our API to get data
+        const response = await fetch('http://127.0.0.1:8000/items/');
+        const data = await response.json();
+        setItems(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text>{item.name} - ${item.price} at {item.store}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
 
 
 
@@ -155,5 +208,15 @@ const styles = StyleSheet.create({
   logInButtonsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  listElementContainer: {
+    flexDirection: 'column',
+  },
+
+  item: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
 });
