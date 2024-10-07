@@ -33,11 +33,24 @@ class krogerApi:
             if data["items"][0]["price"] < price:
                 price = data["items"][0]["price"]
 
-    def findStores(self, lat, lon):
-        result = req.get(f'{krogerApi.krogerUrl}/locations', headers={'Authorization': f"{self.token['token_type']} {self.token['access_token']}"}, params={"filter.latLong.near": f'{lat}, {lon}', "filter.radiusInMiles": "10", "filter.limit": "10"})
+    def getStores(self, lat, lon, radius):
+        result = req.get(f'{krogerApi.krogerUrl}/locations', headers={'Authorization': f"{self.token['token_type']} {self.token['access_token']}"}, params={"filter.latLong.near": f'{lat}, {lon}', "filter.radiusInMiles": f"{radius}", "filter.limit": "10"})
         return result.json()
+    
+    def findClosestStore(self, lat, lon, stores):
+        latitude = 999999999
+        longitude = 999999999
+        closest = None
+        for store in stores['data']:
+            if abs(store['geolocation']['latitude'] - lat) < latitude and abs(store['geolocation']['longitude'] - lon) < longitude:
+                closest = store
+        return closest
+
 
 
 kroger = krogerApi()
 
-print(kroger.findStores(40.454769, -86.915703))
+
+stores = kroger.getStores(40.454769, -86.915703, 10)
+
+print(kroger.findClosestStore(40.454769, -86.915703, stores))
