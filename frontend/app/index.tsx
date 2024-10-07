@@ -1,8 +1,9 @@
 
 
 
+import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, TextInput } from "react-native";
 import { Stack, useRouter, Link } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -94,6 +95,8 @@ const welcomeStyles = StyleSheet.create({
 function LogInScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("I wanna push!!!!");
+  const [usernameText, onUsernameChangeText] = React.useState('');
+  const [passwordText, onPasswordChangeText] = React.useState('');
   return (
     <View style={loginStyles.container}>
 
@@ -103,8 +106,18 @@ function LogInScreen() {
 
         <View style={loginStyles.contentContainer}>
           <Button label="Log in with Google" theme="secondary" onPress={pushLogin}/>
-          <Button label="Username" theme="primary" onPress={pushLogin}/>
-          <Button label="Password" theme="primary" onPress={pushLogin}/>
+          <TextInput
+            style={loginStyles.textInputField}
+            onChangeText={onUsernameChangeText}
+            value={usernameText}
+            placeholder="Username / Email"
+          />
+          <TextInput
+            style={loginStyles.textInputField}
+            onChangeText={onPasswordChangeText}
+            value={passwordText}
+            placeholder="Password"
+          />
           <Button label="Log in" theme="primary" onPress={pushLogin}/>
         </View>
 
@@ -146,6 +159,17 @@ const loginStyles = StyleSheet.create({
     marginTop: 110,
   },
 
+  textInputField: {
+    height: 20,
+    width: 325,
+    margin: 25,
+    padding: 2,
+    fontSize: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#959595',
+    color: '#232528',
+  },
+
 });
 
 
@@ -155,9 +179,13 @@ const loginStyles = StyleSheet.create({
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-function SignUpScreen() {
+export default function SignUpScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("I wanna push!!!!");
+  const [emailText, onEmailChangeText] = React.useState('');
+  const [usernameText, onUsernameChangeText] = React.useState('');
+  const [passwordText, onPasswordChangeText] = React.useState('');
+  const [confirmPWText, onConfirmPWChangeText] = React.useState('');
   return (
     <View style={signUpStyles.container}>
 
@@ -167,10 +195,35 @@ function SignUpScreen() {
 
         <View style={signUpStyles.contentContainer}>
           <Button label="Sign up with Google" theme="secondary" onPress={pushLogin}/>
-          <Button label="Email" theme="primary" onPress={pushLogin}/>
+          <TextInput
+            style={signUpStyles.textInputField}
+            onChangeText={onEmailChangeText}
+            value={emailText}
+            placeholder="Email (Optional)"
+          />
+          <TextInput
+            style={signUpStyles.textInputField}
+            onChangeText={onUsernameChangeText}
+            value={usernameText}
+            placeholder="Username"
+          />
+          <TextInput
+            style={signUpStyles.textInputField}
+            onChangeText={onPasswordChangeText}
+            value={passwordText}
+            placeholder="Password"
+          />
+          <TextInput
+            style={signUpStyles.textInputField}
+            onChangeText={onConfirmPWChangeText}
+            value={confirmPWText}
+            placeholder="Confirm Password"
+          />
+          {/*<Button label="Email" theme="primary" onPress={pushLogin}/>
           <Button label="Username" theme="primary" onPress={pushLogin}/>
           <Button label="Password" theme="primary" onPress={pushLogin}/>
           <Button label="Confirm Password" theme="primary" onPress={pushLogin}/>
+          */}
           <Button label="Sign up" theme="primary" onPress={pushLogin}/>
         </View>
 
@@ -212,6 +265,17 @@ const signUpStyles = StyleSheet.create({
     marginTop: 110,
   },
 
+  textInputField: {
+    height: 20,
+    width: 325,
+    margin: 25,
+    padding: 2,
+    fontSize: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#959595',
+    color: '#232528',
+  },
+
 });
 
 
@@ -221,7 +285,7 @@ const signUpStyles = StyleSheet.create({
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-export default function SplashScreen() {
+function SplashScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("I wanna push!!!!");
   return (
