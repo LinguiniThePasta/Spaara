@@ -9,7 +9,7 @@ from requests.auth import HTTPBasicAuth
 
 class krogerApi:
     client_id = "spaara-243261243034247667504c4775576c74642e56726f2e556d744563784f565a38625a7a5a5336335a6e6d475978374b686d464f39344b6c5a6a4374324459061933678969631"
-    client_secret = "x8dLBhfDUjHCqwS1Q9p9JZBNAA9pYrlB5JdEq5FE"
+    client_secret = ""
     krogerUrl = 'https://api-ce.kroger.com/v1'
     krogerAuthUrl = 'https://api-ce.kroger.com/v1/connect/oauth2'
 
@@ -33,6 +33,11 @@ class krogerApi:
             if data["items"][0]["price"] < price:
                 price = data["items"][0]["price"]
 
+    def findStores(self, lat, lon):
+        result = req.get(f'{krogerApi.krogerUrl}/locations', headers={'Authorization': f"{self.token['token_type']} {self.token['access_token']}"}, params={"filter.latLong.near": f'{lat}, {lon}', "filter.radiusInMiles": "10", "filter.limit": "10"})
+        return result.json()
 
 
+kroger = krogerApi()
 
+print(kroger.findStores(40.454769, -86.915703))
