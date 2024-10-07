@@ -11,6 +11,7 @@ import { Stack, useRouter, Link } from 'expo-router';
 
 
 import Button from '@/components/Button';
+import NavigationButton from '@/components/NavigationButton';
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 const spaaraIconImage = require('@/assets/images/SpaaraIcon.png');
@@ -23,12 +24,22 @@ const spaaraIconImage = require('@/assets/images/SpaaraIcon.png');
 
 
 
+/*export default function Index() {
+  const router = useRouter();
+  router.push("/welcome");
+}
+*/
+
+
+
+
+
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-function WelcomeScreen() {
+export default function WelcomeScreen() {
   //const pushLogin = () => router.push("/login")
-  const pushLogin = () => alert("I wanna push!!!!");
+  const pushLogin = () => alert("Continue as Guest");
   return (
     <View style={welcomeStyles.container}>
 
@@ -41,8 +52,8 @@ function WelcomeScreen() {
 
         <View style={welcomeStyles.logInButtonsContainer}>
           <View style={welcomeStyles.logInButtonsRow}>
-            <Button label="Log in" theme="primary" onPress={pushLogin}/>
-            <Button label="Sign up" theme="primary" onPress={pushLogin}/>
+            <NavigationButton label="Log in" type="push" destination="/login"/>
+            <NavigationButton label="Sign up" type="push" destination="/signup"/>
           </View>
           <View style={welcomeStyles.logInButtonsRow}>
             <Button label="or continue as Guest" theme="secondary" onPress={pushLogin}/>
@@ -179,7 +190,7 @@ const loginStyles = StyleSheet.create({
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-export default function SignUpScreen() {
+function SignUpScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("I wanna push!!!!");
   const [emailText, onEmailChangeText] = React.useState('');
@@ -200,24 +211,28 @@ export default function SignUpScreen() {
             onChangeText={onEmailChangeText}
             value={emailText}
             placeholder="Email (Optional)"
+            placeholderTextColor='#959595'
           />
           <TextInput
             style={signUpStyles.textInputField}
             onChangeText={onUsernameChangeText}
             value={usernameText}
             placeholder="Username"
+            placeholderTextColor='#959595'
           />
           <TextInput
             style={signUpStyles.textInputField}
             onChangeText={onPasswordChangeText}
             value={passwordText}
             placeholder="Password"
+            placeholderTextColor='#959595'
           />
           <TextInput
             style={signUpStyles.textInputField}
             onChangeText={onConfirmPWChangeText}
             value={confirmPWText}
             placeholder="Confirm Password"
+            placeholderTextColor='#959595'
           />
           {/*<Button label="Email" theme="primary" onPress={pushLogin}/>
           <Button label="Username" theme="primary" onPress={pushLogin}/>
@@ -225,6 +240,7 @@ export default function SignUpScreen() {
           <Button label="Confirm Password" theme="primary" onPress={pushLogin}/>
           */}
           <Button label="Sign up" theme="primary" onPress={pushLogin}/>
+          <NavigationButton label="Go Away!" type="push" destination="/login"/>
         </View>
 
         <StatusBar style='auto'/>
@@ -286,8 +302,7 @@ const signUpStyles = StyleSheet.create({
 //const pushLogin = () => alert("I wanna push!!!!");
 
 function SplashScreen() {
-  //const pushLogin = () => router.push("/login")
-  const pushLogin = () => alert("I wanna push!!!!");
+  //const router = useRouter();
   return (
     <View style={splashStyles.container}>
         <Image style={splashStyles.iconImage} source={spaaraIconImage}/>
@@ -295,6 +310,7 @@ function SplashScreen() {
       </View>
   );
 }
+
 
 
 

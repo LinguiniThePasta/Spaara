@@ -2,14 +2,16 @@
 
 
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image } from "react-native";
-import { Stack, useRouter, Link } from 'expo-router';
+import { StyleSheet, Text, View, Image, TextInput } from "react-native";
+import React from "react";
+import { Stack, useRouter, Link, Href } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 
 
 import Button from '@/components/Button';
+import NavigationButton from '@/components/NavigationButton';
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
@@ -26,19 +28,40 @@ const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 export default function LogInScreen() {
   //const pushLogin = () => router.push("/login")
-  const pushLogin = () => alert("I wanna push!!!!");
+  const pushLogin = () => alert("Log in");
+  const [usernameText, onUsernameChangeText] = React.useState('');
+  const [passwordText, onPasswordChangeText] = React.useState('');
   return (
     <View style={loginStyles.container}>
 
         <View style={loginStyles.headerContainer}>
+          <NavigationButton label="Back" type="back" destination="/welcome"/>
           <Text style={loginStyles.headerLabel}>Log in</Text>
+          <View style={loginStyles.headerSpacer}/>
         </View>
 
         <View style={loginStyles.contentContainer}>
-          <Button label="Log in with Google" theme="secondary" onPress={pushLogin}/>
-          <Button label="Username" theme="primary" onPress={pushLogin}/>
-          <Button label="Password" theme="primary" onPress={pushLogin}/>
-          <Button label="Log in" theme="primary" onPress={pushLogin}/>
+          <Button label="Log in with Google" theme="google" onPress={pushLogin}/>
+          <View style={loginStyles.separatorContainer}>
+            <View style={loginStyles.separatorSpacer}/>
+            <Text style={loginStyles.separatorLabel}>OR</Text>
+            <View style={loginStyles.separatorSpacer}/>
+          </View>
+          <TextInput
+            style={loginStyles.textInputField}
+            onChangeText={onUsernameChangeText}
+            value={usernameText}
+            placeholder="Username / Email"
+          />
+          <TextInput
+            style={loginStyles.textInputField}
+            onChangeText={onPasswordChangeText}
+            value={passwordText}
+            placeholder="Password"
+          />
+          <View style={loginStyles.loginButtonsContainer}>
+            <Button label="Log in" theme="primary-wide" onPress={pushLogin}/>
+          </View>
         </View>
 
         <StatusBar style='auto'/>
@@ -62,21 +85,71 @@ const loginStyles = StyleSheet.create({
     height: 100,
     backgroundColor: '#F6AA1C',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
 
   headerLabel: {
+    width: 290,
     marginTop: 50,
     marginBottom: 10,
     color: '#232528',
     fontSize: 28,
+    textAlign: 'center',
+  },
+
+  headerSpacer: {
+    width: 50,
+    height: 50,
+    marginTop: 50,
+    marginBottom: 10,
   },
 
   contentContainer: {
     flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
-    marginTop: 110,
+    marginTop: 30,
+  },
+
+  separatorContainer: {
+    flexDirection: 'row',
+    width: 325,
+    height: 25,
+    marginTop: 25,
+    marginBottom: 35,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  separatorLabel: {
+    width: 41,
+    height: 20,
+    color: '#959595',
+    fontSize: 15,
+    textAlign: 'center'
+  },
+
+  separatorSpacer: {
+    width: 142,
+    height: 1,
+    marginVertical: 12,
+    backgroundColor: '#959595',
+    borderRadius: 100,
+  },
+  
+  textInputField: {
+    height: 20,
+    width: 325,
+    margin: 25,
+    fontSize: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#959595',
+    color: '#232528',
+  },
+
+  loginButtonsContainer: {
+    alignItems: 'center',
+    marginTop: 50,
   },
 
 });

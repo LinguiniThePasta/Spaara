@@ -1,5 +1,9 @@
+
+
+
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, TextInput } from "react-native";
+import React from "react";
 import { Stack, useRouter, Link } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -7,74 +11,23 @@ import { Stack, useRouter, Link } from 'expo-router';
 
 
 import Button from '@/components/Button';
+import NavigationButton from '@/components/NavigationButton';
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 //const Stack = createNativeStackNavigator();
-const router = useRouter();
+//const router = useRouter();
 //router.navigate("/login");
 
 
 
 
 
-/*export default function Index() {
-  return (
-    <NavigationContainer>
-      <View style={styles.container}>
-
-        <View style={styles.logoImageContainer}>
-          <Image
-            style={styles.logoImage}
-            source={spaaraLogoImage}
-          />
-        </View>
-
-        <View style={styles.logInButtonsContainer}>
-          <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary"/>
-            <Button label="Sign up" theme="primary"/>
-          </View>
-          <View style={styles.logInButtonsRow}>
-            <Button label="or continue as Guest" theme="secondary"/>
-          </View>
-        </View>
-
-        <StatusBar style="auto"/>
-      </View>
-    </NavigationContainer>
-  );
-}*/
-
-
-
-
-
-/*export default function Index() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Welcome"
-          component={WelcomeScreen}
-          options={{title: "Welcome"}}
-        />
-        <Stack.Screen
-          name="LogIn"
-          component={LogInScreen}
-          options={{title: "Log in"}}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}*/
-
-
-
 //const pushLogin = () => router.push("/login")
-const pushLogin = () => alert("I wanna push!!!!");
+//const pushLogin = () => alert("I wanna push!!!!");
 
 export default function WelcomeScreen() {
+    const pushLogin = () => alert("I wanna push!!!!");
   return (
     <View style={styles.container}>
 
@@ -87,8 +40,10 @@ export default function WelcomeScreen() {
 
         <View style={styles.logInButtonsContainer}>
           <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary" onPress={pushLogin}/>
-            <Button label="Sign up" theme="primary" onPress={pushLogin}/>
+            {//<Button label="Log in" theme="primary" onPress={pushLogin}/>
+            //<Button label="Sign up" theme="primary" onPress={pushLogin}/>
+            }<NavigationButton label="Log in" type="push" destination="/login"/>
+            <NavigationButton label="Sign up" type="push" destination="/signup"/>
           </View>
           <View style={styles.logInButtonsRow}>
             <Button label="or continue as Guest" theme="secondary" onPress={pushLogin}/>
@@ -99,34 +54,6 @@ export default function WelcomeScreen() {
       </View>
   );
 }
-
-
-
-
-
-/*
-function LogInScreen() {
-  return (
-    <View style={styles.container}>
-
-        <View style={styles.logoImageContainer}>
-          <Image
-            style={styles.logoImage}
-            source={spaaraLogoImage}
-          />
-        </View>
-
-        <View style={styles.logInButtonsContainer}>
-          <View style={styles.logInButtonsRow}>
-            <Button label="Log in" theme="primary"/>
-          </View>
-        </View>
-
-        <StatusBar style="auto"/>
-      </View>
-  );
-}
-*/
 
 
 
