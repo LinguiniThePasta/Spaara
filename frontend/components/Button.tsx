@@ -6,7 +6,7 @@ type props = {
     onPress?: () => void;
 }
 
-export default function Button({ label, theme, onPress }: props) {
+export default function Button({ label, theme, onPress = () => {} }: props) {
     if (theme === "primary") {
         return (
             <View style={primaryStyles.buttonContainer}>
