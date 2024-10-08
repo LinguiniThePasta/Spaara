@@ -15,7 +15,7 @@ export default function Header() {
         if (option === 'Profile') {
             navigation.navigate('Profile');
         } else {
-            console.log(option); // Handle "Log in" or "Log out" logic here
+            console.log(option);
         }
     };
 
@@ -26,7 +26,7 @@ export default function Header() {
                 <Text style={styles.welcomeText}>Welcome, Guest</Text>
                 <TouchableOpacity onPress={toggleMenu}>
                     <Image
-                        source={{ uri: 'https://via.placeholder.com/40' }} // Placeholder profile image
+                        source={{ uri: 'https://via.placeholder.com/40' }}
                         style={styles.profileImage}
                     />
                 </TouchableOpacity>
