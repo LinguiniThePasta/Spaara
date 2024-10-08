@@ -1,0 +1,31 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+
+export default function Footer() {
+    return (
+        <View style={styles.footerContainer}>
+
+        </View>
+    );
+}
+
+
+const styles = StyleSheet.create({
+    footerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around', // Evenly distributes the items
+        alignItems: 'center',
+        backgroundColor: '#d3d3d3', // Light grey background color to match your image
+        height: 60,
+        borderTopWidth: 1,
+        borderTopColor: '#ccc', // Slight border to separate footer from the rest of the content
+    },
+    footerItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    footerText: {
+        fontSize: 16,
+        color: '#000', // Black text color
+    },
+});
