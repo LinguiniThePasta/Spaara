@@ -1,3 +1,4 @@
+import {RichText, Toolbar} from "@10play/tentap-editor";
 import React from 'react';
 import {
     SafeAreaView,
@@ -7,14 +8,13 @@ import {
     StyleSheet,
     Text,
 } from 'react-native';
-import { CoreBridge, HistoryBridge, RichText, TaskListBridge, Toolbar, useEditorBridge } from '@10play/tentap-editor';
+import {CoreBridge, HistoryBridge, TaskListBridge, useEditorBridge} from '@10play/tentap-editor';
 import NavigationButton from "@/components/NavigationButton";
-import Footer from "@/components/Footer";
 
-export default function Shopping() {
+export default function RichEditorList() {
     const editor = useEditorBridge({
         bridgeExtensions: [
-            CoreBridge.extendExtension({ content: 'taskList+' }),
+            CoreBridge.extendExtension({content: 'taskList+'}),
             TaskListBridge,
             HistoryBridge
         ],
@@ -25,21 +25,15 @@ export default function Shopping() {
 
     return (
         <View style={loginStyles.container}>
-            <View style={loginStyles.headerContainer}>
-                <NavigationButton label="Back" type="back" destination="/welcome" />
-                <Text style={loginStyles.headerLabel}>Log in</Text>
-                <View style={loginStyles.headerSpacer} />
-            </View>
             <SafeAreaView style={loginStyles.contentContainer}>
-                <RichText editor={editor} />
+                <RichText editor={editor}/>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={loginStyles.keyboardAvoidingView}
                 >
-                    <Toolbar editor={editor} />
+                    <Toolbar editor={editor}/>
                 </KeyboardAvoidingView>
             </SafeAreaView>
-            <Footer />
         </View>
     );
 };
@@ -49,26 +43,6 @@ const loginStyles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFBEE',
         alignItems: 'center',
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F6AA1C',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    headerLabel: {
-        flex: 1,
-        marginTop: 50,
-        marginBottom: 10,
-        color: '#232528',
-        fontSize: 28,
-        textAlign: 'center',
-    },
-    headerSpacer: {
-        width: 50,
-        height: 50,
     },
     contentContainer: {
         flex: 1,
@@ -85,3 +59,4 @@ const loginStyles = StyleSheet.create({
 });
 
 const initialContent = `<p>This is a basic example!</p>`;
+
