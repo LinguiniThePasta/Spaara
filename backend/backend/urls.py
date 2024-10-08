@@ -32,3 +32,4 @@ urlpatterns = [
     path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]
+
