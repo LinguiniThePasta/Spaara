@@ -4,7 +4,7 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Image, TextInput } from "react-native";
-import { Stack, useRouter, Link } from 'expo-router';
+import {Stack, useRouter, Link, router} from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
             <NavigationButton label="Sign up" type="push" destination="/signup"/>
           </View>
           <View style={welcomeStyles.logInButtonsRow}>
-            <NavigationButton label="or continue as Guest" type="push" destination="/shopping"/>
+            <Button label="or continue as Guest" theme="secondary" onPress={() => {router.push("/shopping")}}/>
           </View>
         </View>
 
