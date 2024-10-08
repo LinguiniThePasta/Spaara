@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 export default function RootLayout() {
-
   const [loaded] = useFonts({
     LeagueSpartan: require('../assets/fonts/LeagueSpartan-VariableFont_wght.ttf'),
   });
@@ -31,6 +30,7 @@ export default function RootLayout() {
       <Stack.Screen name="signup"/>
       <Stack.Screen name="welcome"/>
       <Stack.Screen name="splash"/>
+      <Stack.Screen name="shopping"/>
     </Stack>
   );
   /*return (
