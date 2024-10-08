@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function Header() {
@@ -15,8 +15,7 @@ export default function Header() {
         if (option === 'Profile') {
             navigation.navigate('Profile');
         } else {
-            // Handle "Log in" or "Log out" logic here
-            console.log(option);
+            console.log(option); // Handle "Log in" or "Log out" logic here
         }
     };
 
@@ -31,20 +30,20 @@ export default function Header() {
                         style={styles.profileImage}
                     />
                 </TouchableOpacity>
-                {menuVisible && (
-                    <View style={styles.dropdownMenu}>
-                        <TouchableOpacity onPress={() => handleMenuOption('Log in')}>
-                            <Text style={styles.dropdownItem}>Log in</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleMenuOption('Log out')}>
-                            <Text style={styles.dropdownItem}>Log out</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleMenuOption('Profile')}>
-                            <Text style={styles.dropdownItem}>Profile</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
             </View>
+            {menuVisible && (
+                <View style={[styles.dropdownMenu, { top: 60 }]}>
+                    <TouchableOpacity onPress={() => handleMenuOption('Log in')}>
+                        <Text style={styles.dropdownItem}>Log in</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleMenuOption('Log out')}>
+                        <Text style={styles.dropdownItem}>Log out</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleMenuOption('Profile')}>
+                        <Text style={styles.dropdownItem}>Profile</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 }
@@ -59,6 +58,8 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
+        position: 'relative',
+        zIndex: 2,
     },
     zipCodeText: {
         fontSize: 18,
@@ -67,7 +68,6 @@ const styles = StyleSheet.create({
     profileContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        position: 'relative', // Required for dropdown positioning
     },
     welcomeText: {
         fontSize: 18,
@@ -81,14 +81,13 @@ const styles = StyleSheet.create({
     },
     dropdownMenu: {
         position: 'absolute',
-        top: 50,
-        right: 0,
+        right: 16,
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5,
         padding: 10,
-        zIndex: 1, // Ensures the dropdown appears above other elements
+        zIndex: 3,
     },
     dropdownItem: {
         paddingVertical: 5,
