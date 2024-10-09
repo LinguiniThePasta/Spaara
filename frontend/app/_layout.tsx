@@ -5,8 +5,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-//import { NavigationContainer } from "@react-navigation/native";
-//import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -33,6 +31,8 @@ export default function RootLayout() {
       <Stack.Screen name="welcome"/>
       <Stack.Screen name="splash"/>
       <Stack.Screen name="shopping"/>
+      <Stack.Screen name="profile"/>
+      <Stack.Screen name="map"/>
     </Stack>
   );
   /*return (
