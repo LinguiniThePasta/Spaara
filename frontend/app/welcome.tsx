@@ -28,6 +28,7 @@ const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 export default function WelcomeScreen() {
     const pushLogin = () => alert("Continue as Guest");
+    const pushLogin = () => alert("I wanna push!!!!");
   return (
     <View style={styles.container}>
 
