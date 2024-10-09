@@ -3,3 +3,5 @@ psycopg2==2.9.9
 djangorestframework==3.15.2
 rest_framework_simplejwt==0.0.2
 django-allauth==65.0.1
+django-cors-headers==4.4.0
+djangorestframework-simplejwt==5.3.1
