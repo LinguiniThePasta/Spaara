@@ -9,6 +9,7 @@ from . import serializers
 from .models import User, ShoppingList, Recipe
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
+import pandas as pd;
 
 from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer
 
@@ -51,6 +52,7 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -81,6 +83,7 @@ class ShoppingListView(APIView):
             shoppingLists = user.shoppingLists.all()
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        
 class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -111,6 +114,40 @@ class RecipeView(APIView):
             recipes = user.recipes.all()
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ExportShoppingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        shopping_list_id = request.query_params.get('id', None)
+        user = request.user
+
+        if shopping_list_id:
+            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
+            serializer = SaveShoppingListSerializer(shoppingList)
+            df = pd.DataFrame.from_records(serializer.data.values())
+            df.to_excel('ExportedList.xlsx')
+            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class ExportRecipeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        recipe_id = request.query_params.get('id', None)
+        user = request.user
+
+        if recipe_id:
+            recipe = get_object_or_404(user.recipes.all(), id=recipe_id)
+            serializer = SaveRecipeSerializer(recipe)
+            df = pd.DataFrame.from_records(serializer.data.values())
+            df.to_excel('ExportedList.xlsx')
+            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class RemoveShoppingListView(APIView):
     permission_classes = [IsAuthenticated]

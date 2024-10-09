@@ -28,9 +28,11 @@ urlpatterns = [
     path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
     path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
+    path('api/shopping/export', ExportShoppingListView.as_view(), name='export_shopping_list'),
     path('api/shopping/delete', RemoveShoppingListView.as_view(), name='delete_shopping_list'),
     path('api/recipe/create', RecipeView.as_view(), name='save_recipe'),
     path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
+    path('api/recipe/export', ExportRecipeView.as_view(), name='export_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
