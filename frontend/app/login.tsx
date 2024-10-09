@@ -25,7 +25,7 @@ export default function LogInScreen() {
         try {
             const response = await axios.post(
                 //TODO: CHANGE THIS TO YOUR PC'S IP ADDRESS
-                'http://192.168.4.68:8000/api/user/login',
+                'http://127.0.0.1:8000/api/user/login',
                 {
                     "email": username,
                     "password": password
@@ -37,8 +37,8 @@ export default function LogInScreen() {
                 }
             );
 
-            await SecureStore.setItemAsync('jwtToken', response.data.access);
-            await SecureStore.setItemAsync('refreshToken', response.data.refresh);
+            //await SecureStore.setItemAsync('jwtToken', response.data.access);
+            //await SecureStore.setItemAsync('refreshToken', response.data.refresh);
             router.push('/home');
         } catch (error) {
             console.log(error);
