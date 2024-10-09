@@ -31,6 +31,8 @@ export default function RootLayout() {
       <Stack.Screen name="welcome"/>
       <Stack.Screen name="splash"/>
       <Stack.Screen name="shopping"/>
+      <Stack.Screen name="profile"/>
+      <Stack.Screen name="map"/>
     </Stack>
   );
   /*return (

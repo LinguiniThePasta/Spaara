@@ -40,13 +40,14 @@ export default function WelcomeScreen() {
 
         <View style={styles.logInButtonsContainer}>
           <View style={styles.logInButtonsRow}>
-            {//<Button label="Log in" theme="primary" onPress={pushLogin}/>
-            //<Button label="Sign up" theme="primary" onPress={pushLogin}/>
-            }<NavigationButton label="Log in" type="push" destination="/login"/>
+            <NavigationButton label="Log in" type="push" destination="/login"/>
             <NavigationButton label="Sign up" type="push" destination="/signup"/>
           </View>
           <View style={styles.logInButtonsRow}>
             <Button label="or continue as Guest" theme="secondary" onPress={pushLogin}/>
+          </View>
+          <View style={styles.logInButtonsRow}>
+            <NavigationButton label="Test" type="push" destination="/profile"/>
           </View>
         </View>
 
