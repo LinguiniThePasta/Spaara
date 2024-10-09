@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
             <NavigationButton label="Sign up" type="push" destination="/signup"/>
           </View>
           <View style={welcomeStyles.logInButtonsRow}>
-            <Button label="or continue as Guest" theme="secondary" onPress={() => {router.push("/map")}}/>
+            <Button label="or continue as Guest" theme="secondary" onPress={() => {router.push("/home")}}/>
           </View>
         </View>
 
