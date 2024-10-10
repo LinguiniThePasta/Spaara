@@ -12,7 +12,7 @@ class KrogerAPI:
     krogerUrl = 'https://api-ce.kroger.com/v1'
     krogerAuthUrl = 'https://api-ce.kroger.com/v1/connect/oauth2'
 
-    def __init__(self) -> None:
+    def __init__(self, user) -> None:
         self.token = KrogerAPI.getToken()
         
     
