@@ -84,17 +84,15 @@ class ShoppingListView(APIView):
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
     def delete(self, request):
-        data = request.data
         user = request.user
-        shoppingListID = data.get('id', None)
-        if shoppingListID:
-            shoppingList = get_object_or_404(user.recipes.all(), id=shoppingListID)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            shoppingList.delete()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        shopping_list_id = request.query_params.get('id', None)
+
+        if shopping_list_id:
+            shopping_list = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
+            shopping_list.delete()
+            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
         else:
-            return Response({"message" : "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"message": "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)
 class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
