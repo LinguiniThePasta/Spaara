@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
     path('api/recipe/export', ExportRecipeView.as_view(), name='export_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/favorites/get', FavoriteView.as_view(), name='get_favorite'),
     path('api/favorites/add', FavoriteView.as_view(), name='add_favorite'),
     path('api/favorites/delete', FavoriteView.as_view(), name='delete_favorite'),
 ]
