@@ -48,15 +48,25 @@ export default function SavedListsScreen() {
   useEffect(() => {
     const getAllShoppingLists = async () => {
       try {
-        const allKeys = await AsyncStorage.getAllKeys();
+        /*const allKeys = await AsyncStorage.getAllKeys();
         const shoppingListKeys = allKeys.filter(key => key.startsWith('@@shopping_list'));
         const shoppingListData = await AsyncStorage.multiGet(shoppingListKeys);
         const formattedShoppingLists = shoppingListData.map(([key, value]) => ({
           key,
           value: JSON.parse(value),
-        }));
+        }));*/
+        const response = await axios.get(
+          `${API_BASE_URL}/api/shopping/get`, // Adjust the URL based on your API
+          {
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+              },
+          }
+        );
 
-        setShoppingLists(formattedShoppingLists);
+        //setShoppingLists(formattedShoppingLists);
+        console.log("Shopping Lists!: ", response);
       } catch (error) {
         console.error('Error retrieving shopping lists:', error);
       }
