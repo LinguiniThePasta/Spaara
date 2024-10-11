@@ -25,17 +25,34 @@ export default function FavoritedItems() {
     const [newItemName, setNewItemName] = React.useState('');
     const [newItemQuantity, setNewItemQuantity] = React.useState('');
 
-    const addItem = () => {
-        if (newItemName && newItemQuantity) {
-            setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false}]);
-            setNewItemName('');
-            setNewItemQuantity('');
-        }
-    };
+    const removeItem = async (index) => {
+        try {
+            // Get the ID of the item to be deleted
+            const itemId = items[index].id;
 
-    const removeItem = (index) => {
-        const updatedItems = items.filter((_, i) => i !== index);
-        setItems(updatedItems);
+            // Send a DELETE request to the server to remove the item
+            const response = await fetch(`${API_BASE_URL}/api/favorites/delete?id=${itemId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`,
+                },
+            });
+
+            // Check if the response was successful
+            if (response.ok) {
+                // Update the local state only if the server deletion was successful
+                const updatedItems = items.filter((_, i) => i !== index);
+                setItems(updatedItems);
+                console.log(`Item with ID ${itemId} successfully deleted.`);
+            } else {
+                console.error('Failed to delete item from server:', response.statusText);
+                alert('Failed to delete item from the server. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error deleting item:', error);
+            alert('An error occurred while deleting the item. Please try again.');
+        }
     };
 
 
@@ -60,6 +77,7 @@ export default function FavoritedItems() {
                 console.log(data);
 
                 const transformedItems = data.map(item => ({
+                    id: item.id,
                     name: item.name,
                     price: item.price,
                     store: item.store
