@@ -62,27 +62,30 @@ class LoginSerializer(serializers.Serializer):
 class UpdateInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email', 'password', 'latitude', 'longitude', 'radius']
         extra_kwargs = {
             'username': {'required': False},
             'email': {'required': False, 'validators': []},
             'password': {'write_only': True, 'required': False},
+            'radius': {'required': False},
+            'latitude': {'required': False},
+            'longitude': {'required': False},
         }
     def validate(self, data):
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         errorDict = collections.defaultdict(str)
-        if username:
+        if username and username != "":
             if not re.match("^[a-zA-Z0-9_]*$", username):
                 errorDict['username'] = 'Username can only contain alphanumeric characters.'
-        if password:
+        if password and password != "":
             # Check if password is okay
             if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
                 errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
-        if password == email:
-            errorDict['password'] += 'Password cannot be the same as email.'
-        if email:
+            if email and email != "" and password == email:
+                errorDict['password'] += 'Password cannot be the same as email.'
+        if email and email != "":
             try:
                 validate_email(email)
             except serializers.ValidationError:
@@ -93,8 +96,11 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errorDict)
         return data
     def update(self, instance, validated_data):
-        validated_data.get('username', instance.username)
-        validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.email = validated_data.get('email', instance.email)
+        instance.latitude = validated_data.get('latitude', instance.latitude)
+        instance.longitude = validated_data.get('longitude', instance.longitude)
+        instance.radius = validated_data.get('radius', instance.radius)
         password = validated_data.get('password', None)
         if password:
             instance.set_password(password)
