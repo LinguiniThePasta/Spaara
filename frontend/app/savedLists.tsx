@@ -76,17 +76,19 @@ export default function SavedListsScreen() {
     try {
       //const updatedElements = shoppingLists.filter((_, i) => i === index);
       //const deletedList = shoppingLists[index];
-      setDeletedList(shoppingLists[index])
+      //setDeletedList(shoppingLists[index])
+      console.log("Deleting this List: ", shoppingLists[index].id);
       const response = await axios.delete(
         `${API_BASE_URL}/api/shopping/delete`, // Adjust the URL based on your API
         {
-          "id": deletedList.id,
+          "data": shoppingLists[index],
         },
         {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
-            },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+          },
+          //"id": shoppingLists[index].id,
         }
       );
 
@@ -110,7 +112,7 @@ export default function SavedListsScreen() {
 
   const removeElement = (index) => {
     const updatedElements = shoppingLists.filter((_, i) => i !== index);
-    console.log("Deleting this List: ", shoppingLists[index])
+    console.log("Deleting this List: ", shoppingLists[index].id)
     setShoppingLists(updatedElements);
   };
 
