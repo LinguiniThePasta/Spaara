@@ -6,20 +6,26 @@ import {
     Platform,
     StyleSheet,
     Text,
+    TextInput,
+    Button,
+    ScrollView,
+    TouchableOpacity,
 } from 'react-native';
 import { CoreBridge, HistoryBridge, RichText, TaskListBridge, Toolbar, useEditorBridge } from '@10play/tentap-editor';
 import NavigationButton from "@/components/NavigationButton";
 import Footer from "@/components/Footer";
+import CheckBox from 'react-native-check-box'
+import TabsFooter from "@/components/TabsFooter"
 
 export default function Shopping() {
-  const [items, setItems] = useState([
+  const [items, setItems] = React.useState([
     { name: 'Item', quantity: 'x3', checked: false },
     { name: 'Item 2', quantity: 'x2', checked: false },
     { name: 'Item 3', quantity: 'x10', checked: false },
     { name: 'Item 4', quantity: 'x1', checked: false },
   ]);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemName, setNewItemName] = React.useState('');
+  const [newItemQuantity, setNewItemQuantity] = React.useState('');
 
   const addItem = () => {
     if (newItemName && newItemQuantity) {
@@ -99,6 +105,7 @@ export default function Shopping() {
           </View>
         ))}
       </ScrollView>
+      <TabsFooter/>
     </View>
   );
 }

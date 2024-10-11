@@ -40,10 +40,10 @@ export default function NavigationButton({ label, type, destination }: props) {
     if (type === "tab") {
         let icon = backIcon;
         switch (destination) {
-            case "/home":
+            case "/shopping":
                 icon = homeIcon;
                 break;
-            case "/shopping":
+            case "/savedLists":
                 icon = listIcon;
                 break;
             case "/map":
