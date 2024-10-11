@@ -8,13 +8,12 @@ class User(AbstractUser):
     password = models.CharField(max_length=100)
     shoppingLists = models.ManyToManyField("Shopping", related_name='shoppingLists')
     recipes = models.ManyToManyField("Recipe", related_name='recipes')
+    favorites = models.ManyToManyField("FavoriteItem", related_name = 'favorites')
 
     def __str__(self):
         return self.email
 
 class FavoriteItem(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
     name = models.CharField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     store = models.CharField()
