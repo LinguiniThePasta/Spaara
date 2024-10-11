@@ -1,7 +1,7 @@
 import {StatusBar} from "expo-status-bar";
 import {StyleSheet, Text, View, Image, TextInput, ScrollView, TouchableOpacity} from "react-native";
 import React, {useEffect} from "react";
-import {Stack, useRouter, Link, Href} from 'expo-router';
+import {Stack, useRouter, Link, Href, router} from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import axios from "axios";
@@ -135,7 +135,14 @@ export default function SavedListsScreen() {
                             {/*<NavigationButton label="tab" type="tab" destination={"/savedLists"}/>
                 <NavigationButton label="tab" type="tab" destination={"/savedLists"}/>*/}
                             <View style={savedListsStyles.itemButtonContainer}>
-                                <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => addElement()}>
+                                <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => {
+                                    router.push({
+                                        pathname: '/shopping',
+                                        params: {
+                                            shoppingList: JSON.stringify(element), // Serialize the whole element object
+                                        },
+                                    });
+                                }}>
                                     <Image style={savedListsStyles.itemButtonIcon} source={openIcon}/>
                                 </TouchableOpacity>
                             </View>
