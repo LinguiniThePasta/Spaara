@@ -1,6 +1,5 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import {router} from "expo-router";
 
 export default function Footer() {
     return (
@@ -8,7 +7,7 @@ export default function Footer() {
             <TouchableOpacity style={styles.footerItem}>
                 <Text style={styles.footerText}>Home</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem} onPress={()=> router.push("/shopping")}>
+            <TouchableOpacity style={styles.footerItem}>
                 <Text style={styles.footerText}>Shopping List</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.footerItem}>

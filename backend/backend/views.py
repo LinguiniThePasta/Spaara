@@ -6,12 +6,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Shopping, Recipe, FavoriteItem
+from .models import User, ShoppingList, Recipe
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
-import pandas as pd;
 
-from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer, FavoriteItemSerializer
+from .serializers import SaveShoppingListSerializer, SaveRecipeSerializer
 
 
 class RegisterView(APIView):
@@ -52,7 +51,6 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 class ShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -83,7 +81,6 @@ class ShoppingListView(APIView):
             shoppingLists = user.shoppingLists.all()
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
 class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -114,78 +111,3 @@ class RecipeView(APIView):
             recipes = user.recipes.all()
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-            
-class AddFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = FavoriteItemSerializer(data=request.data)
-        if serializer.is_valid():
-            # Associate the favorite item with the current user
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        
-    
-class RemoveFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request):
-        item_id = request.query_params.get('id', None)
-        try:
-            favorite_item = FavoriteItem.objects.get(id=item_id, user=request.user)
-            favorite_item.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except FavoriteItem.DoesNotExist:
-            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
-
-class ExportShoppingListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        shopping_list_id = request.query_params.get('id', None)
-        user = request.user
-
-        if shopping_list_id:
-            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            df = pd.DataFrame.from_records(serializer.data.values())
-            df.to_excel('ExportedList.xlsx')
-            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
-        
-class ExportRecipeView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        recipe_id = request.query_params.get('id', None)
-        user = request.user
-
-        if recipe_id:
-            recipe = get_object_or_404(user.recipes.all(), id=recipe_id)
-            serializer = SaveRecipeSerializer(recipe)
-            df = pd.DataFrame.from_records(serializer.data.values())
-            df.to_excel('ExportedList.xlsx')
-            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-class RemoveShoppingListView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def delete(self, request):
-        data = request.data
-        user = request.user
-        shoppingListID = data.get('id', None)
-
-        if shoppingListID:
-            shoppingList = get_object_or_404(user.recipes.all(), id=shoppingListID)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            shoppingList.delete()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message" : "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)

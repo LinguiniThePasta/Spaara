@@ -7,6 +7,10 @@ import { Stack, router, Link, Href } from 'expo-router';
 
 
 const backIcon = require('@/assets/images/BackArrow.png');
+const homeIcon = require('@/assets/images/HomeIcon.png');
+const listIcon = require('@/assets/images/ListIcon.png');
+const mapIcon = require('@/assets/images/MapIcon.png');
+const recipeIcon = require('@/assets/images/RecipeIcon.png');
 
 type props = {
     label: string;
@@ -29,6 +33,33 @@ export default function NavigationButton({ label, type, destination }: props) {
             <View style={pushStyles.buttonContainer}>
                 <Pressable style={pushStyles.button} onPress={() => router.push(destination)}>
                     <Text style={pushStyles.buttonLabel}>{label}</Text>
+                </Pressable>
+            </View>
+        )
+    }
+    if (type === "tab") {
+        let icon = backIcon;
+        switch (destination) {
+            case "/shopping":
+                icon = homeIcon;
+                break;
+            case "/savedLists":
+                icon = listIcon;
+                break;
+            case "/map":
+                icon = mapIcon;
+                break;
+            case "/profile":
+                icon = recipeIcon;
+                break;
+            default:
+                icon = backIcon;
+                break;
+        }
+        return (
+            <View style={tabStyles.buttonContainer}>
+                <Pressable style={tabStyles.button} onPress={() => router.replace(destination)}>
+                    <Image style={tabStyles.buttonIcon} source={icon}/>
                 </Pressable>
             </View>
         )
@@ -71,6 +102,31 @@ const backStyles = StyleSheet.create({
         width: 50,
         height: 50,
         marginTop: 50,
+        marginBottom: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    button: {
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+    },
+
+    buttonIcon: {
+        width: 25,
+        height: 25,
+    },
+
+})
+
+const tabStyles = StyleSheet.create({
+    buttonContainer: {
+        width: 50,
+        height: 50,
+        marginTop: 10,
         marginBottom: 10,
         alignItems: 'center',
         justifyContent: 'center',

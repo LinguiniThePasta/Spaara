@@ -13,6 +13,7 @@ import { Stack, useRouter, Link, Href } from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import TabsFooter from '@/components/TabsFooter';
+import GroceryListElement from '@/components/GroceryListElement';
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
@@ -27,31 +28,25 @@ const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-export default function MapScreen() {
+export default function SavedListsScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("Log in");
   const [usernameText, onUsernameChangeText] = React.useState('');
   const [passwordText, onPasswordChangeText] = React.useState('');
   return (
-    <View style={mapStyles.container}>
+    <View style={savedListsStyles.container}>
 
-        <View style={mapStyles.headerContainer}>
+        <View style={savedListsStyles.headerContainer}>
           {/*<NavigationButton label="Back" type="back" destination="/welcome"/>*/}
-          <View style={mapStyles.headerSpacer}/>
-          <Text style={mapStyles.headerLabel}>Map</Text>
-          <View style={mapStyles.headerSpacer}/>
+          <View style={savedListsStyles.headerSpacer}/>
+          <Text style={savedListsStyles.headerLabel}>My Grocery Lists</Text>
+          <View style={savedListsStyles.headerSpacer}/>
         </View>
 
-        <View style={mapStyles.contentContainer}>
-          <View style={mapStyles.mapPosition}/>
-          <TextInput
-            style={mapStyles.textInputField}
-            onChangeText={onUsernameChangeText}
-            value={usernameText}
-            placeholder="Set Search Radius"
-          />
-          <View style={mapStyles.loginButtonsContainer}>
+        <View style={savedListsStyles.contentContainer}>
+          <View style={savedListsStyles.loginButtonsContainer}>
             <Button label="Set Home Location" theme="primary-wide" onPress={pushLogin}/>
+            <GroceryListElement label="OOOOOOOOOOOOOOOO"/>
           </View>
         </View>
         <TabsFooter/>
@@ -63,7 +58,7 @@ export default function MapScreen() {
 
 
 
-const mapStyles = StyleSheet.create({
+const savedListsStyles = StyleSheet.create({
 
   container: {
     flex: 1,

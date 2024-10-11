@@ -11,17 +11,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
-class FavoriteItem(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    name = models.CharField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    store = models.CharField()
-
-    def __str__(self):
-        return self.name
-
 '''    
 # A grocery item
 class GroceryItem(models.Model):
@@ -94,7 +83,7 @@ class ListBase(models.Model):
 
     def __str__(self):
         return self.name
-class Shopping(ListBase):
+class ShoppingList(ListBase):
     pass
 class Recipe(ListBase):
     pass
