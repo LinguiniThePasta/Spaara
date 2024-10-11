@@ -38,7 +38,7 @@ export default function ProfileScreen() {
 
         <View style={profileStyles.headerContainer}>
           <NavigationButton label="Back" type="back" destination="/welcome"/>
-          <Text style={profileStyles.headerLabel}>Profile</Text>
+          <Text style={profileStyles.headerLabel}>Settings</Text>
           <View style={profileStyles.headerSpacer}/>
         </View>
 
