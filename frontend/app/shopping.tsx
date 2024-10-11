@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     View,
     StyleSheet,
@@ -7,7 +7,7 @@ import {
     Button,
     ScrollView,
     TouchableOpacity,
-    Alert,
+    Alert, ActivityIndicator,
 } from 'react-native';
 import CheckBox from 'react-native-check-box';
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -25,8 +25,8 @@ export default function Shopping() {
     ]);
     const [newItemName, setNewItemName] = useState('');
     const [newItemQuantity, setNewItemQuantity] = useState('');
+    const [authenticated, setAuthenticated] = useState(false);
     const [listName, setListName] = useState('');
-
     const addItem = () => {
         if (newItemName && newItemQuantity) {
             setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false, favorite: false}]);
@@ -75,7 +75,7 @@ export default function Shopping() {
                     };
 
 
-                    if (await isAuthenticated()) {
+                    if (authenticated) {
                         try {
                             const response = await fetch(`${API_BASE_URL}/api/shopping/create`, {
                                 method: 'POST',
@@ -110,6 +110,16 @@ export default function Shopping() {
         );
     };
 
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            // Run the authentication check
+            const authStatus = await isAuthenticated();
+            console.log('Authentication status:', authStatus);
+            setAuthenticated(authStatus);
+        };
+
+        checkAuthentication();
+    }, []);
     return (
         <View style={styles.container}>
             {/* Search Bar */}
@@ -164,11 +174,21 @@ export default function Shopping() {
                             isChecked={item.checked}
                             leftText={null}
                         />
-                        <TouchableOpacity style={styles.favoriteButton} onPress={() => toggleFavorite(index)}>
-                            <Text style={[styles.favoriteButtonText, item.favorite ? styles.favorite : null]}>
-                                {item.favorite ? '★' : '☆'}
-                            </Text>
-                        </TouchableOpacity>
+                        {authenticated && (
+                            <TouchableOpacity
+                                style={styles.favoriteButton}
+                                onPress={() => toggleFavorite(index)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.favoriteButtonText,
+                                        item.favorite ? styles.favorite : null,
+                                    ]}
+                                >
+                                    {item.favorite ? '★' : '☆'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                         <TouchableOpacity style={styles.removeButton} onPress={() => removeItem(index)}>
                             <Text style={styles.removeButtonText}>Remove</Text>
                         </TouchableOpacity>
@@ -278,5 +298,10 @@ const styles = StyleSheet.create({
     },
     favorite: {
         color: 'gold',
+    },
+    loadingIndicator: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

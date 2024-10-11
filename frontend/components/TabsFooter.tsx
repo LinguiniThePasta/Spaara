@@ -1,24 +1,20 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import NavigationButton from './NavigationButton';
+import {isAuthenticated} from "@/components/Axios";
 
 export default function Footer() {
-    /*return (
-        <View style={styles.footerContainer}>
-            <TouchableOpacity style={styles.footerItem}>
-                <Text style={styles.footerText}>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem}>
-                <Text style={styles.footerText}>Shopping List</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem}>
-                <Text style={styles.footerText}>Map</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem}>
-                <Text style={styles.footerText}>Recipes</Text>
-            </TouchableOpacity>
-        </View>
-    );*/
+    const [authenticated, setAuthenticated] = useState(false);
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            // Run the authentication check
+            const authStatus = await isAuthenticated();
+            // console.log('Authentication status:', authStatus);
+            setAuthenticated(authStatus);
+        };
+
+        checkAuthentication();
+    }, []);
     return (
         <View style={styles.footerContainer}>
             {/*<NavigationButton label="tab" type="tab" destination={"/home"}/>
@@ -35,9 +31,10 @@ export default function Footer() {
                 <View style={styles.tabContainer}>
                     <NavigationButton label="tab" type="tab" destination={"/savedRecipes"}/>
                 </View>
-                <View style={styles.tabContainer}>
+                {authenticated && <View style={styles.tabContainer}>
                     <NavigationButton label="tab" type="tab" destination={"/profile"}/>
                 </View>
+                }
                 {/*<NavigationButton label="tab" type="tab" destination={"/home"}/>
                 <NavigationButton label="tab" type="tab" destination={"/shopping"}/>
                 <NavigationButton label="tab" type="tab" destination={"/map"}/>
