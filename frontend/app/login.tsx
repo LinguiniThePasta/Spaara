@@ -1,7 +1,7 @@
 import {StatusBar} from "expo-status-bar";
 import {StyleSheet, Text, View, Image, TextInput} from "react-native";
-import React from "react";
-import {Stack, useRouter, Link, Href, router} from 'expo-router';
+import React, {useCallback, useEffect} from "react";
+import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
@@ -46,6 +46,22 @@ export default function LogInScreen() {
 
     const [username, onUsernameChange] = React.useState('');
     const [password, onPasswordChange] = React.useState('');
+
+    useFocusEffect(
+        useCallback(() => {
+            const logout = async () => {
+                try {
+                    await SecureStore.deleteItemAsync('jwtToken');
+                    console.log('JWT token cleared on reaching login screen.');
+                } catch (error) {
+                    console.log('Error clearing JWT token:', error);
+                }
+            };
+
+            logout();
+        }, [])
+    );
+
     return (
         <View style={loginStyles.container}>
 
