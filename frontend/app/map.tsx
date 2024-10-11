@@ -1,76 +1,72 @@
-
-
-
+import React, { useState, useEffect } from "react";
+import { StyleSheet, Text, View, TextInput, Alert } from "react-native";
+import * as Location from 'expo-location';
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Image, TextInput } from "react-native";
-import React from "react";
-import { Stack, useRouter, Link, Href } from 'expo-router';
-//import { NavigationContainer } from "@react-navigation/native";
-//import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-
-
 import Button from '@/components/Button';
-import NavigationButton from '@/components/NavigationButton';
 import TabsFooter from '@/components/TabsFooter';
 
-const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
-
-//const Stack = createNativeStackNavigator();
-//const router = useRouter();
-//router.navigate("/login");
-
-
-
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
 export default function MapScreen() {
-  //const pushLogin = () => router.push("/login")
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [usernameText, onUsernameChangeText] = useState('');
+  const [passwordText, onPasswordChangeText] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Permission to access location was denied.');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLatitude(location.coords.latitude);
+      setLongitude(location.coords.longitude);
+    })();
+  }, []);
+
   const pushLogin = () => alert("Log in");
-  const [usernameText, onUsernameChangeText] = React.useState('');
-  const [passwordText, onPasswordChangeText] = React.useState('');
+
   return (
     <View style={mapStyles.container}>
+      <View style={mapStyles.headerContainer}>
+        <View style={mapStyles.headerSpacer} />
+        <Text style={mapStyles.headerLabel}>Map</Text>
+        <View style={mapStyles.headerSpacer} />
+      </View>
 
-        <View style={mapStyles.headerContainer}>
-          {/*<NavigationButton label="Back" type="back" destination="/welcome"/>*/}
-          <View style={mapStyles.headerSpacer}/>
-          <Text style={mapStyles.headerLabel}>Map</Text>
-          <View style={mapStyles.headerSpacer}/>
+      <View style={mapStyles.contentContainer}>
+        <View style={mapStyles.mapPosition}>
+          {latitude && longitude ? (
+            <Text style={mapStyles.locationText}>
+              Latitude: {latitude.toFixed(4)}, Longitude: {longitude.toFixed(4)}
+            </Text>
+          ) : (
+            <Text style={mapStyles.locationText}>Fetching location...</Text>
+          )}
         </View>
-
-        <View style={mapStyles.contentContainer}>
-          <View style={mapStyles.mapPosition}/>
-          <TextInput
-            style={mapStyles.textInputField}
-            onChangeText={onUsernameChangeText}
-            value={usernameText}
-            placeholder="Set Search Radius"
-          />
-          <View style={mapStyles.loginButtonsContainer}>
-            <Button label="Set Home Location" theme="primary-wide" onPress={pushLogin}/>
-          </View>
+        <TextInput
+          style={mapStyles.textInputField}
+          onChangeText={onUsernameChangeText}
+          value={usernameText}
+          placeholder="Set Search Radius"
+        />
+        <View style={mapStyles.loginButtonsContainer}>
+          <Button label="Set Home Location" theme="primary-wide" onPress={pushLogin} />
         </View>
-        <TabsFooter/>
-
-        <StatusBar style='auto'/>
+      </View>
+      <TabsFooter />
+      <StatusBar style='auto' />
     </View>
   );
 }
 
-
-
 const mapStyles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#FFFBEE',
     alignItems: 'center',
   },
-
   headerContainer: {
     flexDirection: 'row',
     width: '100%',
@@ -79,7 +75,6 @@ const mapStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
   headerLabel: {
     width: 290,
     marginTop: 50,
@@ -88,55 +83,31 @@ const mapStyles = StyleSheet.create({
     fontSize: 28,
     textAlign: 'center',
   },
-
   headerSpacer: {
     width: 50,
     height: 50,
     marginTop: 50,
     marginBottom: 10,
   },
-
   contentContainer: {
     flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     marginTop: 30,
   },
-
-  separatorContainer: {
-    flexDirection: 'row',
-    width: 325,
-    height: 25,
-    marginTop: 25,
-    marginBottom: 35,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  separatorLabel: {
-    width: 41,
-    height: 20,
-    color: '#959595',
-    fontSize: 15,
-    textAlign: 'center'
-  },
-
-  separatorSpacer: {
-    width: 142,
-    height: 1,
-    marginVertical: 12,
-    backgroundColor: '#959595',
-    borderRadius: 100,
-  },
-
   mapPosition: {
     width: 325,
     height: 325,
     marginVertical: 50,
     borderRadius: 10,
-    backgroundColor: '#959595'
+    backgroundColor: '#959595',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  
+  locationText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
   textInputField: {
     height: 20,
     width: 325,
@@ -146,10 +117,8 @@ const mapStyles = StyleSheet.create({
     borderBottomColor: '#959595',
     color: '#232528',
   },
-
   loginButtonsContainer: {
     alignItems: 'center',
     marginTop: 50,
   },
-
 });
