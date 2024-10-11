@@ -38,23 +38,17 @@ export default function SavedListsScreen() {
   const pushLogin = () => alert("Log in");
 
   const [shoppingLists, setShoppingLists] = React.useState([
-    { name: 'Weekly List' },
+    /*{ name: 'Weekly List' },
     { name: 'Dessert Run' },
     { name: 'Diet Trip' },
-    { name: 'GIBBBAAAAAAAAH' },
+    { name: 'GIBBBAAAAAAAAH' },*/
   ]);
   const [newElementName, setNewElementName] = React.useState('Hehe');
-  //const [newElementQuantity, setNewItemQuantity] = React.useState('');
+
+
   useEffect(() => {
     const getAllShoppingLists = async () => {
       try {
-        /*const allKeys = await AsyncStorage.getAllKeys();
-        const shoppingListKeys = allKeys.filter(key => key.startsWith('@@shopping_list'));
-        const shoppingListData = await AsyncStorage.multiGet(shoppingListKeys);
-        const formattedShoppingLists = shoppingListData.map(([key, value]) => ({
-          key,
-          value: JSON.parse(value),
-        }));*/
         const response = await axios.get(
           `${API_BASE_URL}/api/shopping/get`, // Adjust the URL based on your API
           {
@@ -65,16 +59,43 @@ export default function SavedListsScreen() {
           }
         );
 
-        //setShoppingLists(formattedShoppingLists);
-        console.log("Shopping Lists!: ", response);
+        setShoppingLists(response.data);
       } catch (error) {
         console.error('Error retrieving shopping lists:', error);
+        alert('Error retrieving shopping lists');
       }
     };
 
     // Call the function to load shopping lists when the component mounts
     getAllShoppingLists();
   }, []); // Empty dependency array ensures this runs only on component mount
+
+  const [deletedList, setDeletedList] = React.useState();
+
+  const removeShoppingList = async (index) => {
+    try {
+      //const updatedElements = shoppingLists.filter((_, i) => i === index);
+      //const deletedList = shoppingLists[index];
+      setDeletedList(shoppingLists[index])
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/shopping/delete`, // Adjust the URL based on your API
+        {
+          "id": deletedList.id,
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+            },
+        }
+      );
+
+      //setShoppingLists(response.data);
+    } catch (error) {
+      console.error('Error retrieving shopping lists:', error);
+      alert('Error retrieving shopping lists');
+    }
+  };
 
 
 
@@ -89,6 +110,7 @@ export default function SavedListsScreen() {
 
   const removeElement = (index) => {
     const updatedElements = shoppingLists.filter((_, i) => i !== index);
+    console.log("Deleting this List: ", shoppingLists[index])
     setShoppingLists(updatedElements);
   };
 
@@ -129,7 +151,7 @@ export default function SavedListsScreen() {
                     </TouchableOpacity>
                 </View>
                 <View style={savedListsStyles.itemButtonContainer}>
-                    <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => removeElement(index)}>
+                    <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => removeShoppingList(index)}>
                         <Image style={savedListsStyles.itemButtonIcon} source={deleteIcon}/>
                     </TouchableOpacity>
                 </View>
