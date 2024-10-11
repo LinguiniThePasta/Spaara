@@ -94,7 +94,7 @@ class ListBase(models.Model):
 
     def __str__(self):
         return self.name
-class ShoppingList(ListBase):
+class Shopping(ListBase):
     pass
 class Recipe(ListBase):
     pass

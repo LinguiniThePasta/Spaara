@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, ShoppingList, Recipe, FavoriteItem
+from .models import User, Shopping, Recipe, FavoriteItem
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
 import pandas as pd;
