@@ -96,7 +96,7 @@ class ShoppingListView(APIView):
             request.user.shoppingLists.remove(shopping_list)
             shopping_list.delete()
             return Response(status=status.HTTP_200_OK)
-        except FavoriteItem.DoesNotExist:
+        except Shopping.DoesNotExist:
             return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
