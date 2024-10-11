@@ -6,7 +6,7 @@ class User(AbstractUser):
     username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
-    shoppingLists = models.ManyToManyField("Shopping", related_name='shoppingLists')
+    shoppingLists = models.ManyToManyField("ShoppingList", related_name='shoppingLists')
     recipes = models.ManyToManyField("Recipe", related_name='recipes')
 
     def __str__(self):
