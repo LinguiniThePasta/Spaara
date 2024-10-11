@@ -82,8 +82,7 @@ class ShoppingListView(APIView):
         else:
             shoppingLists = user.shoppingLists.all()
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
+            return Response(serializer.data, status=status.HTTP_200_OK)        
     def delete(self, request):
         shopping_list_id = request.data.get('id', None)
         if not shopping_list_id:
@@ -133,6 +132,23 @@ class RecipeView(APIView):
             recipes = user.recipes.all()
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+    def delete(self, request):
+        recipe_id = request.data.get('id', None)
+        if not recipe_id:
+            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.is_anonymous:
+            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            recipe = get_object_or_404(Shopping, id=recipe_id)
+            request.user.recipes.remove(recipe)
+            recipe.delete()
+            return Response(status=status.HTTP_200_OK)
+        except FavoriteItem.DoesNotExist:
+            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
 class FavoriteView(APIView):
     permission_classes = [IsAuthenticated]
