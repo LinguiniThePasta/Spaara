@@ -1,15 +1,10 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
-    SafeAreaView,
-    View,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
+  View,
+  StyleSheet,
+  Text, TextInput, ScrollView, TouchableOpacity, Button,
 } from 'react-native';
-import { CoreBridge, HistoryBridge, RichText, TaskListBridge, Toolbar, useEditorBridge } from '@10play/tentap-editor';
-import NavigationButton from "@/components/NavigationButton";
-import Footer from "@/components/Footer";
+import CheckBox from 'react-native-check-box';
 
 export default function Shopping() {
   const [items, setItems] = useState([
