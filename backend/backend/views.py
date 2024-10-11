@@ -132,6 +132,7 @@ class RemoveFavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
+        item_id = request.query_params.get('id', None)
         try:
             favorite_item = FavoriteItem.objects.get(id=item_id, user=request.user)
             favorite_item.delete()

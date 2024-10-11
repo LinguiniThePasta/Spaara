@@ -1,7 +1,6 @@
 node_modules/
 .expo/
 dist/
-venv/
 npm-debug.*
 *.jks
 *.p8
@@ -10,6 +9,7 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
+venv/
 
 # macOS
 .DS_Store
@@ -19,3 +19,9 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli
+backend/backend/__pycache__/views.cpython-310.pyc
+backend/backend/__pycache__/urls.cpython-310.pyc
+backend/backend/__pycache__/settings.cpython-310.pyc
+backend/backend/__pycache__/serializers.cpython-310.pyc
+backend/backend/__pycache__/models.cpython-310.pyc
+backend/backend/__pycache__/__init__.cpython-310.pyc
