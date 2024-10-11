@@ -157,7 +157,7 @@ class FavoriteView(APIView):
     def delete(self, request):
         item_id = request.query_params.get('id', None)
         try:
-            favorite_item = FavoriteItem.objects.get(id=item_id, user=request.user)
+            favorite_item = FavoriteItem.objects.get(id=item_id)
             favorite_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except FavoriteItem.DoesNotExist:
