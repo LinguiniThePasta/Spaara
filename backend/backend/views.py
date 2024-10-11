@@ -118,6 +118,11 @@ class RecipeView(APIView):
 class FavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+        favorited = user.favorites.all()
+        serializer = FavoriteItemSerializer(favorited, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     def post(self, request):
         user = request.user
         data = request.data

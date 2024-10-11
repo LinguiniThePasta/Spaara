@@ -47,11 +47,37 @@ export default function Shopping() {
         setItems(updatedItems);
     };
 
-    const toggleFavorite = (index) => {
-        const updatedItems = items.map((item, i) =>
-            i === index ? {...item, favorite: !item.favorite} : item
-        );
-        setItems(updatedItems);
+    const toggleFavorite = async (index) => {
+        const updatedItems = [...items];
+        const item = updatedItems[index];
+
+        try {
+            // Send request to add the item to favorites
+            const response = await fetch(`${API_BASE_URL}/api/favorites/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`,
+                },
+                body: JSON.stringify({
+                    name: item.name,
+                    price: item.price | 0,
+                    store: item.store | "None",
+                }),
+            });
+
+            if (response.ok) {
+                // Update the item's favorite status only if the request is successful
+                item.favorite = !item.favorite;
+                setItems(updatedItems);
+                Alert.alert('Success', `${item.name} has been ${item.favorite ? 'added to' : 'removed from'} favorites!`);
+            } else {
+                Alert.alert('Error', 'Failed to update favorite status on the server.');
+            }
+        } catch (error) {
+            console.error('Error updating favorite:', error);
+            Alert.alert('Error', 'Network error while updating favorite status.');
+        }
     };
 
     const handleSave = async () => {
