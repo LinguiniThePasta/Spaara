@@ -82,26 +82,17 @@ class ShoppingListView(APIView):
         else:
             shoppingLists = user.shoppingLists.all()
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)        
+            return Response(serializer.data, status=status.HTTP_200_OK)
     def delete(self, request):
-        shopping_list_id = request.data.get('id', None)
-        if not shopping_list_id:
-            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        shopping_list_id = request.query_params.get('id', None)
 
-        if request.user.is_anonymous:
-            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            shopping_list = get_object_or_404(Shopping, id=shopping_list_id)
-            request.user.shoppingLists.remove(shopping_list)
+        if shopping_list_id:
+            shopping_list = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
             shopping_list.delete()
-            return Response(status=status.HTTP_200_OK)
-        except Shopping.DoesNotExist:
-            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        
+            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)
 class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -133,26 +124,25 @@ class RecipeView(APIView):
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
     def delete(self, request):
-        recipe_id = request.data.get('id', None)
-        if not recipe_id:
-            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        recipeID = request.query_params.get('id', None)
 
-        if request.user.is_anonymous:
-            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            recipe = get_object_or_404(Shopping, id=recipe_id)
-            request.user.recipes.remove(recipe)
+        if recipeID:
+            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
             recipe.delete()
-            return Response(status=status.HTTP_200_OK)
-        except FavoriteItem.DoesNotExist:
-            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Could not find recipe to remove"}, status=status.HTTP_400_BAD_REQUEST)
+            
             
 class FavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+        favorited = user.favorites.all()
+        serializer = FavoriteItemSerializer(favorited, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     def post(self, request):
         user = request.user
         data = request.data
@@ -164,27 +154,15 @@ class FavoriteView(APIView):
             user.favorites.add(favorite)
             return Response({"Message" : "Saved favorited item successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
     def delete(self, request):
-        item_id = request.data.get('id', None)
-        if not item_id:
-            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if request.user.is_anonymous:
-            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        item_id = request.query_params.get('id', None)
         try:
-            # Filter by `favorites` through the User model
-            favorite_item = request.user.favorites.get(id=item_id)
-            request.user.favorites.remove(favorite_item)
+            favorite_item = FavoriteItem.objects.get(id=item_id, user=request.user)
             favorite_item.delete()
-            return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except FavoriteItem.DoesNotExist:
             return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-'''
 class ExportShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -216,4 +194,21 @@ class ExportRecipeView(APIView):
             return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
         else:
             return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
-'''
+
+
+
+class RemoveShoppingListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request):
+        data = request.data
+        user = request.user
+        shoppingListID = data.get('id', None)
+
+        if shoppingListID:
+            shoppingList = get_object_or_404(user.recipes.all(), id=shoppingListID)
+            serializer = SaveShoppingListSerializer(shoppingList)
+            shoppingList.delete()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"message" : "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)

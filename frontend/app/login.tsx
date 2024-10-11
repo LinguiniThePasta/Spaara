@@ -1,11 +1,13 @@
 import {StatusBar} from "expo-status-bar";
 import {StyleSheet, Text, View, Image, TextInput} from "react-native";
-import React from "react";
-import {Stack, useRouter, Link, Href, router} from 'expo-router';
+import React, {useCallback, useEffect} from "react";
+import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
+import {API_BASE_URL} from "@/components/config";
+
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 //const Stack = createNativeStackNavigator();
@@ -17,46 +19,85 @@ const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 //const pushLogin = () => alert("I wanna push!!!!");
 
 export default function LogInScreen() {
-  //const pushLogin = () => router.push("/login")
-  const pushLogin = () => alert("Log in");
-  const [usernameText, onUsernameChangeText] = React.useState('');
-  const [passwordText, onPasswordChangeText] = React.useState('');
-  return (
-    <View style={loginStyles.container}>
+    //const pushLogin = () => router.push("/login")
+    const handleLogin = async () => {
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/api/user/login`,
+                {
+                    "email": username,
+                    "password": password
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
-        <View style={loginStyles.headerContainer}>
-          <NavigationButton label="Back" type="back" destination="/welcome"/>
-          <Text style={loginStyles.headerLabel}>Log in</Text>
-          <View style={loginStyles.headerSpacer}/>
+            await SecureStore.setItemAsync('jwtToken', response.data.access);
+            await SecureStore.setItemAsync('refreshToken', response.data.refresh);
+            router.push('/shopping');
+        } catch (error) {
+            console.log(error);
+            alert(error);
+        }
+    };
+
+    const [username, onUsernameChange] = React.useState('');
+    const [password, onPasswordChange] = React.useState('');
+
+    useFocusEffect(
+        useCallback(() => {
+            const logout = async () => {
+                try {
+                    await SecureStore.deleteItemAsync('jwtToken');
+                    console.log('JWT token cleared on reaching login screen.');
+                } catch (error) {
+                    console.log('Error clearing JWT token:', error);
+                }
+            };
+
+            logout();
+        }, [])
+    );
+
+    return (
+        <View style={loginStyles.container}>
+
+            <View style={loginStyles.headerContainer}>
+                <NavigationButton label="Back" type="back" destination="/welcome"/>
+                <Text style={loginStyles.headerLabel}>Log in</Text>
+                <View style={loginStyles.headerSpacer}/>
+            </View>
+
+            <View style={loginStyles.contentContainer}>
+                <Button label="Log in with Google" theme="google" onPress={handleLogin}/>
+                <View style={loginStyles.separatorContainer}>
+                    <View style={loginStyles.separatorSpacer}/>
+                    <Text style={loginStyles.separatorLabel}>OR</Text>
+                    <View style={loginStyles.separatorSpacer}/>
+                </View>
+                <TextInput
+                    style={loginStyles.textInputField}
+                    onChangeText={onUsernameChange}
+                    value={username}
+                    placeholder="Username / Email"
+                />
+                <TextInput
+                    style={loginStyles.textInputField}
+                    onChangeText={onPasswordChange}
+                    value={password}
+                    placeholder="Password"
+                />
+                <View style={loginStyles.loginButtonsContainer}>
+                    <Button label="Log in" theme="primary-wide" onPress={handleLogin}/>
+                </View>
+            </View>
+
+            <StatusBar style='auto'/>
         </View>
-
-        <View style={loginStyles.contentContainer}>
-          <Button label="Log in with Google" theme="google" onPress={pushLogin}/>
-          <View style={loginStyles.separatorContainer}>
-            <View style={loginStyles.separatorSpacer}/>
-            <Text style={loginStyles.separatorLabel}>OR</Text>
-            <View style={loginStyles.separatorSpacer}/>
-          </View>
-          <TextInput
-            style={loginStyles.textInputField}
-            onChangeText={onUsernameChangeText}
-            value={usernameText}
-            placeholder="Username / Email"
-          />
-          <TextInput
-            style={loginStyles.textInputField}
-            onChangeText={onPasswordChangeText}
-            value={passwordText}
-            placeholder="Password"
-          />
-          <View style={loginStyles.loginButtonsContainer}>
-            <Button label="Log in" theme="primary-wide" onPress={pushLogin}/>
-          </View>
-        </View>
-
-        <StatusBar style='auto'/>
-      </View>
-  );
+    );
 }
 const loginStyles = StyleSheet.create({
 
