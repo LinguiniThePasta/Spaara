@@ -12,6 +12,7 @@ import { Stack, useRouter, Link } from 'expo-router';
 
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
+import TabsFooter from '@/components/TabsFooter';
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
@@ -33,11 +34,13 @@ export default function ProfileScreen() {
   const [usernameText, onUsernameChangeText] = React.useState('');
   const [passwordText, onPasswordChangeText] = React.useState('');
   const [confirmPWText, onConfirmPWChangeText] = React.useState('');
+  const [setSearchRadius, onSetSearchRadius] = React.useState('');
   return (
     <View style={profileStyles.container}>
 
         <View style={profileStyles.headerContainer}>
-          <NavigationButton label="Back" type="back" destination="/welcome"/>
+          {/*<NavigationButton label="Back" type="back" destination="/welcome"/>*/}
+          <View style={profileStyles.headerSpacer}/>
           <Text style={profileStyles.headerLabel}>Settings</Text>
           <View style={profileStyles.headerSpacer}/>
         </View>
@@ -71,10 +74,22 @@ export default function ProfileScreen() {
             placeholder="Confirm Password"
             placeholderTextColor='#959595'
           />
+          <TextInput
+            style={profileStyles.textInputField}
+            onChangeText={onSetSearchRadius}
+            value={setSearchRadius}
+            placeholder="Set Search Radius"
+            placeholderTextColor='#959595'
+          />
+          <View style={profileStyles.signupButtonsContainer}>
+            <Button label="Set Home Location" theme="primary-wide" onPress={pushLogin}/>
+          </View>
           <View style={profileStyles.signupButtonsContainer}>
             <Button label="Confirm Changes" theme="primary-wide" onPress={pushLogin}/>
           </View>
         </View>
+
+        <TabsFooter/>
 
         <StatusBar style='auto'/>
       </View>
@@ -161,7 +176,8 @@ const profileStyles = StyleSheet.create({
 
   signupButtonsContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 40,
+    //marginBottom: 20,
   },
 
 });

@@ -2,6 +2,11 @@ import React, {useState} from 'react';
 import {
     View,
     StyleSheet,
+    Text,
+    TextInput,
+    Button,
+    ScrollView,
+    TouchableOpacity,
     Text, TextInput, ScrollView, TouchableOpacity, Button,
     Alert,
 } from 'react-native';
@@ -10,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {isAuthenticated} from "@/components/Axios";
 import * as SecureStore from "expo-secure-store";
 import {API_BASE_URL} from "@/components/config";
+import TabsFooter from "@/components/TabsFooter"
 
 export default function Shopping() {
     const [items, setItems] = useState([
@@ -157,6 +163,7 @@ export default function Shopping() {
                     </View>
                 ))}
             </ScrollView>
+            <TabsFooter/>
         </View>
     );
 }
