@@ -4,7 +4,7 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Image, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import React from "react";
-import { Stack, useRouter, Link, Href } from 'expo-router';
+import { Stack, useRouter, Link, Href, router } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -71,6 +71,8 @@ export default function SavedRecipesScreen() {
           <Text style={savedListsStyles.headerLabel}>My Recipes</Text>
           <View style={savedListsStyles.headerSpacer}/>
         </View>
+
+        <Button label="View Favorite Items" theme="primary-wide" onPress={() => {router.replace("/favoritedItems")}}/>
 
         <ScrollView contentContainerStyle={savedListsStyles.itemListContainer}>
         {elements.map((element, index) => (
