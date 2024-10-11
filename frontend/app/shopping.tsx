@@ -10,6 +10,7 @@ import {
 import { CoreBridge, HistoryBridge, RichText, TaskListBridge, Toolbar, useEditorBridge } from '@10play/tentap-editor';
 import NavigationButton from "@/components/NavigationButton";
 import Footer from "@/components/Footer";
+import TabsFooter from "@/components/TabsFooter";
 
 export default function Shopping() {
     const editor = useEditorBridge({
@@ -39,7 +40,8 @@ export default function Shopping() {
                     <Toolbar editor={editor} />
                 </KeyboardAvoidingView>
             </SafeAreaView>
-            <Footer />
+            {/*<Footer />*/}
+            <TabsFooter/>
         </View>
     );
 };
