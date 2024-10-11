@@ -7,7 +7,6 @@ import {
     Button,
     ScrollView,
     TouchableOpacity,
-    Text, TextInput, ScrollView, TouchableOpacity, Button,
     Alert,
 } from 'react-native';
 import CheckBox from 'react-native-check-box';
