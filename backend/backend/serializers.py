@@ -141,7 +141,6 @@ class FavoriteItemSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'id': {'read_only': True, 'required': False},
         }
-
     def create(self, validated_data):
         favoritedItem = FavoriteItem.objects.create(**validated_data)
         return favoritedItem

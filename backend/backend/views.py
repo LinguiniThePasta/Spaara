@@ -61,7 +61,7 @@ class ShoppingListView(APIView):
         user = request.user
         shopping_list_id = data.get('id', None)
         if shopping_list_id:
-            shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id)
+            shopping_list = get_object_or_404(Shopping, id=shopping_list_id)
             serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
         else:
             serializer = SaveShoppingListSerializer(data=data)
@@ -115,22 +115,20 @@ class RecipeView(APIView):
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
             
-class AddFavoriteView(APIView):
+class FavoriteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = FavoriteItemSerializer(data=request.data)
+        user = request.user
+        data = request.data
+
+        serializer = FavoriteItemSerializer(data=data)
         if serializer.is_valid():
             # Associate the favorite item with the current user
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            favorite = serializer.save()
+            user.favorites.add(favorite)
+            return Response({"Message" : "Saved favorited item successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        
-    
-class RemoveFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def delete(self, request):
         item_id = request.query_params.get('id', None)
         try:
