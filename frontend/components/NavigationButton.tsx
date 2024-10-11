@@ -11,6 +11,7 @@ const homeIcon = require('@/assets/images/HomeIcon.png');
 const listIcon = require('@/assets/images/ListIcon.png');
 const mapIcon = require('@/assets/images/MapIcon.png');
 const recipeIcon = require('@/assets/images/RecipeIcon.png');
+const settingsIcon = require('@/assets/images/SettingsIcon.png');
 
 type props = {
     label: string;
@@ -40,16 +41,16 @@ export default function NavigationButton({ label, type, destination }: props) {
     if (type === "tab") {
         let icon = backIcon;
         switch (destination) {
-            case "/home":
+            case "/shopping":
                 icon = homeIcon;
                 break;
-            case "/shopping":
+            case "/savedLists":
                 icon = listIcon;
                 break;
-            case "/map":
-                icon = mapIcon;
-                break;
             case "/profile":
+                icon = settingsIcon;
+                break;
+            case "/savedRecipes":
                 icon = recipeIcon;
                 break;
             default:

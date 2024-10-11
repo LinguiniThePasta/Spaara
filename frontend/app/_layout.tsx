@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import '../components/Axios';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -34,6 +35,8 @@ export default function RootLayout() {
       <Stack.Screen name="profile"/>
       <Stack.Screen name="map"/>
       <Stack.Screen name="home"/>
+      <Stack.Screen name="savedLists"/>
+      <Stack.Screen name="savedRecipes"/>
     </Stack>
   );
   /*return (
