@@ -84,6 +84,25 @@ class ShoppingListView(APIView):
             serializer = SaveShoppingListSerializer(shoppingLists, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
+    def delete(self, request):
+        shopping_list_id = request.data.get('id', None)
+        if not shopping_list_id:
+            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.is_anonymous:
+            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            shopping_list = get_object_or_404(Shopping, id=shopping_list_id)
+            request.user.shoppingLists.remove(shopping_list)
+            shopping_list.delete()
+            return Response(status=status.HTTP_200_OK)
+        except FavoriteItem.DoesNotExist:
+            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        
 class RecipeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -149,6 +168,7 @@ class FavoriteView(APIView):
         except Exception as e:
             return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+'''
 class ExportShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -180,21 +200,4 @@ class ExportRecipeView(APIView):
             return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
         else:
             return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-class RemoveShoppingListView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def delete(self, request):
-        data = request.data
-        user = request.user
-        shoppingListID = data.get('id', None)
-
-        if shoppingListID:
-            shoppingList = get_object_or_404(user.recipes.all(), id=shoppingListID)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            shoppingList.delete()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message" : "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)
+'''
