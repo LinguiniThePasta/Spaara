@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, ShoppingList, Recipe, FavoriteItem
+from .models import User, Shopping, Recipe, FavoriteItem
 from django.core.validators import validate_email
 
 
@@ -104,13 +104,13 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
 
 class SaveShoppingListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ShoppingList
+        model = Shopping
         fields = ['id', 'name', 'content']
         extra_kwargs = {
             'id': {'read_only': True, 'required': False},
         }
     def create(self, validated_data):
-        shoppingList = ShoppingList.objects.create(**validated_data)
+        shoppingList = Shopping.objects.create(**validated_data)
         return shoppingList
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
