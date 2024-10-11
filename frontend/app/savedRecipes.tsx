@@ -3,10 +3,13 @@
 
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Image, TextInput, ScrollView, TouchableOpacity } from "react-native";
-import React from "react";
+import React, {useEffect} from "react";
 import { Stack, useRouter, Link, Href, router } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import axios from "axios";
+import * as SecureStore from 'expo-secure-store';
+import {API_BASE_URL} from "@/components/config";
 
 
 
@@ -34,13 +37,46 @@ export default function SavedRecipesScreen() {
   const pushLogin = () => alert("Log in");
 
   const [elements, setElements] = React.useState([
-    { name: 'Beefaroni' },
+    /*{ name: 'Beefaroni' },
     { name: 'Apple Pie' },
     { name: 'Smallga' },
-    { name: 'Bigitte' },
+    { name: 'Bigitte' },*/
   ]);
   const [newElementName, setNewElementName] = React.useState('Hehe');
   //const [newElementQuantity, setNewItemQuantity] = React.useState('');
+
+  useEffect(() => {
+    const getAllRecipes = async () => {
+      try {
+        /*const allKeys = await AsyncStorage.getAllKeys();
+        const shoppingListKeys = allKeys.filter(key => key.startsWith('@@shopping_list'));
+        const shoppingListData = await AsyncStorage.multiGet(shoppingListKeys);
+        const formattedShoppingLists = shoppingListData.map(([key, value]) => ({
+          key,
+          value: JSON.parse(value),
+        }));*/
+        const response = await axios.get(
+          `${API_BASE_URL}/api/recipe/get`, // Adjust the URL based on your API
+          {
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+              },
+          }
+        );
+
+        setElements(response.data);
+      } catch (error) {
+        console.error('Error retrieving recipes:', error);
+        alert('Error retrieving recipes');
+      }
+    };
+
+    // Call the function to load shopping lists when the component mounts
+    getAllRecipes();
+  }, []); // Empty dependency array ensures this runs only on component mount
+
+
 
   const addElement = () => {
     if (newElementName) {
