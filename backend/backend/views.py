@@ -123,6 +123,17 @@ class RecipeView(APIView):
             recipes = user.recipes.all()
             serializer = SaveRecipeSerializer(recipes, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+    def delete(self, request):
+        user = request.user
+        recipeID = request.query_params.get('id', None)
+
+        if recipeID:
+            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
+            recipe.delete()
+            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Could not find recipe to remove"}, status=status.HTTP_400_BAD_REQUEST)
+            
             
 class FavoriteView(APIView):
     permission_classes = [IsAuthenticated]
