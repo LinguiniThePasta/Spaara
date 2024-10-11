@@ -27,13 +27,13 @@ export default function Footer() {
             <NavigationButton label="tab" type="tab" destination={"/profile"}/>*/}
             <View style={styles.tabRowContainer}>
                 <View style={styles.tabContainer}>
-                    <NavigationButton label="tab" type="tab" destination={"/home"}/>
-                </View>
-                <View style={styles.tabContainer}>
                     <NavigationButton label="tab" type="tab" destination={"/shopping"}/>
                 </View>
                 <View style={styles.tabContainer}>
-                    <NavigationButton label="tab" type="tab" destination={"/map"}/>
+                    <NavigationButton label="tab" type="tab" destination={"/savedLists"}/>
+                </View>
+                <View style={styles.tabContainer}>
+                    <NavigationButton label="tab" type="tab" destination={"/savedRecipes"}/>
                 </View>
                 <View style={styles.tabContainer}>
                     <NavigationButton label="tab" type="tab" destination={"/profile"}/>

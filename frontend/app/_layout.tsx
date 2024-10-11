@@ -35,6 +35,8 @@ export default function RootLayout() {
       <Stack.Screen name="profile"/>
       <Stack.Screen name="map"/>
       <Stack.Screen name="home"/>
+      <Stack.Screen name="savedLists"/>
+      <Stack.Screen name="savedRecipes"/>
     </Stack>
   );
   /*return (
