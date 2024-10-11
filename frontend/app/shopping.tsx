@@ -15,18 +15,16 @@ import {isAuthenticated} from "@/components/Axios";
 import * as SecureStore from "expo-secure-store";
 import {API_BASE_URL} from "@/components/config";
 import TabsFooter from "@/components/TabsFooter"
+import {useLocalSearchParams} from "expo-router";
 
 export default function Shopping() {
-    const [items, setItems] = useState([
-        {name: 'Item', quantity: 'x3', checked: false, favorite: false},
-        {name: 'Item 2', quantity: 'x2', checked: false, favorite: false},
-        {name: 'Item 3', quantity: 'x10', checked: false, favorite: false},
-        {name: 'Item 4', quantity: 'x1', checked: false, favorite: false},
-    ]);
+    const [items, setItems] = useState([]);
+    const [id, setId] = useState(null);
     const [newItemName, setNewItemName] = useState('');
     const [newItemQuantity, setNewItemQuantity] = useState('');
     const [authenticated, setAuthenticated] = useState(false);
     const [listName, setListName] = useState('');
+    const { shoppingList } = useLocalSearchParams();
     const addItem = () => {
         if (newItemName && newItemQuantity) {
             setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false, favorite: false}]);
@@ -100,6 +98,9 @@ export default function Shopping() {
                         content: JSON.stringify(content),
                     };
 
+                    if (id) {
+                        shoppingList.id = id;
+                    }
 
                     if (authenticated) {
                         try {
@@ -135,7 +136,6 @@ export default function Shopping() {
             }
         );
     };
-
     useEffect(() => {
         const checkAuthentication = async () => {
             // Run the authentication check
@@ -143,8 +143,25 @@ export default function Shopping() {
             console.log('Authentication status:', authStatus);
             setAuthenticated(authStatus);
         };
-
         checkAuthentication();
+
+
+        console.log("Received shopping list parameter:", shoppingList); // Debug log
+
+        if (shoppingList) {
+            try {
+                const parsedList = JSON.parse(shoppingList); // Parse the JSON string back to an object
+                console.log("Parsed shopping list object:", parsedList); // Debug log
+
+                setId(parsedList.id);
+                setListName(parsedList.name);
+
+                // Assuming `content` is a JSON string of the items
+                setItems(parsedList.content ? JSON.parse(parsedList.content) : []);
+            } catch (error) {
+                console.error("Error parsing shopping list:", error); // Debug log in case of error
+            }
+        }
     }, []);
     return (
         <View style={styles.container}>
