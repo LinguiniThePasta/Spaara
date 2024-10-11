@@ -1,5 +1,7 @@
+import googlemaps.places
+
+import googlemaps
 """
-This Code was taken form scrapfly i did not write this code it is a publicly available web scrapper API
 This is an example web scraper for Walmart.com.
 
 To run this scraper set env variable $SCRAPFLY_KEY with your scrapfly API key:
@@ -74,7 +76,14 @@ async def scrape_products(urls: List[str]) -> List[Dict]:
     return result
 
 
-async def scrape_search(query: str = "", sort: TypedDict("SortOptions", {"best_seller": str, "best_match": str, "price_low": str, "price_high": str},)= "best_match", max_pages: int = None,):
+async def scrape_search(
+    query: str = "",
+    sort: TypedDict(
+        "SortOptions",
+        {"best_seller": str, "best_match": str, "price_low": str, "price_high": str},
+    ) = "best_match", # type: ignore
+    max_pages: int = None,
+):
     """scrape single walmart search page"""
 
     def make_search_url(page):
@@ -116,8 +125,29 @@ async def scrape_search(query: str = "", sort: TypedDict("SortOptions", {"best_s
     log.success(f"scraped {len(search_data)} product listings from search pages")
     return search_data
 
+class WalmartAPI:
+    gmaps = googlemaps.Client("AIzaSyCChCuNvZk1j4E1MTaC3ykYEyMjtLyIeP4")
 
+    def __init__(self, user):
+        user_location = (user.latitude, user.longitude)
+        self.walmarts = WalmartAPI.find_closest_walmarts(user_location, user.radius * 1609)
 
-result = asyncio.run(scrape_search("milk", "best_match", 1))
+    def getItem(item):
+        return asyncio.run(scrape_search(item, "best_match", 1))
 
-print(result[0]["priceInfo"]["linePrice"])
+    def find_closest_walmarts(location, radius=5000):
+        # Perform a nearby search for Walmarts
+        places_result = WalmartAPI.gmaps.places_nearby(location=location, radius=radius, keyword='Walmart')
+
+        # Extract relevant information from the results
+        walmarts = []
+        for place in places_result.get('results', []):
+            walmarts.append({
+                'name': place['name'],
+                'address': place.get('vicinity'),
+                'location': place['geometry']['location'],
+                'rating': place.get('rating')
+            })
+        return walmarts
+    
+
