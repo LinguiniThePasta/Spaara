@@ -18,10 +18,10 @@ import TabsFooter from "@/components/TabsFooter"
 
 export default function Shopping() {
     const [items, setItems] = useState([
-        {name: 'Item', quantity: 'x3', checked: false},
-        {name: 'Item 2', quantity: 'x2', checked: false},
-        {name: 'Item 3', quantity: 'x10', checked: false},
-        {name: 'Item 4', quantity: 'x1', checked: false},
+        {name: 'Item', quantity: 'x3', checked: false, favorite: false},
+        {name: 'Item 2', quantity: 'x2', checked: false, favorite: false},
+        {name: 'Item 3', quantity: 'x10', checked: false, favorite: false},
+        {name: 'Item 4', quantity: 'x1', checked: false, favorite: false},
     ]);
     const [newItemName, setNewItemName] = useState('');
     const [newItemQuantity, setNewItemQuantity] = useState('');
@@ -29,7 +29,7 @@ export default function Shopping() {
 
     const addItem = () => {
         if (newItemName && newItemQuantity) {
-            setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false}]);
+            setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false, favorite: false}]);
             setNewItemName('');
             setNewItemQuantity('');
         }
@@ -47,6 +47,13 @@ export default function Shopping() {
         setItems(updatedItems);
     };
 
+    const toggleFavorite = (index) => {
+        const updatedItems = items.map((item, i) =>
+            i === index ? {...item, favorite: !item.favorite} : item
+        );
+        setItems(updatedItems);
+    };
+
     const handleSave = async () => {
         // Prompt the user for the shopping list name
         Alert.prompt(
@@ -59,6 +66,7 @@ export default function Shopping() {
                         name: item.name,
                         quantity: item.quantity,
                         checked: item.checked,
+                        favorite: item.favorite,
                     }));
 
                     const shoppingList = {
@@ -156,6 +164,11 @@ export default function Shopping() {
                             isChecked={item.checked}
                             leftText={null}
                         />
+                        <TouchableOpacity style={styles.favoriteButton} onPress={() => toggleFavorite(index)}>
+                            <Text style={[styles.favoriteButtonText, item.favorite ? styles.favorite : null]}>
+                                {item.favorite ? '★' : '☆'}
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity style={styles.removeButton} onPress={() => removeItem(index)}>
                             <Text style={styles.removeButtonText}>Remove</Text>
                         </TouchableOpacity>
@@ -255,5 +268,15 @@ const styles = StyleSheet.create({
     },
     removeButtonText: {
         color: '#fff',
+    },
+    favoriteButton: {
+        marginLeft: 8,
+        padding: 8,
+    },
+    favoriteButtonText: {
+        fontSize: 18,
+    },
+    favorite: {
+        color: 'gold',
     },
 });
