@@ -78,6 +78,33 @@ export default function SavedRecipesScreen() {
 
 
 
+  const removeRecipe = async (index) => {
+    try {
+        //const updatedElements = shoppingLists.filter((_, i) => i === index);
+        //const deletedList = shoppingLists[index];
+        //setDeletedList(shoppingLists[index])
+        console.log("Deleting this List: ", elements[index].id);
+        console.log(await SecureStore.getItemAsync('jwtToken'));
+        const response = await fetch(`${API_BASE_URL}/api/recipe/delete?id=${elements[index].id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+            },
+        });
+        removeElement(index);
+
+        //setShoppingLists(response.data);
+    } catch
+        (error) {
+        console.error('Error deleting recipes:', error);
+        alert('Error deleting recipes');
+    }
+}
+;
+
+
+
   const addElement = () => {
     if (newElementName) {
       setElements([...elements, { name: newElementName }]);
@@ -125,12 +152,19 @@ export default function SavedRecipesScreen() {
                 {/*<NavigationButton label="tab" type="tab" destination={"/savedLists"}/>
                 <NavigationButton label="tab" type="tab" destination={"/savedLists"}/>*/}
                 <View style={savedListsStyles.itemButtonContainer}>
-                    <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => addElement()}>
+                <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => {
+                                    router.push({
+                                        pathname: '/shopping',
+                                        params: {
+                                            shoppingList: JSON.stringify(element), // Serialize the whole element object
+                                        },
+                                    });
+                                }}>
                         <Image style={savedListsStyles.itemButtonIcon} source={openIcon}/>
                     </TouchableOpacity>
                 </View>
                 <View style={savedListsStyles.itemButtonContainer}>
-                    <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => removeElement(index)}>
+                    <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => removeRecipe(index)}>
                         <Image style={savedListsStyles.itemButtonIcon} source={deleteIcon}/>
                     </TouchableOpacity>
                 </View>

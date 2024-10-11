@@ -136,6 +136,69 @@ export default function Shopping() {
             }
         );
     };
+
+
+    const handleSaveRecipe = async () => {
+        // Prompt the user for the shopping list name
+        Alert.prompt(
+            'Save Recipe',
+            'Enter the name of your recipe:',
+            async (name) => {
+                if (name) {
+                    setListName(name);
+                    const content = items.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        checked: item.checked,
+                        favorite: item.favorite,
+                    }));
+
+                    const shoppingList = {
+                        name: name,
+                        content: JSON.stringify(content),
+                    };
+
+                    if (id) {
+                        shoppingList.id = id;
+                    }
+
+                    if (authenticated) {
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/api/recipe/create`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
+                                },
+                                body: JSON.stringify(shoppingList),
+                            });
+
+                            if (response.ok) {
+                                Alert.alert('Success', 'Recipe saved to server!');
+                            } else {
+                                Alert.alert('Error', 'Failed to save recipe to server.');
+                            }
+                        } catch (error) {
+                            console.log(error);
+                            Alert.alert('Error', 'Network error while saving recipe.');
+                        }
+                    } else {
+                        try {
+                            await AsyncStorage.setItem(`@recipe_${name}`, JSON.stringify(shoppingList));
+                            Alert.alert('Success', 'Recipe saved locally!');
+                        } catch (error) {
+                            Alert.alert('Error', 'Failed to save recipe locally.');
+                        }
+                    }
+                } else {
+                    Alert.alert('Error', 'List name is required to save the recipe.');
+                }
+            }
+        );
+    };
+
+
+
     useEffect(() => {
         const checkAuthentication = async () => {
             // Run the authentication check
@@ -176,11 +239,12 @@ export default function Shopping() {
 
             {/* Settings Row */}
             <View style={styles.settingsRow}>
-                <Button title="No. of stores" onPress={() => {
+                {/*<Button title="No. of stores" onPress={() => {
                 }}/>
                 <Button title="Max distance" onPress={() => {
-                }}/>
-                <Button title="Save" onPress={handleSave}/>
+                }}/>*/}
+                <Button title="Save as List" onPress={handleSave}/>
+                <Button title="Save as Recipe" onPress={handleSaveRecipe}/>
             </View>
 
             {/* Input for adding new items */}

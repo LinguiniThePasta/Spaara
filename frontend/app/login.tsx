@@ -37,7 +37,7 @@ export default function LogInScreen() {
 
             await SecureStore.setItemAsync('jwtToken', response.data.access);
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
-            router.push('/home');
+            router.push('/shopping');
         } catch (error) {
             console.log(error);
             alert(error);
