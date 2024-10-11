@@ -3,7 +3,7 @@
 
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Image, TextInput, ScrollView, TouchableOpacity } from "react-native";
-import React from "react";
+import React, {useEffect} from "react";
 import { Stack, useRouter, Link, Href } from 'expo-router';
 //import { NavigationContainer } from "@react-navigation/native";
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -13,6 +13,7 @@ import { Stack, useRouter, Link, Href } from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import TabsFooter from '@/components/TabsFooter';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 const deleteIcon = require('@/assets/images/DeleteIcon.png');
@@ -33,7 +34,7 @@ export default function SavedListsScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("Log in");
 
-  const [elements, setElements] = React.useState([
+  const [shoppingLists, setShoppingLists] = React.useState([
     { name: 'Weekly List' },
     { name: 'Dessert Run' },
     { name: 'Diet Trip' },
@@ -41,22 +42,45 @@ export default function SavedListsScreen() {
   ]);
   const [newElementName, setNewElementName] = React.useState('Hehe');
   //const [newElementQuantity, setNewItemQuantity] = React.useState('');
+  useEffect(() => {
+    const getAllShoppingLists = async () => {
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const shoppingListKeys = allKeys.filter(key => key.startsWith('@@shopping_list'));
+        const shoppingListData = await AsyncStorage.multiGet(shoppingListKeys);
+        const formattedShoppingLists = shoppingListData.map(([key, value]) => ({
+          key,
+          value: JSON.parse(value),
+        }));
+
+        setShoppingLists(formattedShoppingLists);
+      } catch (error) {
+        console.error('Error retrieving shopping lists:', error);
+      }
+    };
+
+    // Call the function to load shopping lists when the component mounts
+    getAllShoppingLists();
+  }, []); // Empty dependency array ensures this runs only on component mount
+
+
+
 
   const addElement = () => {
     if (newElementName) {
-      setElements([...elements, { name: newElementName }]);
+      setShoppingLists([...shoppingLists, { name: newElementName }]);
       setNewElementName('Hehe');
       //setNewItemQuantity('');
     }
   };
 
   const removeElement = (index) => {
-    const updatedElements = elements.filter((_, i) => i !== index);
-    setElements(updatedElements);
+    const updatedElements = shoppingLists.filter((_, i) => i !== index);
+    setShoppingLists(updatedElements);
   };
 
   /*const toggleCheckbox = (index) => {
-    const updatedItems = elements.map((item, i) =>
+    const updatedItems = shoppingLists.map((item, i) =>
       i === index ? { ...item, checked: !item.checked } : item
     );
     setElements(updatedItems);
@@ -73,7 +97,7 @@ export default function SavedListsScreen() {
         </View>
 
         <ScrollView contentContainerStyle={savedListsStyles.itemListContainer}>
-        {elements.map((element, index) => (
+        {shoppingLists.map((element, index) => (
           <View key={index} style={savedListsStyles.itemContainer}>
             {/*<TouchableOpacity style={savedListsStyles.itemButton}>
               <Text style={savedListsStyles.itemText}>{element.name}</Text>
