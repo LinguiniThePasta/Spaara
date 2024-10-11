@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Button } from 'react-native';
+import React, {useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  Text, TextInput, ScrollView, TouchableOpacity, Button,
+} from 'react-native';
 import CheckBox from 'react-native-check-box';
 
 export default function Shopping() {
