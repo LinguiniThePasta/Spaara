@@ -14,6 +14,9 @@ class KrogerAPI:
 
     def __init__(self, user) -> None:
         self.token = KrogerAPI.getToken()
+        self.lat = user.latitude
+        self.lon = user.longitude
+        self.rad = user.radius
         
     
     def getToken(): 
@@ -32,16 +35,16 @@ class KrogerAPI:
             if data["items"][0]["price"] < price:
                 price = data["items"][0]["price"]
 
-    def getStores(self, lat, lon, radius):
-        result = req.get(f'{KrogerAPI.krogerUrl}/locations', headers={'Authorization': f"{self.token['token_type']} {self.token['access_token']}"}, params={"filter.latLong.near": f'{lat}, {lon}', "filter.radiusInMiles": f"{radius}", "filter.limit": "10"})
+    def getStores(self):
+        result = req.get(f'{KrogerAPI.krogerUrl}/locations', headers={'Authorization': f"{self.token['token_type']} {self.token['access_token']}"}, params={"filter.latLong.near": f'{self.lat}, {self.lon}', "filter.radiusInMiles": f"{self.rad}", "filter.limit": "10"})
         return result.json()
     
-    def findClosestStore(self, lat, lon, stores):
+    def findClosestStore(self, stores):
         latitude = 999999999
         longitude = 999999999
         closest = None
         for store in stores['data']:
-            if abs(store['geolocation']['latitude'] - lat) < latitude and abs(store['geolocation']['longitude'] - lon) < longitude:
+            if abs(store['geolocation']['latitude'] - self.lat) < latitude and abs(store['geolocation']['longitude'] - self.lon) < longitude:
                 closest = store
         return closest
 
