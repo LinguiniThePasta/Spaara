@@ -33,10 +33,10 @@ export default function Footer() {
                     <NavigationButton label="tab" type="tab" destination={"/savedLists"}/>
                 </View>
                 <View style={styles.tabContainer}>
-                    <NavigationButton label="tab" type="tab" destination={"/profile"}/>
+                    <NavigationButton label="tab" type="tab" destination={"/savedRecipes"}/>
                 </View>
                 <View style={styles.tabContainer}>
-                    <NavigationButton label="tab" type="tab" destination={"/map"}/>
+                    <NavigationButton label="tab" type="tab" destination={"/profile"}/>
                 </View>
                 {/*<NavigationButton label="tab" type="tab" destination={"/home"}/>
                 <NavigationButton label="tab" type="tab" destination={"/shopping"}/>

@@ -29,15 +29,15 @@ const openIcon = require('@/assets/images/OpenIcon.png');
 //const pushLogin = () => router.push("/login")
 //const pushLogin = () => alert("I wanna push!!!!");
 
-export default function SavedListsScreen() {
+export default function SavedRecipesScreen() {
   //const pushLogin = () => router.push("/login")
   const pushLogin = () => alert("Log in");
 
   const [elements, setElements] = React.useState([
-    { name: 'Weekly List' },
-    { name: 'Dessert Run' },
-    { name: 'Diet Trip' },
-    { name: 'GIBBBAAAAAAAAH' },
+    { name: 'Beefaroni' },
+    { name: 'Apple Pie' },
+    { name: 'Smallga' },
+    { name: 'Bigitte' },
   ]);
   const [newElementName, setNewElementName] = React.useState('Hehe');
   //const [newElementQuantity, setNewItemQuantity] = React.useState('');
@@ -68,7 +68,7 @@ export default function SavedListsScreen() {
         <View style={savedListsStyles.headerContainer}>
           {/*<NavigationButton label="Back" type="back" destination="/welcome"/>*/}
           <View style={savedListsStyles.headerSpacer}/>
-          <Text style={savedListsStyles.headerLabel}>My Grocery Lists</Text>
+          <Text style={savedListsStyles.headerLabel}>My Recipes</Text>
           <View style={savedListsStyles.headerSpacer}/>
         </View>
 
@@ -144,17 +144,7 @@ const savedListsStyles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  /*contentContainer: {
-    //flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginTop: 30,
-  },*/
-
   itemListContainer: {
-    //paddingBottom: 16,
-    //height: 45,
-    //width: 325,
     flexDirection: 'column',
     alignItems: 'center',
     marginTop: 30,
@@ -165,19 +155,11 @@ const savedListsStyles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#F6AA1C',
-    //padding: 10,
     height: 45,
     width: 325,
     borderRadius: 15,
     marginBottom: 10,
   },
-
-  /*itemButton: {
-    flex: 1,
-    backgroundColor: '#b0b0b0',
-    borderRadius: 8,
-    padding: 8,
-  },*/
 
   itemText: {
     color: '#232528',
@@ -193,9 +175,6 @@ const savedListsStyles = StyleSheet.create({
   itemButtonContainer: {
     height: 45,
     width: 45,
-    //height: 50,
-    //marginTop: 10,
-    //marginBottom: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -212,32 +191,5 @@ const savedListsStyles = StyleSheet.create({
     width: 25,
     height: 25,
   },
-
-  /*quantityButton: {
-    backgroundColor: '#999',
-    borderRadius: 8,
-    padding: 8,
-    marginLeft: 8,
-  },
-
-  quantityText: {
-    color: '#fff',
-  },
-
-  checkbox: {
-    flex: 1,
-    padding: 10,
-  },
-
-  removeButton: {
-    backgroundColor: '#ff4d4d',
-    borderRadius: 8,
-    padding: 8,
-    marginLeft: 8,
-  },
-
-  removeButtonText: {
-    color: '#fff',
-  },*/
 
 });
