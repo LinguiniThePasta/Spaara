@@ -129,14 +129,25 @@ class FavoriteView(APIView):
             user.favorites.add(favorite)
             return Response({"Message" : "Saved favorited item successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     def delete(self, request):
-        item_id = request.query_params.get('id', None)
+        item_id = request.data.get('id', None)
+        if not item_id:
+            return Response({'error': 'Item ID not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.is_anonymous:
+            return Response({'error': 'User not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            favorite_item = FavoriteItem.objects.get(id=item_id, user=request.user)
+            # Filter by `favorites` through the User model
+            favorite_item = request.user.favorites.get(id=item_id)
+            request.user.favorites.remove(favorite_item)
             favorite_item.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_200_OK)
         except FavoriteItem.DoesNotExist:
             return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ExportShoppingListView(APIView):
     permission_classes = [IsAuthenticated]
