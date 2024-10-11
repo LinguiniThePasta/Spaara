@@ -43,3 +43,14 @@ axios.interceptors.response.use(
 );
 
 export default axios;
+
+
+export const isAuthenticated = async () => {
+  try {
+    const token = await SecureStore.getItemAsync('jwtToken');
+    return token !== null; // Returns true if the token exists, false otherwise
+  } catch (error) {
+    console.log('Error checking authentication:', error);
+    return false;
+  }
+};
