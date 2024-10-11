@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView} from 'react-native';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import TabsFooter from "@/components/TabsFooter";
 
 export default function HomePage() {
     return (
@@ -46,7 +47,8 @@ export default function HomePage() {
                     <Text style={styles.favStoresText}>Favorited Stores</Text>
                 </View>
             </ScrollView>
-            <Footer/>
+            {/*<Footer/>*/}
+            <TabsFooter/>
 
         </View>
     );
