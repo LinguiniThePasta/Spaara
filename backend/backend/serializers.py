@@ -2,7 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, Shopping, Recipe, FavoriteItem
+from .models import User, Shopping, Recipe, FavoritedItem
 from django.core.validators import validate_email
 
 
@@ -142,11 +142,11 @@ class SaveRecipeSerializer(serializers.ModelSerializer):
     
 class FavoriteItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FavoriteItem
+        model = FavoritedItem
         fields = ['id', 'name', 'price', 'store']
         extra_kwargs = {
             'id': {'read_only': True, 'required': False},
         }
     def create(self, validated_data):
-        favoritedItem = FavoriteItem.objects.create(**validated_data)
+        favoritedItem = FavoritedItem.objects.create(**validated_data)
         return favoritedItem
