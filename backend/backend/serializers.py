@@ -2,14 +2,14 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, Shopping, Recipe, FavoritedItem
+from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized
 from django.core.validators import validate_email
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['email', 'password']
     def validate(self, data):
         email = data.get('email')
         username = data.get('username')
@@ -62,14 +62,10 @@ class LoginSerializer(serializers.Serializer):
 class UpdateInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'latitude', 'longitude', 'radius']
+        fields = ['email', 'password']
         extra_kwargs = {
-            'username': {'required': False},
             'email': {'required': False, 'validators': []},
-            'password': {'write_only': True, 'required': False},
-            'radius': {'required': False},
-            'latitude': {'required': False},
-            'longitude': {'required': False},
+            'password': {'write_only': True, 'required': False}
         }
     def validate(self, data):
         username = data.get('username')
@@ -108,45 +104,66 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class SaveShoppingListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Shopping
-        fields = ['id', 'name', 'content']
-        extra_kwargs = {
-            'id': {'read_only': True, 'required': False},
-        }
-    def create(self, validated_data):
-        shoppingList = Shopping.objects.create(**validated_data)
-        return shoppingList
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.content = validated_data.get('content', instance.content)
-        instance.save()
-        return instance
-
-class SaveRecipeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Recipe
-        fields = ['id', 'name', 'content']
-        extra_kwargs = {
-            'id': {'read_only': True, 'required': False},
-        }
-    def create(self, validated_data):
-        recipe = Recipe.objects.create(**validated_data)
-        return recipe
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.content = validated_data.get('content', instance.content)
-        instance.save()
-        return instance
-    
+# class SaveShoppingListSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Shopping
+#         fields = ['id', 'name', 'content']
+#         extra_kwargs = {
+#             'id': {'read_only': True, 'required': False},
+#         }
+#     def create(self, validated_data):
+#         shoppingList = Shopping.objects.create(**validated_data)
+#         return shoppingList
+#     def update(self, instance, validated_data):
+#         instance.name = validated_data.get('name', instance.name)
+#         instance.content = validated_data.get('content', instance.content)
+#         instance.save()
+#         return instance
+#
+# class SaveRecipeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Recipe
+#         fields = ['id', 'name', 'content']
+#         extra_kwargs = {
+#             'id': {'read_only': True, 'required': False},
+#         }
+#     def create(self, validated_data):
+#         recipe = Recipe.objects.create(**validated_data)
+#         return recipe
+#     def update(self, instance, validated_data):
+#         instance.name = validated_data.get('name', instance.name)
+#         instance.content = validated_data.get('content', instance.content)
+#         instance.save()
+#         return instance
+#
 class FavoriteItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritedItem
-        fields = ['id', 'name', 'price', 'store']
-        extra_kwargs = {
-            'id': {'read_only': True, 'required': False},
-        }
+        fields = '__all__'
     def create(self, validated_data):
         favoritedItem = FavoritedItem.objects.create(**validated_data)
         return favoritedItem
+
+class RecipeItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecipeItem
+        fields = '__all__'
+    def create(self, validated_data):
+        recipeItem = RecipeItem.objects.create(**validated_data)
+        return recipeItem
+
+class UnoptimizedGroceryItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryItemUnoptimized,
+        fields = '__all__'
+    def create(self, validated_data):
+        groceryItem = GroceryItemUnoptimized.objects.create(**validated_data)
+        return groceryItem
+
+class OptimizedGroceryItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryItemOptimized,
+        fields = '__all__'
+    def create(self, validated_data):
+        groceryItem = GroceryItemUnoptimized.objects.create(**validated_data)
+        return groceryItem
