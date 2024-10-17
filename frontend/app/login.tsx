@@ -1,5 +1,5 @@
 import {StatusBar} from "expo-status-bar";
-import {StyleSheet, Text, View, Image, TextInput} from "react-native";
+import {StyleSheet, Text, View, Image, TextInput, SafeAreaView, Dimensions, Pressable} from "react-native";
 import React, {useCallback, useEffect} from "react";
 import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
@@ -7,19 +7,14 @@ import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 import {API_BASE_URL} from "@/components/config";
+import {Colors} from "@/styles/Colors";
+import {globalStyles} from "@/styles/globalStyles";
+
+const {width, height} = Dimensions.get('window');
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
-//const Stack = createNativeStackNavigator();
-//const router = useRouter();
-//router.navigate("/login");
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
-export default function LogInScreen() {
-    //const pushLogin = () => router.push("/login")
+export default function Login() {
     const handleLogin = async () => {
         try {
             const response = await axios.post(
@@ -63,121 +58,129 @@ export default function LogInScreen() {
     );
 
     return (
-        <View style={loginStyles.container}>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                <Pressable style={styles.backButton} onPress={() => {
+                    router.push("/splash")
+                }}>
+                    <Text style={styles.backButtonText}>{'<'}</Text>
+                </Pressable>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.headerText}>Welcome back!</Text>
 
-            <View style={loginStyles.headerContainer}>
-                <NavigationButton label="Back" type="back" destination="/welcome"/>
-                <Text style={loginStyles.headerLabel}>Log in</Text>
-                <View style={loginStyles.headerSpacer}/>
-            </View>
-
-            <View style={loginStyles.contentContainer}>
-                <Button label="Log in with Google" theme="google" onPress={handleLogin}/>
-                <View style={loginStyles.separatorContainer}>
-                    <View style={loginStyles.separatorSpacer}/>
-                    <Text style={loginStyles.separatorLabel}>OR</Text>
-                    <View style={loginStyles.separatorSpacer}/>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[globalStyles.primaryInput, styles.input]}
+                            placeholder="Email"
+                            placeholderTextColor={Colors.light.secondaryText}
+                            onChangeText={onUsernameChange}
+                            value={username}
+                        />
+                        <TextInput
+                            style={[globalStyles.primaryInput, styles.input]}
+                            placeholder="Password"
+                            secureTextEntry
+                            placeholderTextColor={Colors.light.secondaryText}
+                            onChangeText={onPasswordChange}
+                            value={password}
+                        />
+                        <View style={styles.forgotPasswordWrapper}>
+                            <Pressable style={styles.forgotPasswordContainer}>
+                                <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+                            </Pressable>
+                        </View>
+                        <Pressable style={[globalStyles.primaryButton, styles.loginButton]} onPress={() => {
+                            router.push("/shopping")
+                        }}>
+                            <Text style={styles.loginButtonText}>Log In</Text>
+                        </Pressable>
+                    </View>
+                    <View style={styles.footerContainer}>
+                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Pressable onPress={() => {
+                            router.push("/signup")
+                        }} style={styles.signupLink}>
+                            <Text style={styles.signupLinkText}>Sign Up.</Text>
+                        </Pressable>
+                    </View>
                 </View>
-                <TextInput
-                    style={loginStyles.textInputField}
-                    onChangeText={onUsernameChange}
-                    value={username}
-                    placeholder="Username / Email"
-                />
-                <TextInput
-                    style={loginStyles.textInputField}
-                    onChangeText={onPasswordChange}
-                    value={password}
-                    placeholder="Password"
-                />
-                <View style={loginStyles.loginButtonsContainer}>
-                    <Button label="Log in" theme="primary-wide" onPress={handleLogin}/>
-                </View>
             </View>
-
-            <StatusBar style='auto'/>
-        </View>
+        </SafeAreaView>
     );
 }
-const loginStyles = StyleSheet.create({
 
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFBEE',
+        backgroundColor: Colors.light.background,
+    },
+    content: {
+        flex: 1,
         alignItems: 'center',
+        paddingHorizontal: 20,
     },
-
-    headerContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F6AA1C',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    backButton: {
+        alignSelf: 'flex-start',
+        marginTop: 10,
+        marginBottom: 20,
     },
-
-    headerLabel: {
-        width: 290,
-        marginTop: 50,
-        marginBottom: 10,
-        color: '#232528',
-        fontSize: 28,
-        textAlign: 'center',
+    backButtonText: {
+        fontSize: 24,
+        color: Colors.light.primaryText,
     },
-
-    headerSpacer: {
-        width: 50,
-        height: 50,
-        marginTop: 50,
-        marginBottom: 10,
-    },
-
     contentContainer: {
         flex: 1,
-        flexDirection: 'column',
+        width: '100%',
+        maxWidth: 0.85 * width,
+        justifyContent: 'space-evenly',
         alignItems: 'center',
-        marginTop: 30,
     },
-
-    separatorContainer: {
+    headerText: {
+        fontSize: 34,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+        marginBottom: 0.04 * height,
+        textAlign: 'center',
+    },
+    inputContainer: {
+        width: '100%',
+        alignItems: "center",
+    },
+    input: {
+        marginBottom: 0.02 * height,
+        width: '100%',
+    },
+    forgotPasswordWrapper: {
+        width: '100%',
+        alignItems: 'flex-end',
+        height: 28,
+    },
+    forgotPasswordContainer: {},
+    forgotPasswordText: {
+        ...globalStyles.primaryText,
+        color: Colors.light.primaryColor,
+        fontSize: 12,
+    },
+    loginButton: {
+        width: '100%',
+        marginTop: 0.06 * height,
+    },
+    loginButtonText: {
+        ...globalStyles.buttonText,
+    },
+    footerContainer: {
         flexDirection: 'row',
-        width: 325,
-        height: 25,
-        marginTop: 25,
-        marginBottom: 35,
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
+        marginTop: 20,
     },
-
-    separatorLabel: {
-        width: 41,
-        height: 20,
-        color: '#959595',
-        fontSize: 15,
-        textAlign: 'center'
+    footerText: {
+        ...globalStyles.primaryText,
     },
-
-    separatorSpacer: {
-        width: 142,
-        height: 1,
-        marginVertical: 12,
-        backgroundColor: '#959595',
-        borderRadius: 100,
+    signupLink: {
+        marginLeft: 5,
     },
-
-    textInputField: {
-        height: 20,
-        width: 325,
-        margin: 25,
-        fontSize: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: '#959595',
-        color: '#232528',
+    signupLinkText: {
+        ...globalStyles.primaryText,
+        color: Colors.light.primaryColor,
     },
-
-    loginButtonsContainer: {
-        alignItems: 'center',
-        marginTop: 50,
-    },
-
 });

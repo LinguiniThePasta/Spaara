@@ -6,12 +6,12 @@ import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header"; // Use your color definitions
 
-export default function ShoppingListScreen() {
+export default function RecipeListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const shoppingLists = [
-        {id: '1', title: "My Shopping List 1", date: "10/10/24"},
-        {id: '2', title: "My Shopping List 2", date: "10/10/24"},
-        {id: '3', title: "Lingyu’s Shopping List", date: "10/10/24"},
+        {id: '1', title: "My Recipe 1", date: "10/10/24"},
+        {id: '2', title: "My Recipe 2", date: "10/10/24"},
+        {id: '3', title: "Lingyu’s Recipe", date: "10/10/24"},
     ];
 
     const renderItem = ({item}) => (
@@ -29,7 +29,9 @@ export default function ShoppingListScreen() {
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <Header header={"Shopping Lists"}/>
+                <Header header={"Recipes"}/>
+
+
                 <View style={globalStyles.searchBar}>
                     <Icon name="search-outline" size={20} color={Colors.light.primaryColor} style={styles.searchIcon}/>
                     <TextInput
@@ -58,7 +60,31 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.light.background,
     },
-
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+    },
+    profileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    profileIcon: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
+        backgroundColor: Colors.light.secondaryText,
+    },
     searchIcon: {
         marginRight: 10,
     },

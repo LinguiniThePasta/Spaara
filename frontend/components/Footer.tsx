@@ -1,43 +1,56 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
+import {Colors} from "@/styles/Colors";  // You can use a different icon set if you prefer
+const {width, height} = Dimensions.get('window');
 
 export default function Footer() {
     return (
         <View style={styles.footerContainer}>
-            <TouchableOpacity style={styles.footerItem}>
-                <Text style={styles.footerText}>Home</Text>
+            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/favorite")}>
+                <Icon name="heart-outline" size={24} color="#000" />
+                <Text style={styles.footerText}>Favorites</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem} onPress={()=> router.push("/shopping")}>
-                <Text style={styles.footerText}>Shopping List</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem}>
+
+            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/map")}>
+                <Icon name="location-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Map</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.footerItem}>
+
+            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/shopping")}>
+                <Icon name="cart-outline" size={24} color="#000" />
+                <Text style={styles.footerText}>List</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/recipe")}>
+                <Icon name="book-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Recipes</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/")}>
+                <Icon name="person-outline" size={24} color="#000" />
+                <Text style={styles.footerText}>Profile</Text>
             </TouchableOpacity>
         </View>
     );
 }
 
-
 const styles = StyleSheet.create({
     footerContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around', // Evenly distributes the items
-        alignItems: 'center',
-        backgroundColor: '#d3d3d3', // Light grey background color to match your image
-        height: 60,
+        justifyContent: 'space-around',
+        paddingBottom: 0.04 * height,
+        paddingTop: 0.03 * height,
+        backgroundColor: Colors.light.background,  // Change to match your app's theme
         borderTopWidth: 1,
-        borderTopColor: '#ccc', // Slight border to separate footer from the rest of the content
+        borderColor: '#ccc',
     },
     footerItem: {
-        flex: 1,
         alignItems: 'center',
     },
     footerText: {
-        fontSize: 16,
-        color: '#000', // Black text color
+        fontSize: 12,
+        color: '#000',  // Adjust to match your app's text color
     },
 });
