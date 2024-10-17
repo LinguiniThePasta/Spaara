@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Shopping, Recipe, FavoritedItem
+from .models import User, Grocery, Recipe, FavoritedItem
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.decorators import login_required
 import pandas as pd;
@@ -61,7 +61,7 @@ class ShoppingListView(APIView):
         user = request.user
         shopping_list_id = data.get('id', None)
         if shopping_list_id:
-            shopping_list = get_object_or_404(Shopping, id=shopping_list_id)
+            shopping_list = get_object_or_404(Grocery, id=shopping_list_id)
             serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
         else:
             serializer = SaveShoppingListSerializer(data=data)

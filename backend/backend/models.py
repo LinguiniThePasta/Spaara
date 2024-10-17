@@ -6,15 +6,13 @@ from django.dispatch import receiver
 
 class User(AbstractUser):
     id = models.AutoField(primary_key=True)
-    username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
     # radius = models.IntegerField(default=0)
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    shoppingLists = models.ManyToManyField("Shopping", related_name='shoppingLists')
+    groceryLists = models.ManyToManyField("Grocery", related_name='groceryLists')
     recipes = models.ManyToManyField("Recipe", related_name='recipes')
-    favorites = models.ManyToManyField("FavoritedItem", related_name='favorites')
 
     def __str__(self):
         return self.email
@@ -94,11 +92,8 @@ class ListBase(models.Model):
     def __str__(self):
         return self.name
 
-
-class Shopping(ListBase):
+class Grocery(ListBase):
     pass
-
-
 class Recipe(ListBase):
     pass
 
@@ -114,7 +109,6 @@ def update_favorite(sender, instance, **kwargs):
 
     if sender in FavoriteManager.receivers:
         FavoriteManager.sync(instance)
-
 
 class FavoriteManager:
     receivers = []
@@ -137,8 +131,6 @@ class FavoriteManager:
                                                 )
         else:
             FavoritedItem.objects.filter(id=instance.id).delete()
-
-
 class ItemBase(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
@@ -148,22 +140,23 @@ class ItemBase(models.Model):
     class Meta:
         abstract = True
 
-
-class ShoppingItemOptimized(ItemBase):
+class GroceryItemOptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Register the class when an instance is created
         FavoriteManager.register(self.__class__)
 
-class ShoppingItemUnoptimized(ItemBase):
+class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -175,6 +168,7 @@ class RecipeItem(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -182,6 +176,7 @@ class RecipeItem(ItemBase):
         FavoriteManager.register(self.__class__)
 
 class FavoritedItem(ItemBase):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
     favorited = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
