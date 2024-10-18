@@ -60,6 +60,10 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     serializer_class = GrocerySerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        return user.groceryLists.all()
+
     def create(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(data=request.data)
@@ -70,11 +74,19 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
     serializer_class = GroceryItemOptimizedSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        grocery_id = self.request.query_params.get('list_id')
+
+        if grocery_id:
+            queryset = queryset.filter(list_id=grocery_id)
+
+        return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -102,13 +114,21 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
     serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        grocery_id = self.request.query_params.get('list_id')
+
+        if grocery_id:
+            queryset = queryset.filter(list_id=grocery_id)
+
+        return queryset
+
     def create(self, request, *args, **kwargs):
         data = request.data
         grocery_list_id = data.get('list_id')
+        grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
-        grocery_list = Grocery.objects.get(pk=grocery_list_id)
-
-        serializer = self.get_serializer(grocery_list)
+        serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             serializer.save(list=grocery_list)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -137,19 +157,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class RecipeItemViewSet(viewsets.ModelViewSet):
     queryset = RecipeItem.objects.all()
     serializer_class = RecipeItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        recipe = request.data.get('list')
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        recipe_id = self.request.query_params.get('recipe_id')
 
+        if recipe_id:
+            queryset = queryset.filter(list_id=recipe_id)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        recipe_id = request.data.get('recipe_id')
+        recipe = get_object_or_404(Recipe, id=recipe_id)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            recipe_item = serializer.save()
-            recipe.items.add(recipe_item)
+            serializer.save(recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
