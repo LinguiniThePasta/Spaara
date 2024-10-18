@@ -23,10 +23,19 @@ from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
-router.register(r'api/shopping/items/optimized', GroceryItemOptimizedViewSet, basename='optimized-item')
-router.register(r'api/shopping/items/unoptimized', GroceryItemUnoptimizedViewSet, basename='unoptimized-item')
+router.register(r'api/grocery', GroceryListViewSet, basename='grocery')
+router.register(r'api/grocery/items/optimized', GroceryItemOptimizedViewSet, basename='optimized-item')
+router.register(r'api/grocery/items/unoptimized', GroceryItemUnoptimizedViewSet, basename='unoptimized-item')
+router.register(r'api/recipe', RecipeViewSet, basename='recipe')
 router.register(r'api/recipe/items', RecipeItemViewSet, basename='recipe-item')
 router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorited-item')
+'''
+Create: POST /api/grocery
+Read All: GET /api/grocery
+Read One: GET /api/grocery/{id}
+Update: PUT /api/grocery/{id} or PATCH /api/grocery/{id}
+Delete: DELETE /api/grocery/{id}
+'''
 
 
 urlpatterns = [
@@ -35,7 +44,6 @@ urlpatterns = [
     path('admin', admin.site.urls),
     path('api/user/login', LoginView.as_view(), name='login'),
     path('api/user/register', RegisterView.as_view(), name='register'),
-    path('', include(router.urls)),
     # path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
@@ -49,5 +57,6 @@ urlpatterns = [
     # path('api/favorites/get', FavoriteView.as_view(), name='get_favorite'),
     # path('api/favorites/add', FavoriteView.as_view(), name='add_favorite'),
     # path('api/favorites/delete', FavoriteView.as_view(), name='delete_favorite'),
+    path('', include(router.urls)),
 ]
 
