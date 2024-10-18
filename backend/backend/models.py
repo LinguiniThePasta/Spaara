@@ -6,13 +6,13 @@ from django.dispatch import receiver
 
 class User(AbstractUser):
     id = models.AutoField(primary_key=True)
+    username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
     # radius = models.IntegerField(default=0)
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     groceryLists = models.ManyToManyField("Grocery", related_name='groceryLists')
-    recipes = models.ManyToManyField("Recipe", related_name='recipes')
 
     def __str__(self):
         return self.email
@@ -95,7 +95,7 @@ class ListBase(models.Model):
 class Grocery(ListBase):
     pass
 class Recipe(ListBase):
-    pass
+    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
 
 
 @receiver(pre_save)

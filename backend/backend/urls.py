@@ -30,12 +30,13 @@ router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorite
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+
     path('accounts', include('allauth.urls')),
     path('admin', admin.site.urls),
     path('api/user/login', LoginView.as_view(), name='login'),
     path('api/user/register', RegisterView.as_view(), name='register'),
-    path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
+    path('', include(router.urls)),
+    # path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
