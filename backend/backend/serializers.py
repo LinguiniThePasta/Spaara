@@ -136,34 +136,34 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
 #         instance.save()
 #         return instance
 #
-class FavoriteItemSerializer(serializers.ModelSerializer):
+
+class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
-        model = FavoritedItem
+        model = Grocery
+        field = '__all__'
+class RecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        field = '__all__'
+class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryItemOptimized
         fields = '__all__'
-    def create(self, validated_data):
-        favoritedItem = FavoritedItem.objects.create(**validated_data)
-        return favoritedItem
+
+
+class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroceryItemUnoptimized
+        fields = '__all__'
+
 
 class RecipeItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeItem
         fields = '__all__'
-    def create(self, validated_data):
-        recipeItem = RecipeItem.objects.create(**validated_data)
-        return recipeItem
 
-class UnoptimizedGroceryItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroceryItemUnoptimized,
-        fields = '__all__'
-    def create(self, validated_data):
-        groceryItem = GroceryItemUnoptimized.objects.create(**validated_data)
-        return groceryItem
 
-class OptimizedGroceryItemSerializer(serializers.ModelSerializer):
+class FavoritedItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GroceryItemOptimized,
+        model = FavoritedItem
         fields = '__all__'
-    def create(self, validated_data):
-        groceryItem = GroceryItemUnoptimized.objects.create(**validated_data)
-        return groceryItem
