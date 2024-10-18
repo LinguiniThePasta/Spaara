@@ -17,26 +17,46 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
+from rest_framework.routers import DefaultRouter
+
 from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
+router = DefaultRouter()
+router.register(r'api/grocery', GroceryListViewSet, basename='grocery')
+router.register(r'api/grocery_items/optimized', GroceryItemOptimizedViewSet, basename='optimized-item')
+router.register(r'api/grocery_items/unoptimized', GroceryItemUnoptimizedViewSet, basename='unoptimized-item')
+router.register(r'api/recipe', RecipeViewSet, basename='recipe')
+router.register(r'api/recipe_items', RecipeItemViewSet, basename='recipe-item')
+router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorited-item')
+'''
+Create: POST /api/grocery
+Read All: GET /api/grocery
+Read One: GET /api/grocery/{id}
+Update: PUT /api/grocery/{id} or PATCH /api/grocery/{id}
+Delete: DELETE /api/grocery/{id}
+'''
+
+
 urlpatterns = [
+
     path('accounts', include('allauth.urls')),
     path('admin', admin.site.urls),
     path('api/user/login', LoginView.as_view(), name='login'),
     path('api/user/register', RegisterView.as_view(), name='register'),
-    path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
-    path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
-    path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
-    path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
-    path('api/shopping/export', ExportShoppingListView.as_view(), name='export_shopping_list'),
-    path('api/recipe/create', RecipeView.as_view(), name='save_recipe'),
-    path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
-    path('api/recipe/export', ExportRecipeView.as_view(), name='export_recipe'),
-    path('api/recipe/delete', RecipeView.as_view(), name='delete_recipe'),
+    # path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
+    # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
+    # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
+    # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
+    # path('api/shopping/export', ExportShoppingListView.as_view(), name='export_shopping_list'),
+    # path('api/recipe/create', RecipeView.as_view(), name='save_recipe'),
+    # path('api/recipe/get', RecipeView.as_view(), name='get_recipe'),
+    # path('api/recipe/export', ExportRecipeView.as_view(), name='export_recipe'),
+    # path('api/recipe/delete', RecipeView.as_view(), name='delete_recipe'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/favorites/get', FavoriteView.as_view(), name='get_favorite'),
-    path('api/favorites/add', FavoriteView.as_view(), name='add_favorite'),
-    path('api/favorites/delete', FavoriteView.as_view(), name='delete_favorite'),
+    # path('api/favorites/get', FavoriteView.as_view(), name='get_favorite'),
+    # path('api/favorites/add', FavoriteView.as_view(), name='add_favorite'),
+    # path('api/favorites/delete', FavoriteView.as_view(), name='delete_favorite'),
+    path('', include(router.urls)),
 ]
 
