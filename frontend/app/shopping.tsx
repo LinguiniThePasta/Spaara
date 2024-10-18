@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import Modal from 'react-modal';
 import {
     View,
     StyleSheet,
@@ -77,6 +78,10 @@ export default function Shopping() {
             Alert.alert('Error', 'Network error while updating favorite status.');
         }
     };
+
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const openModal = () => setModalIsOpen(true);
+    const closeModal = () => setModalIsOpen(false);
 
     const handleSave = async () => {
         // Prompt the user for the shopping list name
@@ -302,6 +307,18 @@ export default function Shopping() {
                     </View>
                 ))}
             </ScrollView>
+
+            <Modal
+                isOpen={modalIsOpen}
+                onRequestClose={closeModal}
+                contentLabel="Example Modal"
+            >
+                <h2>Modal Title</h2>
+                <button onClick={closeModal}>Close</button>
+                <div>Modal Content</div>
+            </Modal>
+
+            <button onClick={openModal}>Open Modal</button>
             <TabsFooter/>
         </View>
     );
