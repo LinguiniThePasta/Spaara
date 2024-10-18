@@ -9,7 +9,7 @@ from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer
 
 
 class RegisterView(APIView):
@@ -20,6 +20,7 @@ class RegisterView(APIView):
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -39,8 +40,10 @@ class LoginView(APIView):
             })
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
 
@@ -50,163 +53,116 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-class ShoppingListView(APIView):
+
+
+class GroceryListViewSet(viewsets.ModelViewSet):
+    queryset = Grocery.objects.all()
+    serializer_class = GrocerySerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        data = request.data
+    def create(self, request, *args, **kwargs):
         user = request.user
-        shopping_list_id = data.get('id', None)
-        if shopping_list_id:
-            shopping_list = get_object_or_404(Grocery, id=shopping_list_id)
-            serializer = SaveShoppingListSerializer(shopping_list, data=data, partial=True)
-        else:
-            serializer = SaveShoppingListSerializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            shopping_list = serializer.save()
-            user.shoppingLists.add(shopping_list)
-            return Response({'message': 'Saved List successfully'}, status=status.HTTP_201_CREATED)
+            grocery_list = serializer.save(user=user)
+            user.groceryLists.add(grocery_list)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    def get(self, request):
-        shopping_list_id = request.query_params.get('id', None)
-        user = request.user
 
-        if shopping_list_id:
-            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            shoppingLists = user.shoppingLists.all()
-            serializer = SaveShoppingListSerializer(shoppingLists, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-    def delete(self, request):
-        user = request.user
-        shopping_list_id = request.query_params.get('id', None)
 
-        if shopping_list_id:
-            shopping_list = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
-            shopping_list.delete()
-            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
-        else:
-            return Response({"message": "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)
-class RecipeView(APIView):
+class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
+    queryset = GroceryItemOptimized.objects.all()
+    serializer_class = GroceryItemOptimizedSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def create(self, request, *args, **kwargs):
         data = request.data
-        user = request.user
-        recipeListID = data.get('id', None)
-        if recipeListID:
-            recipe = get_object_or_404(Recipe, id=recipeListID)
-            serializer = SaveRecipeSerializer(recipe, data=data, partial=True)
-        else:
-            serializer = SaveRecipeSerializer(data=data)
+        grocery_list_id = data.get('list_id')
+
+        grocery_list = Grocery.objects.get(pk=grocery_list_id)
+
+        serializer = self.get_serializer(grocery_list)
         if serializer.is_valid():
-            recipe = serializer.save()
-            user.recipes.add(recipe)
-            return Response({'message': 'Saved Recipe successfully'}, status=status.HTTP_201_CREATED)
+            serializer.save(list=grocery_list)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    def get(self, request):
-        recipeID = request.query_params.get('id', None)
-        user = request.user
 
-        if recipeID:
-            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
-            serializer = SaveRecipeSerializer(recipe)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            recipes = user.recipes.all()
-            serializer = SaveRecipeSerializer(recipes, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-    def delete(self, request):
-        user = request.user
-        recipeID = request.query_params.get('id', None)
+    @action(detail=True, methods=['post'])
+    def favorite(self, request, pk=None):
+        item = self.get_object()
+        item.favorited = not item.favorited
+        item.save()
+        return Response(self.get_serializer(item).data)
 
-        if recipeID:
-            recipe = get_object_or_404(user.recipes.all(), id=recipeID)
-            recipe.delete()
-            return Response({"message": "Deleted!"}, status=status.HTTP_200_OK)
-        else:
-            return Response({"message": "Could not find recipe to remove"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            
-class FavoriteView(APIView):
+
+class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
+    queryset = GroceryItemUnoptimized.objects.all()
+    serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        favorited = user.favorites.all()
-        serializer = FavoriteItemSerializer(favorited, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    def post(self, request):
-        user = request.user
+    def create(self, request, *args, **kwargs):
         data = request.data
+        grocery_list_id = data.get('list_id')
 
-        serializer = FavoriteItemSerializer(data=data)
+        grocery_list = Grocery.objects.get(pk=grocery_list_id)
+
+        serializer = self.get_serializer(grocery_list)
         if serializer.is_valid():
-            # Associate the favorite item with the current user
-            favorite = serializer.save()
-            user.favorites.add(favorite)
-            return Response({"Message" : "Saved favorited item successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    def delete(self, request):
-        item_id = request.query_params.get('id', None)
-        try:
-            favorite_item = FavoriteItem.objects.get(id=item_id)
-            favorite_item.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except FavoriteItem.DoesNotExist:
-            return Response({'error': 'Item not found or not owned by user'}, status=status.HTTP_404_NOT_FOUND)
+            serializer.save(list=grocery_list)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ExportShoppingListView(APIView):
+    @action(detail=True, methods=['post'])
+    def favorite(self, request, pk=None):
+        item = self.get_object()
+        item.favorited = not item.favorited
+        item.save()
+        return Response(self.get_serializer(item).data)
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        shopping_list_id = request.query_params.get('id', None)
+    def create(self, request, serializer):
         user = request.user
-
-        if shopping_list_id:
-            shoppingList = get_object_or_404(user.shoppingLists.all(), id=shopping_list_id)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            df = pd.DataFrame.from_records(serializer.data.values())
-            df.to_excel('ExportedList.xlsx')
-            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            recipe = serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
-        
-class ExportRecipeView(APIView):
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RecipeItemViewSet(viewsets.ModelViewSet):
+    queryset = RecipeItem.objects.all()
+    serializer_class = RecipeItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        recipe_id = request.query_params.get('id', None)
-        user = request.user
+    def create(self, request, *args, **kwargs):
+        recipe = request.data.get('list')
 
-        if recipe_id:
-            recipe = get_object_or_404(user.recipes.all(), id=recipe_id)
-            serializer = SaveRecipeSerializer(recipe)
-            df = pd.DataFrame.from_records(serializer.data.values())
-            df.to_excel('ExportedList.xlsx')
-            return Response({'message': 'Export successful'}, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            recipe_item = serializer.save()
+            recipe.items.add(recipe_item)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({'message','Unable to export: could not find shopping list'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def favorite(self, request, pk=None):
+        item = self.get_object()
+        item.favorited = not item.favorited
+        item.save()
+        return Response(self.get_serializer(item).data)
 
 
-
-class RemoveShoppingListView(APIView):
+class FavoritedItemViewSet(viewsets.ModelViewSet):
+    queryset = FavoritedItem.objects.all()
+    serializer_class = FavoritedItemSerializer
     permission_classes = [IsAuthenticated]
-    
-    def delete(self, request):
-        data = request.data
-        user = request.user
-        shoppingListID = data.get('id', None)
-
-        if shoppingListID:
-            shoppingList = get_object_or_404(user.recipes.all(), id=shoppingListID)
-            serializer = SaveShoppingListSerializer(shoppingList)
-            shoppingList.delete()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message" : "Could not find shopping list to remove"}, status=status.HTTP_400_BAD_REQUEST)

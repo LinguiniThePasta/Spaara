@@ -62,11 +62,21 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
 class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Grocery
-        field = '__all__'
+        fields = '__all__'
+
+    def create(self, validated_data):
+        # Remove any fields that aren't accepted by Grocery.objects.create()
+        # If 'user' is passed as part of validated data, remove it here
+        validated_data.pop('user', None)  # Adjust as needed
+
+        # Create the grocery instance with the remaining valid fields
+        grocery = Grocery.objects.create(**validated_data)
+
+        return grocery
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        field = '__all__'
+        fields = '__all__'
 class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroceryItemOptimized
