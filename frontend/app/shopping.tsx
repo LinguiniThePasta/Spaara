@@ -14,6 +14,20 @@ export default function ShoppingListScreen() {
     const [shoppingLists, setShoppingLists] = useState([]);
     const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
     const [modalVisible, setModalVisible] = useState(false);
+
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [selectedList, setSelectedList] = useState(null);
+
+    const handleLongPress = (list) => {
+        setSelectedList(list);
+        setDeleteModalVisible(true);
+    };
+
+    const handleDelete = () => {
+        setShoppingLists(shoppingLists.filter(list => list.id !== selectedList.id));
+        setDeleteModalVisible(false);
+    };
+
     //TEMP SHOPPING LISTS
     /*
     setShoppingLists( [
@@ -74,7 +88,10 @@ export default function ShoppingListScreen() {
     };
 
     const renderItem = ({ item }) => (
-        <Pressable onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}>
+        <Pressable
+            onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onLongPress={() => handleLongPress(item)}
+        >
             <View style={styles.listItem}>
                 <View style={styles.listItemLeft}>
                     <Text style={styles.listItemTitle}>{item.title}</Text>
@@ -141,6 +158,26 @@ export default function ShoppingListScreen() {
                 </Modal>
             </SafeAreaView>
             <Footer />
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={deleteModalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Are you sure you want to delete this list? Deleted lists cannot be restored.</Text>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => handleDelete()}>
+                                <Text style={styles.modalButtonText}>Yes</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setDeleteModalVisible(false)}>
+                                <Text style={styles.modalButtonText}>No</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -213,9 +250,8 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        flex: 1,
-        textAlign: 'center',
+        marginBottom: 20,
+        color: 'black', // Ensure the text color contrasts with the background
     },
     input: {
         width: '100%',
@@ -233,5 +269,26 @@ const styles = StyleSheet.create({
     submitButtonText: {
         color: 'white',
         fontWeight: 'bold',
+    },
+    modalButton: {
+        backgroundColor: '#FF6347',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    modalButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 20,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
     },
 });
