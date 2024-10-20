@@ -1,183 +1,128 @@
 import {StatusBar} from "expo-status-bar";
-import {StyleSheet, Text, View, Image, TextInput} from "react-native";
-import React from "react";
-import {Stack, useRouter, Link, router} from 'expo-router';
-//import { NavigationContainer } from "@react-navigation/native";
-//import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-
+import {StyleSheet, Text, View, Image, TextInput, SafeAreaView, Dimensions, Pressable} from "react-native";
+import React, {useCallback, useEffect} from "react";
+import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
+import * as SecureStore from 'expo-secure-store';
 import {API_BASE_URL} from "@/components/config";
+import {Colors} from "@/styles/Colors";
+import {globalStyles} from "@/styles/globalStyles";
+
+const {width, height} = Dimensions.get('window');
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
-export default function SignUpScreen() {
-    //const pushLogin = () => router.push("/login")
-    const handleSignUp = async () => {
-        try {
-            const response = await axios.post(
-                `${API_BASE_URL}/api/user/register`,
-                {
-                    "username": username,
-                    "email": email,
-                    "password": password
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-
-            router.push('/login');
-        } catch (error) {
-            console.log(error);
-            alert(error);
-        }
-    };
-    const [email, onEmailChange] = React.useState('');
-    const [username, onUsernameChange] = React.useState('');
-    const [password, onPasswordChange] = React.useState('');
-    const [confirmPW, onConfirmPWChange] = React.useState('');
+export default function Signup() {
     return (
-        <View style={signUpStyles.container}>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                <Pressable style={styles.backButton} onPress={() => {
+                    router.push("/splash")
+                }}>
+                    <Text style={styles.backButtonText}>{'<'}</Text>
+                </Pressable>
+                <View style={styles.contentContainer}>
+                    <Text style={styles.headerText}>Create your account</Text>
 
-            <View style={signUpStyles.headerContainer}>
-                <NavigationButton label="Back" type="back" destination="/welcome"/>
-                <Text style={signUpStyles.headerLabel}>Sign up</Text>
-                <View style={signUpStyles.headerSpacer}/>
-            </View>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[globalStyles.primaryInput, styles.input]}
+                            placeholder="Email"
+                            placeholderTextColor={Colors.light.secondaryText}
+                        />
+                        <TextInput
+                            style={[globalStyles.primaryInput, styles.input]}
+                            placeholder="Password"
+                            secureTextEntry
+                            placeholderTextColor={Colors.light.secondaryText}
+                        />
+                        {/* Placeholder to compensate for the removed Forgot Password text */}
+                        <View style={styles.placeholder} />
 
-            <View style={signUpStyles.contentContainer}>
-                <Button label="Sign up with Google" theme="google" onPress={handleSignUp}/>
-                <View style={signUpStyles.separatorContainer}>
-                    <View style={signUpStyles.separatorSpacer}/>
-                    <Text style={signUpStyles.separatorLabel}>OR</Text>
-                    <View style={signUpStyles.separatorSpacer}/>
-                </View>
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onEmailChange}
-                    value={email}
-                    placeholder="Email"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onUsernameChange}
-                    value={username}
-                    placeholder="Username (Optional)"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onPasswordChange}
-                    value={password}
-                    placeholder="Password"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onConfirmPWChange}
-                    value={confirmPW}
-                    placeholder="Confirm Password"
-                    placeholderTextColor='#959595'
-                />
-                <View style={signUpStyles.signupButtonsContainer}>
-                    <Button label="Sign up" theme="primary-wide" onPress={handleSignUp}/>
+                        <Pressable style={[globalStyles.primaryButton, styles.signupButton]}>
+                            <Text style={styles.signupButtonText}>Sign up</Text>
+                        </Pressable>
+                    </View>
+                    <View style={styles.footerContainer}>
+                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Pressable onPress={() => {
+                            router.push("/login")
+                        }} style={styles.loginLink}>
+                            <Text style={styles.loginLinkText}>Login.</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
-
-            <StatusBar style='auto'/>
-        </View>
+        </SafeAreaView>
     );
 }
 
-
-const signUpStyles = StyleSheet.create({
-
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFBEE',
+        backgroundColor: Colors.light.background,
+    },
+    content: {
+        flex: 1,
         alignItems: 'center',
+        paddingHorizontal: 20,
     },
-
-    headerContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F6AA1C',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    backButton: {
+        alignSelf: 'flex-start',
+        marginTop: 10,
+        marginBottom: 20,
     },
-
-    headerLabel: {
-        width: 290,
-        marginTop: 50,
-        marginBottom: 10,
-        color: '#232528',
-        fontSize: 28,
-        textAlign: 'center',
+    backButtonText: {
+        fontSize: 24,
+        color: Colors.light.primaryText,
     },
-
-    headerSpacer: {
-        width: 50,
-        height: 50,
-        marginTop: 50,
-        marginBottom: 10,
-    },
-
     contentContainer: {
         flex: 1,
-        flexDirection: 'column',
+        width: '100%',
+        maxWidth: 0.85 * width,
+        justifyContent: 'space-evenly',
         alignItems: 'center',
-        marginTop: 30,
     },
-
-    separatorContainer: {
+    headerText: {
+        fontSize: 34,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+        marginBottom: 0.04 * height,
+        textAlign: 'center',
+    },
+    inputContainer: {
+        width: '100%',
+        alignItems: "center",
+    },
+    input: {
+        marginBottom: 0.02 * height,
+        width: '100%',
+    },
+    placeholder: {
+        height: 28,
+    },
+    signupButton: {
+        width: '100%',
+        marginTop: 0.06 * height,
+    },
+    signupButtonText: {
+        ...globalStyles.buttonText,
+    },
+    footerContainer: {
         flexDirection: 'row',
-        width: 325,
-        height: 25,
-        marginTop: 25,
-        marginBottom: 35,
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
+        marginTop: 20,
     },
-
-    separatorLabel: {
-        width: 41,
-        height: 20,
-        color: '#959595',
-        fontSize: 15,
-        textAlign: 'center'
+    footerText: {
+        ...globalStyles.primaryText,
     },
-
-    separatorSpacer: {
-        width: 142,
-        height: 1,
-        marginVertical: 12,
-        backgroundColor: '#959595',
-        borderRadius: 100,
+    loginLink: {
+        marginLeft: 5,
     },
-
-    textInputField: {
-        height: 20,
-        width: 325,
-        margin: 25,
-        fontSize: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: '#959595',
-        color: '#232528',
+    loginLinkText: {
+        ...globalStyles.primaryText,
+        color: Colors.light.primaryColor,
     },
-
-    signupButtonsContainer: {
-        alignItems: 'center',
-        marginTop: 50,
-    },
-
 });

@@ -1,28 +1,22 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+
 
 class User(AbstractUser):
     id = models.AutoField(primary_key=True)
-    username = models.CharField(unique=True, max_length=100)
+    username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
-    radius = models.IntegerField(default=0)
-    longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    shoppingLists = models.ManyToManyField("Shopping", related_name='shoppingLists')
-    recipes = models.ManyToManyField("Recipe", related_name='recipes')
-    favorites = models.ManyToManyField("FavoriteItem", related_name = 'favorites')
+    # radius = models.IntegerField(default=0)
+    # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
+    # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
+    groceryLists = models.ManyToManyField("Grocery", related_name='groceryLists')
 
     def __str__(self):
         return self.email
 
-class FavoriteItem(models.Model):
-    name = models.CharField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    store = models.CharField()
-
-    def __str__(self):
-        return self.name
 
 '''    
 # A grocery item
@@ -84,19 +78,108 @@ class Carbohydrates(models.Model):
     total_sugar = models.DecimalField(max_digits=10, decimal_places=2)
     added_sugar = models.DecimalField(max_digits=10, decimal_places=2)
 '''
+
+
 class ListBase(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     creation_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
-    content = models.JSONField()
 
     class Meta:
         abstract = True  # This makes the model abstract and not create a table for it
 
     def __str__(self):
         return self.name
-class Shopping(ListBase):
+
+class Grocery(ListBase):
     pass
 class Recipe(ListBase):
-    pass
+    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
+
+
+@receiver(pre_save)
+def update_favorite(sender, instance, **kwargs):
+    if sender not in FavoriteManager.receivers:
+        return
+    old_instance = sender.objects.get(pk=instance.pk)
+
+    if (instance.favorited == old_instance.favorited):
+        return
+
+    if sender in FavoriteManager.receivers:
+        FavoriteManager.sync(instance)
+
+class FavoriteManager:
+    receivers = []
+
+    @classmethod
+    def register(cls, model):
+        cls.receivers.append(model)
+
+    @classmethod
+    def sync(self, instance, favorited):
+        for receiver in self.receivers:
+            if isinstance(instance, receiver):
+                continue
+            receiver.objects.filter(id=instance.id).update(favorited=favorited)
+        if favorited:
+            FavoritedItem.objects.get_or_create(id=instance.id,
+                                                name=instance.name,
+                                                description=instance.description,
+                                                store=instance.store,
+                                                )
+        else:
+            FavoritedItem.objects.filter(id=instance.id).delete()
+class ItemBase(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    store = models.CharField(blank=True)
+
+    class Meta:
+        abstract = True
+
+class GroceryItemOptimized(ItemBase):
+    quantity = models.IntegerField()
+    units = models.CharField(max_length=20)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
+
+class GroceryItemUnoptimized(ItemBase):
+    quantity = models.IntegerField()
+    units = models.CharField(max_length=20)
+    favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
+
+
+class RecipeItem(ItemBase):
+    quantity = models.IntegerField()
+    units = models.CharField(max_length=20)
+    favorited = models.BooleanField(default=False)
+    list = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
+
+class FavoritedItem(ItemBase):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
+    favorited = models.BooleanField(default=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
