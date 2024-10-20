@@ -83,7 +83,7 @@ export default function SavedRecipesScreen() {
         //const updatedElements = shoppingLists.filter((_, i) => i === index);
         //const deletedList = shoppingLists[index];
         //setDeletedList(shoppingLists[index])
-        console.log("Deleting this List: ", elements[index].id);
+        console.log("Deleting this Recipe: ", elements[index].id);
         console.log(await SecureStore.getItemAsync('jwtToken'));
         const response = await fetch(`${API_BASE_URL}/api/recipe/delete?id=${elements[index].id}`, {
             method: 'DELETE',

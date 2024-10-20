@@ -1,308 +1,183 @@
-import React, {useEffect, useState} from 'react';
-import {
-    View,
-    StyleSheet,
-    Text,
-    TextInput,
-    Button,
-    ScrollView,
-    TouchableOpacity,
-    Alert, ActivityIndicator,
-} from 'react-native';
-import CheckBox from 'react-native-check-box';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {isAuthenticated} from "@/components/Axios";
-import * as SecureStore from "expo-secure-store";
-import {API_BASE_URL} from "@/components/config";
-import TabsFooter from "@/components/TabsFooter"
-import {useLocalSearchParams} from "expo-router";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import { Link, router } from 'expo-router';
+import Icon from 'react-native-vector-icons/Ionicons'; // Assuming you're using Ionicons for icons
+import axios from 'axios';
+import { API_BASE_URL } from '@/components/config';
+import { Colors } from '@/styles/Colors';
+import Footer from "@/components/Footer";
+import { globalStyles } from "@/styles/globalStyles";
+import Header from "@/components/Header"; // Use your color definitions
 
-export default function Shopping() {
-    const [items, setItems] = useState([]);
-    const [id, setId] = useState(null);
-    const [newItemName, setNewItemName] = useState('');
-    const [newItemQuantity, setNewItemQuantity] = useState('');
-    const [authenticated, setAuthenticated] = useState(false);
-    const [listName, setListName] = useState('');
-    const { shoppingList } = useLocalSearchParams();
-    const addItem = () => {
-        if (newItemName && newItemQuantity) {
-            setItems([...items, {name: newItemName, quantity: `x${newItemQuantity}`, checked: false, favorite: false}]);
-            setNewItemName('');
-            setNewItemQuantity('');
-        }
+export default function ShoppingListScreen() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [shoppingLists, setShoppingLists] = useState([]);
+    const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
+    const [modalVisible, setModalVisible] = useState(false);
+
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [selectedList, setSelectedList] = useState(null);
+
+    const handleLongPress = (list) => {
+        setSelectedList(list);
+        setDeleteModalVisible(true);
     };
 
-    const removeItem = (index) => {
-        const updatedItems = items.filter((_, i) => i !== index);
-        setItems(updatedItems);
+    const handleDelete = () => {
+        setShoppingLists(shoppingLists.filter(list => list.id !== selectedList.id));
+        setDeleteModalVisible(false);
     };
 
-    const toggleCheckbox = (index) => {
-        const updatedItems = items.map((item, i) =>
-            i === index ? {...item, checked: !item.checked} : item
-        );
-        setItems(updatedItems);
-    };
+    //TEMP SHOPPING LISTS
+    /*
+    setShoppingLists( [
+        {id: '1', title: "My Shopping List 1", date: "10/10/24"},
+        {id: '2', title: "My Shopping List 2", date: "10/10/24"},
+        {id: '3', title: "Lingyu’s Shopping List", date: "10/10/24"},
+    ]);
+    */
 
-    const toggleFavorite = async (index) => {
-        const updatedItems = [...items];
-        const item = updatedItems[index];
+    // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
+    /*
+    useEffect(() => {
+        fetchShoppingLists();
+    }, []);
 
+    const fetchShoppingLists = async () => {
+        const tempKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI5MzE1NDU1LCJpYXQiOjE3MjkzMTUxNTUsImp0aSI6IjkwZDA0ZTBjYWVhZTQ2M2E4N2Q5ZDBlZmM3YjA5ZjcxIiwidXNlcl9pZCI6M30.GhSeb6Q2LkwPijL_XXU29dw6kTUxIYdPPXppWmGnaa4';
         try {
-            // Send request to add the item to favorites
-            const response = await fetch(`${API_BASE_URL}/api/favorites/add`, {
-                method: 'POST',
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`,
-                },
-                body: JSON.stringify({
-                    name: item.name,
-                    price: item.price | 0,
-                    store: item.store | "None",
-                }),
+                    'Authorization': 'Bearer ' + tempKey,
+                }
             });
 
-            if (response.ok) {
-                // Update the item's favorite status only if the request is successful
-                item.favorite = !item.favorite;
-                setItems(updatedItems);
-                Alert.alert('Success', `${item.name} has been ${item.favorite ? 'added to' : 'removed from'} favorites!`);
-            } else {
-                Alert.alert('Error', 'Failed to update favorite status on the server.');
-            }
+            const lists = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                date: new Date(item.creation_time).toLocaleDateString(),
+            }));
+            console.log("Correctly fetched shopping lists!");
+            setShoppingLists(lists);
         } catch (error) {
-            console.error('Error updating favorite:', error);
-            Alert.alert('Error', 'Network error while updating favorite status.');
+            console.error('Error fetching shopping lists:', error);
+        }
+    };
+    */
+
+    const addItem = () => {
+        const newId = (shoppingLists.length + 1).toString();
+        setNewItem({ id: newId, title: '', date: new Date().toLocaleDateString() });
+        setModalVisible(true);
+        console.log('Adding new item:', newItem);
+    };
+
+    const handleTitleChange = (text) => {
+        setNewItem({ ...newItem, title: text });
+    };
+
+    const handleTitleSubmit = () => {
+        if (newItem.title.trim() !== '') {
+            const updatedShoppingLists = [...shoppingLists, newItem];
+            setShoppingLists(updatedShoppingLists);
+            setModalVisible(false);
+            setNewItem({ id: '', title: '', date: '' });
+            console.log('New item added:', newItem);
+            console.log('Updated shopping lists:', updatedShoppingLists);
         }
     };
 
-    const handleSave = async () => {
-        // Prompt the user for the shopping list name
-        Alert.prompt(
-            'Save Shopping List',
-            'Enter the name of your shopping list:',
-            async (name) => {
-                if (name) {
-                    setListName(name);
-                    const content = items.map(item => ({
-                        name: item.name,
-                        quantity: item.quantity,
-                        checked: item.checked,
-                        favorite: item.favorite,
-                    }));
+    const renderItem = ({ item }) => (
+        <Pressable
+            onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onLongPress={() => handleLongPress(item)}
+        >
+            <View style={styles.listItem}>
+                <View style={styles.listItemLeft}>
+                    <Text style={styles.listItemTitle}>{item.title}</Text>
+                    <Text style={styles.listItemDate}>{item.date}</Text>
+                </View>
+                <Icon name="chevron-forward-outline" size={24} color={Colors.light.secondaryText} />
+            </View>
+        </Pressable>
+    );
 
-                    const shoppingList = {
-                        name: name,
-                        content: JSON.stringify(content),
-                    };
-
-                    if (id) {
-                        shoppingList.id = id;
-                    }
-
-                    if (authenticated) {
-                        try {
-                            const response = await fetch(`${API_BASE_URL}/api/shopping/create`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
-                                },
-                                body: JSON.stringify(shoppingList),
-                            });
-
-                            if (response.ok) {
-                                Alert.alert('Success', 'Shopping list saved to server!');
-                            } else {
-                                Alert.alert('Error', 'Failed to save shopping list to server.');
-                            }
-                        } catch (error) {
-                            console.log(error);
-                            Alert.alert('Error', 'Network error while saving shopping list.');
-                        }
-                    } else {
-                        try {
-                            await AsyncStorage.setItem(`@shopping_list_${name}`, JSON.stringify(shoppingList));
-                            Alert.alert('Success', 'Shopping list saved locally!');
-                        } catch (error) {
-                            Alert.alert('Error', 'Failed to save shopping list locally.');
-                        }
-                    }
-                } else {
-                    Alert.alert('Error', 'List name is required to save the shopping list.');
-                }
-            }
-        );
-    };
-
-
-    const handleSaveRecipe = async () => {
-        // Prompt the user for the shopping list name
-        Alert.prompt(
-            'Save Recipe',
-            'Enter the name of your recipe:',
-            async (name) => {
-                if (name) {
-                    setListName(name);
-                    const content = items.map(item => ({
-                        name: item.name,
-                        quantity: item.quantity,
-                        checked: item.checked,
-                        favorite: item.favorite,
-                    }));
-
-                    const shoppingList = {
-                        name: name,
-                        content: JSON.stringify(content),
-                    };
-
-                    if (id) {
-                        shoppingList.id = id;
-                    }
-
-                    if (authenticated) {
-                        try {
-                            const response = await fetch(`${API_BASE_URL}/api/recipe/create`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${await SecureStore.getItemAsync('jwtToken')}`
-                                },
-                                body: JSON.stringify(shoppingList),
-                            });
-
-                            if (response.ok) {
-                                Alert.alert('Success', 'Recipe saved to server!');
-                            } else {
-                                Alert.alert('Error', 'Failed to save recipe to server.');
-                            }
-                        } catch (error) {
-                            console.log(error);
-                            Alert.alert('Error', 'Network error while saving recipe.');
-                        }
-                    } else {
-                        try {
-                            await AsyncStorage.setItem(`@recipe_${name}`, JSON.stringify(shoppingList));
-                            Alert.alert('Success', 'Recipe saved locally!');
-                        } catch (error) {
-                            Alert.alert('Error', 'Failed to save recipe locally.');
-                        }
-                    }
-                } else {
-                    Alert.alert('Error', 'List name is required to save the recipe.');
-                }
-            }
-        );
-    };
-
-
-
-    useEffect(() => {
-        const checkAuthentication = async () => {
-            // Run the authentication check
-            const authStatus = await isAuthenticated();
-            console.log('Authentication status:', authStatus);
-            setAuthenticated(authStatus);
-        };
-        checkAuthentication();
-
-
-        console.log("Received shopping list parameter:", shoppingList); // Debug log
-
-        if (shoppingList) {
-            try {
-                const parsedList = JSON.parse(shoppingList); // Parse the JSON string back to an object
-                console.log("Parsed shopping list object:", parsedList); // Debug log
-
-                setId(parsedList.id);
-                setListName(parsedList.name);
-
-                // Assuming `content` is a JSON string of the items
-                setItems(parsedList.content ? JSON.parse(parsedList.content) : []);
-            } catch (error) {
-                console.error("Error parsing shopping list:", error); // Debug log in case of error
-            }
-        }
-    }, []);
     return (
         <View style={styles.container}>
-            {/* Search Bar */}
-            <View style={styles.searchBarContainer}>
-                <TextInput
-                    style={styles.searchBar}
-                    placeholder="Search for item"
-                    placeholderTextColor="#666"
-                />
-            </View>
+            <SafeAreaView style={styles.container}>
+                <Header header={"Shopping Lists"} />
+                <View style={globalStyles.searchBar}>
+                    <Icon name="search-outline" size={20} color={Colors.light.primaryColor} style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search"
+                        placeholderTextColor={Colors.light.secondaryText}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                </View>
 
-            {/* Settings Row */}
-            <View style={styles.settingsRow}>
-                {/*<Button title="No. of stores" onPress={() => {
-                }}/>
-                <Button title="Max distance" onPress={() => {
-                }}/>*/}
-                <Button title="Save as List" onPress={handleSave}/>
-                <Button title="Save as Recipe" onPress={handleSaveRecipe}/>
-            </View>
-
-            {/* Input for adding new items */}
-            <View style={styles.addItemContainer}>
-                <TextInput
-                    style={styles.addItemInput}
-                    placeholder="New item name"
-                    value={newItemName}
-                    onChangeText={setNewItemName}
+                <FlatList
+                    data={shoppingLists}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
                 />
-                <TextInput
-                    style={styles.addItemInput}
-                    placeholder="Quantity"
-                    value={newItemQuantity}
-                    onChangeText={setNewItemQuantity}
-                    keyboardType="numeric"
-                />
-                <Button title="Add Item" onPress={addItem}/>
-            </View>
 
-            {/* Scrollable List of Items */}
-            <ScrollView contentContainerStyle={styles.itemListContainer}>
-                {items.map((item, index) => (
-                    <View key={index} style={styles.itemContainer}>
-                        <TouchableOpacity style={styles.itemButton}>
-                            <Text style={styles.itemText}>{item.name}</Text>
-                        </TouchableOpacity>
-                        <View style={styles.quantityButton}>
-                            <Text style={styles.quantityText}>{item.quantity}</Text>
-                        </View>
-                        <CheckBox
-                            style={styles.checkbox}
-                            onClick={() => toggleCheckbox(index)}
-                            isChecked={item.checked}
-                            leftText={null}
-                        />
-                        {authenticated && (
-                            <TouchableOpacity
-                                style={styles.favoriteButton}
-                                onPress={() => toggleFavorite(index)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.favoriteButtonText,
-                                        item.favorite ? styles.favorite : null,
-                                    ]}
-                                >
-                                    {item.favorite ? '★' : '☆'}
-                                </Text>
+                <TouchableOpacity style={styles.addButton} onPress={addItem}>
+                    <Icon name="add" size={24} color="white" />
+                </TouchableOpacity>
+
+                <Modal
+                    visible={modalVisible}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setModalVisible(false)}
+                >
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                                    <Icon name="close" size={24} color={Colors.light.primaryText} />
+                                </TouchableOpacity>
+                                <Text style={styles.modalTitle}>Add New Shopping List</Text>
+                            </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter item title"
+                                value={newItem.title}
+                                onChangeText={handleTitleChange}
+                                onSubmitEditing={handleTitleSubmit}
+                                autoFocus
+                            />
+                            <TouchableOpacity onPress={handleTitleSubmit} style={styles.submitButton}>
+                                <Text style={styles.submitButtonText}>Submit</Text>
                             </TouchableOpacity>
-                        )}
-                        <TouchableOpacity style={styles.removeButton} onPress={() => removeItem(index)}>
-                            <Text style={styles.removeButtonText}>Remove</Text>
-                        </TouchableOpacity>
+                        </View>
+                    </KeyboardAvoidingView>
+                </Modal>
+            </SafeAreaView>
+            <Footer />
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={deleteModalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Are you sure you want to delete this list? Deleted lists cannot be restored.</Text>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => handleDelete()}>
+                                <Text style={styles.modalButtonText}>Yes</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setDeleteModalVisible(false)}>
+                                <Text style={styles.modalButtonText}>No</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                ))}
-            </ScrollView>
-            <TabsFooter/>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -310,105 +185,110 @@ export default function Shopping() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#e0e0e0',
-        paddingHorizontal: 16,
-        paddingTop: 40,
+        backgroundColor: Colors.light.background,
     },
-    searchBarContainer: {
-        marginBottom: 16,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
-        padding: 8,
+    searchIcon: {
+        marginRight: 10,
     },
-    searchBar: {
-        height: 40,
-        backgroundColor: '#dcdcdc',
-        borderRadius: 8,
-        paddingHorizontal: 12,
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: Colors.light.primaryText,
     },
-    settingsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        paddingVertical: 10,
-        borderRadius: 8,
-        marginBottom: 16,
+    listContainer: {
+        paddingHorizontal: 20,
     },
-    settingsItem: {
-        fontSize: 14,
-        color: '#333',
-    },
-    addItemContainer: {
+    listItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.secondaryText,
     },
-    addItemInput: {
-        flex: 1,
-        backgroundColor: '#dcdcdc',
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        marginRight: 8,
-        height: 40,
+    listItemLeft: {
+        flexDirection: 'column',
     },
-    itemListContainer: {
-        paddingBottom: 16,
-    },
-    itemContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 10,
-    },
-    itemButton: {
-        flex: 1,
-        backgroundColor: '#b0b0b0',
-        borderRadius: 8,
-        padding: 8,
-    },
-    itemText: {
-        color: '#fff',
-    },
-    quantityButton: {
-        backgroundColor: '#999',
-        borderRadius: 8,
-        padding: 8,
-        marginLeft: 8,
-    },
-    quantityText: {
-        color: '#fff',
-    },
-    checkbox: {
-        flex: 1,
-        padding: 10,
-    },
-    removeButton: {
-        backgroundColor: '#ff4d4d',
-        borderRadius: 8,
-        padding: 8,
-        marginLeft: 8,
-    },
-    removeButtonText: {
-        color: '#fff',
-    },
-    favoriteButton: {
-        marginLeft: 8,
-        padding: 8,
-    },
-    favoriteButtonText: {
+    listItemTitle: {
         fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
     },
-    favorite: {
-        color: 'gold',
+    listItemDate: {
+        fontSize: 14,
+        color: Colors.light.secondaryText,
     },
-    loadingIndicator: {
+    addButton: {
+        position: 'absolute',
+        bottom: 30,
+        right: 30,
+        backgroundColor: Colors.light.primaryColor,
+        borderRadius: 50,
+        padding: 15,
+    },
+    modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 10,
+    },
+    closeButton: {
+        marginRight: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        marginBottom: 20,
+        color: 'black', // Ensure the text color contrasts with the background
+    },
+    input: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: Colors.light.secondaryText,
+        borderRadius: 5,
+        marginBottom: 10,
+    },
+    submitButton: {
+        backgroundColor: Colors.light.primaryColor,
+        padding: 10,
+        borderRadius: 5,
+    },
+    submitButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    modalButton: {
+        backgroundColor: '#FF6347',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    modalButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 20,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
     },
 });

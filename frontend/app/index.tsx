@@ -1,315 +1,78 @@
-import React, {useEffect} from "react";
-import {StatusBar} from "expo-status-bar";
-import {StyleSheet, Text, View, Image, TextInput} from "react-native";
-import Button from '@/components/Button';
-import NavigationButton from '@/components/NavigationButton';
-import * as SecureStore from 'expo-secure-store';
-import {router} from "expo-router";
+import React from 'react';
+import {View, Text, Pressable, Image, StyleSheet, Dimensions, SafeAreaView} from 'react-native';
+import {Link, router} from 'expo-router';
+import {useFonts} from 'expo-font';
+import {globalStyles} from '../styles/globalStyles';
+import {Colors} from "@/styles/Colors";
 
-const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
-const spaaraIconImage = require('@/assets/images/SpaaraIcon.png');
-
-//const Stack = createNativeStackNavigator();
-//const router = useRouter();
-//router.navigate("/login");
-
-
-/*export default function Index() {
-  const router = useRouter();
-  router.push("/welcome");
-}
-*/
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
+const {width, height} = Dimensions.get('window');
 
 export default function WelcomeScreen() {
-    useEffect(() => {
-        const logout = async () => {
-            try {
-                await SecureStore.deleteItemAsync('jwtToken');
-                console.log('JWT token cleared on reaching login screen.');
-            } catch (error) {
-                console.log('Error clearing JWT token:', error);
-            }
-        }
-        logout();
-    }, [])
+    const [fontsLoaded] = useFonts({
+        'Lato-Regular': require('../assets/fonts/Lato/Lato-Regular.ttf'),
+    });
+
     return (
-        <View style={welcomeStyles.container}>
-
-            <View style={welcomeStyles.logoImageContainer}>
-                <Image
-                    style={welcomeStyles.logoImage}
-                    source={spaaraLogoImage}
-                />
-            </View>
-
-            <View style={welcomeStyles.logInButtonsContainer}>
-                <View style={welcomeStyles.logInButtonsRow}>
-                    <NavigationButton label="Log in" type="push" destination="/login"/>
-                    <NavigationButton label="Sign up" type="push" destination="/signup"/>
+        <View style={styles.container}>
+            <SafeAreaView>
+                <View style={styles.logoContainer}>
+                    <Image source={require('@/assets/images/SpaaraLogo.png')} style={styles.logo}/>
                 </View>
-                <View style={welcomeStyles.logInButtonsRow}>
-                    <Button label="or continue as Guest" theme="secondary" onPress={() => {
-                        router.push("/shopping")
-                    }}/>
+            </SafeAreaView>
+            <View style={styles.bottomPage}>
+                <View style={styles.buttonContainer}>
+                    <Pressable style={globalStyles.primaryGreyButton}>
+                        <Text style={globalStyles.buttonText}>Continue with Google</Text>
+                    </Pressable>
+                    <Pressable style={globalStyles.primaryGreyButton} onPress={() => {
+                        router.push("/signup")
+                    }}>
+                        <Text style={globalStyles.buttonText}>Continue with Email</Text>
+                    </Pressable>
+                    <Pressable style={globalStyles.secondaryGreyButton}>
+                        <Text style={globalStyles.buttonText}>Continue as Guest</Text>
+                    </Pressable>
+                    <Pressable style={globalStyles.secondaryGreyButton} onPress={() => {
+                        router.push("/login")
+                    }}>
+                        <Text style={globalStyles.buttonText}>Login</Text>
+                    </Pressable>
                 </View>
-            </View>
 
-            <StatusBar style='auto'/>
+            </View>
         </View>
     );
 }
 
-
-const welcomeStyles = StyleSheet.create({
-
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFBEE',
+        backgroundColor: Colors.light.background,
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-
-    logoImageContainer: {
-        paddingTop: 220,
-        paddingBottom: 110,
-    },
-
-    logoImage: {
-        width: 300,
-        height: 84,
-    },
-
-    logInButtonsContainer: {
-        flexDirection: 'column',
+    logoContainer: {
         alignItems: 'center',
+        marginTop: height * 0.13,
     },
-
-    logInButtonsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    logo: {
+        width: width * 0.8,
+        height: height * 0.1,
     },
-});
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
-function LogInScreen() {
-    //const pushLogin = () => router.push("/login")
-    const pushLogin = () => alert("I wanna push!!!!");
-    const [usernameText, onUsernameChangeText] = React.useState('');
-    const [passwordText, onPasswordChangeText] = React.useState('');
-    return (
-        <View style={loginStyles.container}>
-
-            <View style={loginStyles.headerContainer}>
-                <Text style={loginStyles.headerLabel}>Log in</Text>
-            </View>
-
-            <View style={loginStyles.contentContainer}>
-                <Button label="Log in with Google" theme="secondary" onPress={pushLogin}/>
-                <TextInput
-                    style={loginStyles.textInputField}
-                    onChangeText={onUsernameChangeText}
-                    value={usernameText}
-                    placeholder="Username / Email"
-                />
-                <TextInput
-                    style={loginStyles.textInputField}
-                    onChangeText={onPasswordChangeText}
-                    value={passwordText}
-                    placeholder="Password"
-                />
-                <Button label="Log in" theme="primary" onPress={pushLogin}/>
-            </View>
-
-            <StatusBar style='auto'/>
-        </View>
-    );
-}
-
-
-const loginStyles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFBEE',
-        alignItems: 'center',
+    title: {
+        fontSize: 32,
+        fontFamily: 'Lato-Regular',
     },
-
-    headerContainer: {
-        flexDirection: 'row',
+    bottomPage: {
         width: '100%',
-        height: 100,
-        backgroundColor: '#F6AA1C',
+        height: height * 0.4,
         alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: Colors.light.primaryText,
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        paddingVertical: height * 0.03
     },
-
-    headerLabel: {
-        marginTop: 50,
-        marginBottom: 10,
-        color: '#232528',
-        fontSize: 28,
-    },
-
-    contentContainer: {
-        flex: 1,
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginTop: 110,
-    },
-
-    textInputField: {
-        height: 20,
-        width: 325,
-        margin: 25,
-        padding: 2,
-        fontSize: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: '#959595',
-        color: '#232528',
-    },
-
-});
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
-function SignUpScreen() {
-    //const pushLogin = () => router.push("/login")
-    const pushLogin = () => alert("I wanna push!!!!");
-    const [emailText, onEmailChangeText] = React.useState('');
-    const [usernameText, onUsernameChangeText] = React.useState('');
-    const [passwordText, onPasswordChangeText] = React.useState('');
-    const [confirmPWText, onConfirmPWChangeText] = React.useState('');
-    return (
-        <View style={signUpStyles.container}>
-
-            <View style={signUpStyles.headerContainer}>
-                <Text style={signUpStyles.headerLabel}>Sign up</Text>
-            </View>
-
-            <View style={signUpStyles.contentContainer}>
-                <Button label="Sign up with Google" theme="secondary" onPress={pushLogin}/>
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onEmailChangeText}
-                    value={emailText}
-                    placeholder="Email (Optional)"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onUsernameChangeText}
-                    value={usernameText}
-                    placeholder="Username"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onPasswordChangeText}
-                    value={passwordText}
-                    placeholder="Password"
-                    placeholderTextColor='#959595'
-                />
-                <TextInput
-                    style={signUpStyles.textInputField}
-                    onChangeText={onConfirmPWChangeText}
-                    value={confirmPWText}
-                    placeholder="Confirm Password"
-                    placeholderTextColor='#959595'
-                />
-                {/*<Button label="Email" theme="primary" onPress={pushLogin}/>
-          <Button label="Username" theme="primary" onPress={pushLogin}/>
-          <Button label="Password" theme="primary" onPress={pushLogin}/>
-          <Button label="Confirm Password" theme="primary" onPress={pushLogin}/>
-          */}
-                <Button label="Sign up" theme="primary" onPress={pushLogin}/>
-                <NavigationButton label="Go Away!" type="push" destination="/login"/>
-            </View>
-
-            <StatusBar style='auto'/>
-        </View>
-    );
-}
-
-
-const signUpStyles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFBEE',
-        alignItems: 'center',
-    },
-
-    headerContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        height: 100,
-        backgroundColor: '#F6AA1C',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    headerLabel: {
-        marginTop: 50,
-        marginBottom: 10,
-        color: '#232528',
-        fontSize: 28,
-    },
-
-    contentContainer: {
-        flex: 1,
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginTop: 110,
-    },
-
-    textInputField: {
-        height: 20,
-        width: 325,
-        margin: 25,
-        padding: 2,
-        fontSize: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: '#959595',
-        color: '#232528',
-    },
-
-});
-
-
-//const pushLogin = () => router.push("/login")
-//const pushLogin = () => alert("I wanna push!!!!");
-
-function SplashScreen() {
-    //const router = useRouter();
-    return (
-        <View style={splashStyles.container}>
-            <Image style={splashStyles.iconImage} source={spaaraIconImage}/>
-            <StatusBar style='auto'/>
-        </View>
-    );
-}
-
-
-const splashStyles = StyleSheet.create({
-
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFBEE',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    iconImage: {
-        width: 150,
-        height: 107,
-    },
-
+    buttonContainer: {
+        width: 0.85 * width,
+    }
 });
