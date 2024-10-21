@@ -40,6 +40,9 @@ export default function ShoppingListScreen() {
                             <Text style={styles.closeButtonText}>X</Text>
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <TouchableOpacity style={styles.modalFavoriteButtonSelected}>
+                            <Text style={styles.modalFavoriteButtonText}>Favorite</Text>
+                        </TouchableOpacity>
                         {/* Remove text inputs */}
                     </View>
                 </View>
@@ -138,5 +141,23 @@ const styles = StyleSheet.create({
     modalButtonText: {
         color: 'white',
         fontWeight: 'bold',
+    },
+    modalFavoriteButtonSelected: {
+        left: 15,
+        backgroundColor: Colors.light.primaryColor,
+        borderRadius: 50,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        alignSelf: 'flex-start'
+    },
+    modalFavoriteButtonText: {
+        fontSize: 16,
+        color: "black",
+    },
+    modalFavoriteText: {
+        color: "black",
+        fontSize: 28,
     },
 });
