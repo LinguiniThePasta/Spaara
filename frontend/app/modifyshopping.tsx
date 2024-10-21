@@ -17,6 +17,13 @@ export default function ShoppingListScreen() {
     const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [selectedButton, setSelectedButton] = useState('Favorite');
+    const [notSelectedButton, setNotSelectedButton] = useState(false);
+
+
+    const handlePress = (button) => {
+        setSelectedButton(button);
+    };
 
     return (
         <View style={styles.container}>
@@ -39,16 +46,38 @@ export default function ShoppingListScreen() {
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                             <Text style={styles.closeButtonText}>X</Text>
                         </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <Text style={styles.modalTitle}></Text>
                         <View style={styles.favoriteRecipeContainer}>
-                            <TouchableOpacity style={[styles.favoriteRecipeButton, styles.selectedButton]}>
-                                <Text style={styles.selectedText}>Favorite</Text>
+                            <TouchableOpacity 
+                                style={[styles.favoriteRecipeButton, 
+                                    selectedButton === 'Recipe' && styles.unselectedButton,
+                                    selectedButton === 'Favorite' && styles.selectedButton]}
+                                onPress={() => handlePress('Favorite')}
+                            >
+                                <Text style={[
+                                    styles.selectedText,
+                                    selectedButton === 'Recipe' && styles.unselectedText,
+                                    selectedButton === 'Favorite' && styles.selectedText,
+                                ]}>
+                                    Favorite
+                                </Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.favoriteRecipeButton, styles.unselectedButton]}>
-                                <Text style={styles.unselectedText}>Recipe</Text>
+                            <TouchableOpacity 
+                                style={[styles.favoriteRecipeButton, 
+                                    selectedButton === 'Recipe' && styles.selectedButton,
+                                    selectedButton === 'Favorite' && styles.unselectedButton]}
+                                onPress={() => handlePress('Recipe')}
+                            >
+                                <Text style={[
+                                    styles.selectedText,
+                                    selectedButton === 'Recipe' && styles.selectedText,
+                                    selectedButton === 'Favorite' && styles.unselectedText,
+                                ]}>
+                                    Recipe
+                                </Text>
                             </TouchableOpacity>
                         </View>
-                        <Text>Add Favorites</Text>
+                        <Text style={styles.favoriteHeaderText}>Add Favorites</Text>
                         
                         {/* Remove text inputs */}
                     </View>
@@ -180,5 +209,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: Colors.light.primaryColor,
     },
-    
+    favoriteHeaderText: {
+        fontSize: 28,
+        color: 'black',
+        marginLeft: 20,
+        marginTop: 15,
+    },
 });
