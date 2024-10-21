@@ -44,7 +44,7 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeButtonText}>X</Text>
+                            <Text style={styles.closeButtonText}><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#232528"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></Text>
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}></Text>
                         <View style={styles.favoriteRecipeContainer}>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     },
     unselectedText: {
         fontSize: 16,
-        color: Colors.light.primaryColor,
+        color: Colors.light.primaryText,
     },
     favoriteHeaderText: {
         fontSize: 28,
@@ -215,4 +215,10 @@ const styles = StyleSheet.create({
         marginLeft: 20,
         marginTop: 15,
     },
+    favoiteContainer: {
+
+    },
+    recipeContainer: {
+
+    }
 });
