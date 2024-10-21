@@ -40,12 +40,16 @@ export default function ShoppingListScreen() {
                             <Text style={styles.closeButtonText}>X</Text>
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
-                        <TouchableOpacity style={styles.modalFavoriteButtonSelected}>
-                            <Text style={styles.modalFavoriteButtonTextSelected}>Favorite</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalRecipeButtonUnselcted}>
-                            <Text style={styles.modalRecipeButtonTextUnselcted}>Recipe</Text>
-                        </TouchableOpacity>
+                        <View style={styles.favoriteRecipeContainer}>
+                            <TouchableOpacity style={[styles.favoriteRecipeButton, styles.selectedButton]}>
+                                <Text style={styles.selectedText}>Favorite</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.favoriteRecipeButton, styles.unselectedButton]}>
+                                <Text style={styles.unselectedText}>Recipe</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text>Add Favorites</Text>
+                        
                         {/* Remove text inputs */}
                     </View>
                 </View>
@@ -145,60 +149,36 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
-    modalFavoriteButtonSelected: {
-        left: 15,
-        backgroundColor: Colors.light.primaryColor,
+    favoriteRecipeContainer: {
+        flexDirection: 'row',
+        width: "100%",
+        alignItems: 'stretch',
+    },
+    favoriteRecipeButton: {
+        flex: 1,
         borderRadius: 50,
         padding: 10,
-        flexDirection: 'row',
         alignItems: 'center',
+        marginLeft: 20,
+        marginRight: 20,
         marginTop: 20,
-        alignSelf: 'flex-start'
     },
-    modalFavoriteButtonTextSelected: {
-        fontSize: 16,
-        color: "black",
-    },
-    modalFavoriteButtonUnselected: {
-        left: 15,
+    selectedButton: {
         backgroundColor: Colors.light.primaryColor,
-        borderRadius: 50,
-        padding: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 20,
-        alignSelf: 'flex-start'
+        
     },
-    modalFavoriteButtonTextUnelected: {
-        fontSize: 16,
-        color: Colors.light.primaryColor,
-    },
-    modalRecipeButtonSelcted: {
-        left: 15,
-        backgroundColor: Colors.light.primaryColor,
-        borderRadius: 50,
-        padding: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 20,
-        marginLeft: 12,
-        alignSelf: 'flex-start'
-    },
-    modalRecipeButtonUnselcted: {
-        left: 15,
+    unselectedButton: {
         backgroundColor: 'white',
         borderColor: Colors.light.primaryColor,
         borderWidth: 2,
-        borderRadius: 50,
-        padding: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 20,
-        marginLeft: 12,
-        alignSelf: 'flex-start'
     },
-    modalRecipeButtonTextUnselcted: {
+    selectedText: {
+        fontSize: 16,
+        color: 'black',
+    },
+    unselectedText: {
         fontSize: 16,
         color: Colors.light.primaryColor,
     },
+    
 });
