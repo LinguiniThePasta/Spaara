@@ -1,0 +1,22 @@
+## Bugs Major ##
+when adding a recipie to a shoppinglist the recipie over writes the items currently in the shopping list
+
+
+## Bugs Minor ##
+when filling in a password auto capitalizes the first letter
+login screen the text telling you where to type your username and password are so light you can't see them.
+higher contrast on text and background colors
+can have decimal quantities when adding an item
+lets me put 0 for quantity of item
+footer doesnt fill the entire bottom of the screen 
+capitalization matters in email address it shouldn't
+items in currently editting shopping list are deleated if you go to a different tab
+can save emply lists as either recipies or list 
+
+
+## QOL Features ##
+need to impliment a back button 
+highlight which tab we are on
+
+
+
