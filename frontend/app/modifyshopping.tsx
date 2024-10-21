@@ -41,7 +41,10 @@ export default function ShoppingListScreen() {
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
                         <TouchableOpacity style={styles.modalFavoriteButtonSelected}>
-                            <Text style={styles.modalFavoriteButtonText}>Favorite</Text>
+                            <Text style={styles.modalFavoriteButtonTextSelected}>Favorite</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalRecipeButtonUnselcted}>
+                            <Text style={styles.modalRecipeButtonTextUnselcted}>Recipe</Text>
                         </TouchableOpacity>
                         {/* Remove text inputs */}
                     </View>
@@ -152,12 +155,50 @@ const styles = StyleSheet.create({
         marginTop: 20,
         alignSelf: 'flex-start'
     },
-    modalFavoriteButtonText: {
+    modalFavoriteButtonTextSelected: {
         fontSize: 16,
         color: "black",
     },
-    modalFavoriteText: {
-        color: "black",
-        fontSize: 28,
+    modalFavoriteButtonUnselected: {
+        left: 15,
+        backgroundColor: Colors.light.primaryColor,
+        borderRadius: 50,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        alignSelf: 'flex-start'
+    },
+    modalFavoriteButtonTextUnelected: {
+        fontSize: 16,
+        color: Colors.light.primaryColor,
+    },
+    modalRecipeButtonSelcted: {
+        left: 15,
+        backgroundColor: Colors.light.primaryColor,
+        borderRadius: 50,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        marginLeft: 12,
+        alignSelf: 'flex-start'
+    },
+    modalRecipeButtonUnselcted: {
+        left: 15,
+        backgroundColor: 'white',
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 2,
+        borderRadius: 50,
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        marginLeft: 12,
+        alignSelf: 'flex-start'
+    },
+    modalRecipeButtonTextUnselcted: {
+        fontSize: 16,
+        color: Colors.light.primaryColor,
     },
 });
