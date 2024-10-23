@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Keyboard, Animated, TouchableWithoutFeedback, Alert, View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { API_BASE_URL } from '@/components/config';
@@ -7,6 +7,8 @@ import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";
 import Header from "@/components/Header";
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 export default function ShoppingListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -29,48 +31,107 @@ export default function ShoppingListScreen() {
     */
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
-    /*
     useEffect(() => {
         fetchShoppingLists();
     }, []);
 
     const fetchShoppingLists = async () => {
-        const tempKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzI5MzE1NDU1LCJpYXQiOjE3MjkzMTUxNTUsImp0aSI6IjkwZDA0ZTBjYWVhZTQ2M2E4N2Q5ZDBlZmM3YjA5ZjcxIiwidXNlcl9pZCI6M30.GhSeb6Q2LkwPijL_XXU29dw6kTUxIYdPPXppWmGnaa4';
         try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
             const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
                 headers: {
-                    'Authorization': 'Bearer ' + tempKey,
+                    'Authorization': 'Bearer ' + jwtToken,
                 }
             });
-
+                        
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
                 date: new Date(item.creation_time).toLocaleDateString(),
             }));
+
+            // Initialize animations for each list item
+            lists.forEach(list => {
+                animations[list.id] = new Animated.Value(0);
+            });
+
             console.log("Correctly fetched shopping lists!");
             setShoppingLists(lists);
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
+    }
+
+    const handleAddList = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery/`, {
+                name: newItem.title,
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            fetchShoppingLists();
+            // Close modal
+            setModalVisible(false);
+        } catch (error) {
+            console.error('Error adding new shopping list:', error);
+        }
     };
-    */
+
+    const handleDeleteList = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.delete(`${API_BASE_URL}/api/grocery/${selectedList.id}/`, 
+            {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                }
+            });
+
+            // Refresh the shopping lists after deleting one
+            fetchShoppingLists();
+        } catch (error) {
+            console.error('Error deleting shopping list:', error);
+        }
+    };
 
     const handleLongPress = (list) => {
-        setSelectedList(list);
-        setShowDeleteOptions(true);
-        setEditMode(true);
-        setEditedTitle(list.title);
 
-        const newAnimations = { ...animations };
-        newAnimations[list.id] = new Animated.Value(0);
-        setAnimations(newAnimations);
-
-        Animated.timing(newAnimations[list.id], {
-            toValue: 100,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
+        if (selectedList && selectedList.id !== list.id) {
+            // Reverse the animation for the previously selected list
+            Animated.timing(animations[selectedList.id], {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setSelectedList(list);
+                setShowDeleteOptions(true);
+                setEditMode(true);
+                setEditedTitle(list.title);
+                // Start the animation for the newly selected list
+                Animated.timing(animations[list.id], {
+                    toValue: 100,
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start();
+            });
+        } else {
+            setSelectedList(list);
+            setShowDeleteOptions(true);
+            setEditMode(true);
+            setEditedTitle(list.title);
+            // Start the animation for the newly selected list
+            Animated.timing(animations[list.id], {
+                toValue: 100,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
     };
 
     const addItem = () => {
@@ -118,7 +179,7 @@ export default function ShoppingListScreen() {
                     onPress: () => console.log("Cancel Pressed"),
                     style: "cancel"
                 },
-                { text: "Delete", onPress: handleDelete }
+                { text: "Delete", onPress: handleDeleteList }
             ],
             { cancelable: false }
         );
@@ -223,10 +284,10 @@ export default function ShoppingListScreen() {
                                     placeholder="Enter item title"
                                     value={newItem.title}
                                     onChangeText={handleTitleChange}
-                                    onSubmitEditing={handleTitleSubmit}
+                                    onSubmitEditing={handleAddList}
                                     autoFocus
                                 />
-                                <TouchableOpacity onPress={handleTitleSubmit} style={styles.submitButton}>
+                                <TouchableOpacity onPress={handleAddList} style={styles.submitButton}>
                                     <Text style={styles.submitButtonText}>Submit</Text>
                                 </TouchableOpacity>
                             </View>

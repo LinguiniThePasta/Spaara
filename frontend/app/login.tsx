@@ -90,7 +90,7 @@ export default function Login() {
                             </Pressable>
                         </View>
                         <Pressable style={[globalStyles.primaryButton, styles.loginButton]} onPress={() => {
-                            router.push("/shopping")
+                            handleLogin();
                         }}>
                             <Text style={styles.loginButtonText}>Log In</Text>
                         </Pressable>
