@@ -1,27 +1,62 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, Image} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons'; // Assuming you're using Ionicons for icons
 import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
-import Header from "@/components/Header"; // Use your color definitions
+import Header from "@/components/Header";
+import axios from "axios";
+import {API_BASE_URL} from "@/scripts/config";
+import * as SecureStore from 'expo-secure-store';
+import shortenTime from "@/scripts/shortenTime";
 
-export default function RecipeListScreen() {
+
+export default function Recipe() {
     const [searchQuery, setSearchQuery] = useState('');
-    const shoppingLists = [
-        {id: '1', title: "My Recipe 1", date: "10/10/24"},
-        {id: '2', title: "My Recipe 2", date: "10/10/24"},
-        {id: '3', title: "Lingyu’s Recipe", date: "10/10/24"},
-    ];
+    const [recipes, setRecipes] = useState([]);
+    useEffect(() => {
+        getRecipes();
+    }, []);
+    const getRecipes = async () => {
+        const response = await axios.get(
+            `${API_BASE_URL}/api/recipe/`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await SecureStore.getItemAsync("jwtToken")}`
+                },
+            }
+        );
+        const formattedRecipes = response.data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            time: shortenTime(item.update_time)
+        }));
+        setRecipes(formattedRecipes);
+    }
+    const deleteRecipe = async (item) => {
+        const id = item.id;
+        const response = await axios.delete(
+            `${API_BASE_URL}/api/recipe/${id}/`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await SecureStore.getItemAsync("jwtToken")}`
+                },
+            }
+        );
+        await getRecipes();
+    }
+
 
     const renderItem = ({item}) => (
         <View style={styles.listItem}>
-            <View style={styles.listItemLeft}>
-                <Text style={styles.listItemTitle}>{item.title}</Text>
-                <Text style={styles.listItemDate}>{item.date}</Text>
-            </View>
-            <Pressable onPress={() => console.log(`Delete ${item.title}`)}>
-                <Icon name="trash-outline" size={24} color={Colors.light.secondaryText}/>
+            <Pressable style={styles.listItemLeft}>
+                <Text style={styles.listItemTitle}>{item.name}</Text>
+                <Text style={styles.listItemDate}>{item.time}</Text>
+            </Pressable>
+            <Pressable onPress={() => {deleteRecipe(item); console.log("Deleted") } }>
+                <Icon name="trash-outline" size={24} color={Colors.light.primaryText}/>
             </Pressable>
         </View>
     );
@@ -44,7 +79,7 @@ export default function RecipeListScreen() {
                 </View>
 
                 <FlatList
-                    data={shoppingLists}
+                    data={recipes}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}

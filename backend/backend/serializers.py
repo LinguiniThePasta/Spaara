@@ -45,11 +45,11 @@ class LoginSerializer(serializers.Serializer):
         errorDict = collections.defaultdict(str)
         # Check if password is okay
         if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
+            errorDict['error'] = 'Invalid credentials.'
         try:
             validate_email(email)
         except serializers.ValidationError:
-            errorDict['email'] = "email is invalid."
+            errorDict['error'] = "Invalid credentials."
         if errorDict:
             raise serializers.ValidationError(errorDict)
         return data

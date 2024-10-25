@@ -6,7 +6,7 @@ import Button from '@/components/Button';
 import TabsFooter from '@/components/TabsFooter';
 import * as Location from "expo-location";
 import axios from "axios";
-import {API_BASE_URL} from "@/components/config";
+import {API_BASE_URL} from "@/scripts/config";
 import {isAuthenticated} from "@/components/Axios";
 import * as SecureStore from "expo-secure-store";
 

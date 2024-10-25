@@ -16,7 +16,7 @@ import NavigationButton from "@/components/NavigationButton";
 import Footer from "@/components/Footer";
 //import CheckBox from 'react-native-check-box'
 import TabsFooter from "@/components/TabsFooter"
-import {API_BASE_URL} from "@/components/config";
+import {API_BASE_URL} from "@/scripts/config";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
