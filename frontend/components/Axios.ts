@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from "@/components/config";
+import { API_BASE_URL } from "@/scripts/config";
 
 // Function to refresh the access token
 const refreshAccessToken = async () => {

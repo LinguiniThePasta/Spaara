@@ -3,7 +3,7 @@ import { View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, T
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons'; // Assuming you're using Ionicons for icons
 import axios from 'axios';
-import { API_BASE_URL } from '@/components/config';
+import { API_BASE_URL } from '@/scripts/config';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";

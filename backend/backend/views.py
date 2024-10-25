@@ -31,14 +31,17 @@ class LoginView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Authenticate using email and password
-        user = User.objects.get(email=serializer.data['email'])
-        if user is not None and user.check_password(serializer.data['password']):
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh)
-            })
-        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            user = User.objects.get(email=serializer.data['email'])
+            if user.check_password(serializer.data['password']):
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh)
+                })
+            return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
+        except User.DoesNotExist:
+            return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UpdateInfoView(APIView):
@@ -148,11 +151,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
 
-    def create(self, request, serializer):
+    def create(self, request):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            recipe = serializer.save(user=user)
+            serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

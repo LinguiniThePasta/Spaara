@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Keyboard, Animated, TouchableWithoutFeedback, Alert, View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { API_BASE_URL } from '@/components/config';
+import { API_BASE_URL } from '@/scripts/config';
 import { Link, router } from 'expo-router';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";

@@ -6,15 +6,18 @@ import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
-import {API_BASE_URL} from "@/components/config";
+import {API_BASE_URL} from "@/scripts/config";
 import {Colors} from "@/styles/Colors";
 import {globalStyles} from "@/styles/globalStyles";
+import parseErrors from "@/scripts/parseErrors";
 
 const {width, height} = Dimensions.get('window');
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 export default function Login() {
+    const [username, onUsernameChange] = React.useState('');
+    const [password, onPasswordChange] = React.useState('');
     const handleLogin = async () => {
         try {
             const response = await axios.post(
@@ -34,13 +37,10 @@ export default function Login() {
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
             router.push('/shopping');
         } catch (error) {
-            console.log(error);
-            alert(error);
+            console.log(error.response.data);
+            alert(parseErrors(error.response.data));
         }
     };
-
-    const [username, onUsernameChange] = React.useState('');
-    const [password, onPasswordChange] = React.useState('');
 
     useFocusEffect(
         useCallback(() => {
