@@ -1,19 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Keyboard, Animated, TouchableWithoutFeedback, Alert, View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {
+    Keyboard,
+    Animated,
+    TouchableWithoutFeedback,
+    Alert,
+    View,
+    Text,
+    TextInput,
+    SafeAreaView,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    Modal
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { API_BASE_URL } from '@/scripts/config';
-import { Link, router } from 'expo-router';
-import { Colors } from '@/styles/Colors';
+import {API_BASE_URL} from '@/scripts/config';
+import {Link, router} from 'expo-router';
+import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
-import { globalStyles } from "@/styles/globalStyles";
+import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import shortenTime from "@/scripts/shortenTime";
 
-export default function ShoppingListScreen() {
+export default function Shopping() {
     const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
-    const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
+    const [newItem, setNewItem] = useState({title: ''});
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
     const [showDeleteOptions, setShowDeleteOptions] = useState(false);
@@ -21,34 +38,28 @@ export default function ShoppingListScreen() {
     const [editedTitle, setEditedTitle] = useState('');
     const [animations, setAnimations] = useState({});
 
-        //TEMP SHOPPING LISTS
-    /*
-    setShoppingLists( [
-        {id: '1', title: "My Shopping List 1", date: "10/10/24"},
-        {id: '2', title: "My Shopping List 2", date: "10/10/24"},
-        {id: '3', title: "Lingyu’s Shopping List", date: "10/10/24"},
-    ]);
-    */
-
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
         fetchShoppingLists();
     }, []);
-
+    const dismissModal = () => {
+        Keyboard.dismiss(); // Dismiss keyboard if open
+        setModalVisible(false); // Close the modal
+    };
     const fetchShoppingLists = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
             const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
                 headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+                    'Authorization': `Bearer ${jwtToken}`
                 }
             });
-                        
+
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
-                date: new Date(item.creation_time).toLocaleDateString(),
+                date: shortenTime(item.update_time)
             }));
 
             // Initialize animations for each list item
@@ -75,7 +86,7 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            fetchShoppingLists();
+            await fetchShoppingLists();
             // Close modal
             setModalVisible(false);
         } catch (error) {
@@ -86,12 +97,12 @@ export default function ShoppingListScreen() {
     const handleDeleteList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.delete(`${API_BASE_URL}/api/grocery/${selectedList.id}/`, 
-            {
-                headers: {
-                    'Authorization': `Bearer ${jwtToken}`,
-                }
-            });
+            const response = await axios.delete(`${API_BASE_URL}/api/grocery/${selectedList.id}/`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                });
 
             // Refresh the shopping lists after deleting one
             fetchShoppingLists();
@@ -101,7 +112,6 @@ export default function ShoppingListScreen() {
     };
 
     const handleLongPress = (list) => {
-
         if (selectedList && selectedList.id !== list.id) {
             // Reverse the animation for the previously selected list
             Animated.timing(animations[selectedList.id], {
@@ -134,31 +144,31 @@ export default function ShoppingListScreen() {
         }
     };
 
-    const addItem = () => {
-        const newId = (shoppingLists.length + 1).toString();
-        setNewItem({ id: newId, title: '', date: new Date().toLocaleDateString() });
-        setModalVisible(true);
-        console.log('Adding new item:', newItem);
-    };
-
     const handleTitleChange = (text) => {
-        setNewItem({ ...newItem, title: text });
+        setNewItem({...newItem, title: text});
     };
 
-    const handleTitleSubmit = () => {
-        if (newItem.title.trim() !== '') {
-            const updatedShoppingLists = [...shoppingLists, newItem];
-            setShoppingLists(updatedShoppingLists);
-            setModalVisible(false);
-            setNewItem({ id: '', title: '', date: '' });
-            console.log('New item added:', newItem);
-            console.log('Updated shopping lists:', updatedShoppingLists);
+    const handleRename = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.put(`${API_BASE_URL}/api/grocery/${selectedList.id}/`,
+                {
+                    name: `${editedTitle}`
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                });
+
+            // Refresh the shopping lists after deleting one
+            fetchShoppingLists();
+        } catch (error) {
+            console.error('Error updating name:', error);
         }
-    };
 
-    const handleRename = () => {
-        setShoppingLists(shoppingLists.map(list => 
-            list.id === selectedList.id ? { ...list, title: editedTitle } : list
+        setShoppingLists(shoppingLists.map(list =>
+            list.id === selectedList.id ? {...list, title: editedTitle} : list
         ));
         setEditMode(false);
         setShowDeleteOptions(false);
@@ -179,9 +189,9 @@ export default function ShoppingListScreen() {
                     onPress: () => console.log("Cancel Pressed"),
                     style: "cancel"
                 },
-                { text: "Delete", onPress: handleDeleteList }
+                {text: "Delete", onPress: handleDeleteList}
             ],
-            { cancelable: false }
+            {cancelable: false}
         );
     };
 
@@ -211,20 +221,22 @@ export default function ShoppingListScreen() {
         Keyboard.dismiss();
     };
 
-    const renderItem = ({ item }) => (
+    const renderItem = ({item}) => (
         <Pressable
             onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
             onLongPress={() => handleLongPress(item)}
         >
             <View style={styles.listItem}>
                 {selectedList?.id === item.id && showDeleteOptions && (
-                    <Animated.View style={[styles.deleteBlock, { transform: [{ translateX: animations[item.id] || new Animated.Value(0) }] }]}>
-                        <TouchableOpacity onPress={handleDeleteButtonPress}>
+                    <Animated.View
+                        style={[styles.deleteBlock, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
+                        <Pressable onPress={handleDeleteButtonPress}>
                             <Text style={styles.deleteBlockText}>Delete</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     </Animated.View>
                 )}
-                <Animated.View style={[styles.listItemLeft, { transform: [{ translateX: animations[item.id] || new Animated.Value(0) }] }]}>
+                <Animated.View
+                    style={[styles.listItemLeft, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
                     {editMode && selectedList?.id === item.id ? (
                         <TextInput
                             style={styles.renameInput}
@@ -245,9 +257,10 @@ export default function ShoppingListScreen() {
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <View style={styles.container}>
                 <SafeAreaView style={styles.container}>
-                    <Header header={"Shopping Lists"} />
+                    <Header header={"Shopping Lists"}/>
                     <View style={globalStyles.searchBar}>
-                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor} style={styles.searchIcon} />
+                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
+                              style={styles.searchIcon}/>
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Search"
@@ -262,39 +275,44 @@ export default function ShoppingListScreen() {
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
                     />
-                    <TouchableOpacity style={styles.addButton} onPress={addItem}>
-                        <Icon name="add" size={24} color="white" />
-                    </TouchableOpacity>
+                    <Pressable style={styles.addButton} onPress={() => {
+                        setModalVisible(true)
+                    }}>
+                        <Icon name="add" size={24} color="white"/>
+                    </Pressable>
                     <Modal
                         visible={modalVisible}
                         transparent={true}
                         animationType="slide"
                         onRequestClose={() => setModalVisible(false)}
                     >
-                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
-                            <View style={styles.modalContent}>
-                                <View style={styles.modalHeader}>
-                                    <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                                        <Icon name="close" size={24} color={Colors.light.primaryText} />
-                                    </TouchableOpacity>
-                                    <Text style={styles.modalTitle}>Add New Shopping List</Text>
+                        <TouchableWithoutFeedback onPress={dismissModal}>
+                            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                                  style={styles.modalContainer}>
+                                <View style={styles.modalContent}>
+                                    <View style={styles.modalHeader}>
+                                        {/*<Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>*/}
+                                        {/*    <Icon name="close" size={24} color={Colors.light.primaryText}/>*/}
+                                        {/*</Pressable>*/}
+                                        <Text style={styles.modalTitle}>Add New Shopping List</Text>
+                                    </View>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Enter Name"
+                                        value={newItem.title}
+                                        onChangeText={handleTitleChange}
+                                        onSubmitEditing={handleAddList}
+                                        autoFocus
+                                    />
+                                    <Pressable onPress={handleAddList} style={styles.submitButton}>
+                                        <Text style={styles.submitButtonText}>Submit</Text>
+                                    </Pressable>
                                 </View>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter item title"
-                                    value={newItem.title}
-                                    onChangeText={handleTitleChange}
-                                    onSubmitEditing={handleAddList}
-                                    autoFocus
-                                />
-                                <TouchableOpacity onPress={handleAddList} style={styles.submitButton}>
-                                    <Text style={styles.submitButtonText}>Submit</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </KeyboardAvoidingView>
+                            </KeyboardAvoidingView>
+                        </TouchableWithoutFeedback>
                     </Modal>
                 </SafeAreaView>
-                <Footer />
+                <Footer/>
             </View>
         </TouchableWithoutFeedback>
     );
@@ -362,11 +380,13 @@ const styles = StyleSheet.create({
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         width: '100%',
         marginBottom: 10,
     },
     closeButton: {
-        marginRight: 10,
+        marginRight: 30,
+        marginBottom: 20
     },
     modalTitle: {
         fontSize: 18,
@@ -377,9 +397,16 @@ const styles = StyleSheet.create({
         width: '100%',
         padding: 10,
         borderWidth: 1,
-        borderColor: Colors.light.secondaryText,
+        borderColor: Colors.light.primaryColor,
         borderRadius: 5,
         marginBottom: 10,
+
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 20,
+        paddingHorizontal: 10,
+
+
     },
     renameInput: {
         fontSize: 16, // Smaller font size
@@ -390,9 +417,7 @@ const styles = StyleSheet.create({
         borderBottomColor: Colors.light.secondaryText,
     },
     submitButton: {
-        backgroundColor: Colors.light.primaryColor,
-        padding: 10,
-        borderRadius: 5,
+        ...globalStyles.primaryButton,
     },
     submitButtonText: {
         color: 'white',
