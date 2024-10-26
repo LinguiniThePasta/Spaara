@@ -1,6 +1,6 @@
 import {StatusBar} from "expo-status-bar";
 import {StyleSheet, Text, View, Image, TextInput, SafeAreaView, Dimensions, Pressable} from "react-native";
-import React, {useCallback, useEffect} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
@@ -18,7 +18,10 @@ const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 export default function Login() {
     const [username, onUsernameChange] = React.useState('');
     const [password, onPasswordChange] = React.useState('');
+    const [isDisabled, setIsDisabled] = useState(false);
     const handleLogin = async () => {
+        if (isDisabled) return;
+        setIsDisabled(true);
         try {
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/login`,
@@ -39,6 +42,8 @@ export default function Login() {
         } catch (error) {
             console.log(error.response.data);
             alert(parseErrors(error.response.data));
+        } finally {
+            setIsDisabled(false);
         }
     };
 

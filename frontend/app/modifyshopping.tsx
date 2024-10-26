@@ -49,7 +49,7 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeButtonText}>X</Text>
+                            <Icon name="close-outline" size={24} color={Colors.light.background} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
                         {/* Remove text inputs */}

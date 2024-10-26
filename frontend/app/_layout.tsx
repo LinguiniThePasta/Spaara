@@ -8,6 +8,11 @@ import axios from "axios";
 import '../components/Axios';
 import {Provider} from "react-redux";
 import store from "@/store/store";
+import {TransitionPresets} from "@react-navigation/stack";
+import {
+    DefaultTransition,
+    ModalPresentationIOS
+} from "@react-navigation/stack/lib/typescript/src/TransitionConfigs/TransitionPresets";
 
 export default function RootLayout() {
     const [loaded] = useFonts({
@@ -24,10 +29,23 @@ export default function RootLayout() {
         return null;
     }
 
+    const getScreenOptions = (fromRoute, toRoute) => {
+        // Custom animation logic based on source and destination
+        if (fromRoute === "favorites" && toRoute === "map") {
+            return {...TransitionPresets.SlideFromRightIOS}; // Slide from right
+        } else if (fromRoute === "map" && toRoute === "favorites") {
+            return {...TransitionPresets.ModalPresentationIOS}; // Slide from right
+        }
+        else {
+            return {animation: 'default'}; // Default animation
+        }
+    };
+
     return (
         <Provider store={store}>
             <Stack screenOptions={{
                 headerShown: false,
+                // gestureEnabled: false, // Disable swipe-back gesture
             }}>
                 <Stack.Screen name="index"/>
                 <Stack.Screen name="login"/>

@@ -98,7 +98,7 @@ export default function Shopping() {
         } catch (error) {
             console.error('Error adding new shopping list:', error);
         } finally {
-            setIsDisabled(false); // Re-enable button after 2 seconds
+            setIsDisabled(false);
         }
     };
 
