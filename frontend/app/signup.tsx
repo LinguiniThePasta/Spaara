@@ -1,20 +1,51 @@
 import {StatusBar} from "expo-status-bar";
 import {StyleSheet, Text, View, Image, TextInput, SafeAreaView, Dimensions, Pressable} from "react-native";
-import React, {useCallback, useEffect} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {Stack, useRouter, Link, Href, router, useFocusEffect} from 'expo-router';
 import Button from '@/components/Button';
 import NavigationButton from '@/components/NavigationButton';
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
-import {API_BASE_URL} from "@/components/config";
+import {API_BASE_URL} from "@/scripts/config";
 import {Colors} from "@/styles/Colors";
 import {globalStyles} from "@/styles/globalStyles";
+import parseErrors from "@/scripts/parseErrors";
 
 const {width, height} = Dimensions.get('window');
 
 const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
 
 export default function Signup() {
+    const [isDisabled, setIsDisabled] = useState(false);
+    const handleSignUp = async () => {
+        if (isDisabled) return;
+        setIsDisabled(true);
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/api/user/register`,
+                {
+                    "email": email,
+                    "password": password
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            router.push('/login');
+        } catch (error) {
+            console.log(error.response.data);
+            alert(parseErrors(error.response.data));
+        } finally {
+            setIsDisabled(false);
+        }
+    };
+    const [email, onEmailChange] = React.useState('');
+    const [password, onPasswordChange] = React.useState('');
+    const [confirmPW, onConfirmPWChange] = React.useState('');
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
@@ -30,18 +61,20 @@ export default function Signup() {
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
                             placeholder="Email"
+                            onChangeText={onEmailChange}
                             placeholderTextColor={Colors.light.secondaryText}
                         />
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
                             placeholder="Password"
                             secureTextEntry
+                            onChangeText={onPasswordChange}
                             placeholderTextColor={Colors.light.secondaryText}
                         />
                         {/* Placeholder to compensate for the removed Forgot Password text */}
                         <View style={styles.placeholder} />
 
-                        <Pressable style={[globalStyles.primaryButton, styles.signupButton]}>
+                        <Pressable style={[globalStyles.primaryButton, styles.signupButton]} onPress={handleSignUp}>
                             <Text style={styles.signupButtonText}>Sign up</Text>
                         </Pressable>
                     </View>
