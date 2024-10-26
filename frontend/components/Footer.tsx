@@ -4,8 +4,20 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {Colors} from "@/styles/Colors";  // You can use a different icon set if you prefer
 const {width, height} = Dimensions.get('window');
+import { useDispatch, useSelector } from 'react-redux';
+import { setLastAccessedList, setShoppingLists, setSearchQuery } from '../store/shoppingListSlice';
 
 export default function Footer() {
+    const lastAccessedList = useSelector((state) => state.shoppingList.lastAccessedList);
+
+    const goToLastAccessedList = () => {
+        if (lastAccessedList) {
+            router.push(`/modifyshopping?id=${lastAccessedList}`);
+        } else {
+            router.push('/shopping');
+        }
+    };
+
     return (
         <View style={styles.footerContainer}>
             <Pressable style={styles.footerItem} onPress={() => router.push("/favorite")}>
@@ -18,7 +30,7 @@ export default function Footer() {
                 <Text style={styles.footerText}>Map</Text>
             </Pressable>
 
-            <Pressable style={styles.footerItem} onPress={() => router.push("/shopping")}>
+            <Pressable style={styles.footerItem} onPress={() => goToLastAccessedList()}>
                 <Icon name="cart-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>List</Text>
             </Pressable>

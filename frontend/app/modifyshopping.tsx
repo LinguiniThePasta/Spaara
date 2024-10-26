@@ -7,7 +7,7 @@ import { API_BASE_URL } from '@/scripts/config';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";
-import Header from "@/components/Header"; // Use your color definitions
+import Header from "@/components/Header";
 
 export default function ShoppingListScreen() {
     const router = useRouter();
@@ -18,21 +18,25 @@ export default function ShoppingListScreen() {
     const [isEditing, setIsEditing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
 
-
+    //This doesn't work right now
     const fetchAllItems = async() => {
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/api/grocery_items/${selectedList.id}/`
+                `${API_BASE_URL}/api/grocery_items/${local.id}/`
             )
+        } catch (error) {
+            console.error('Error fetching shopping lists:', error);
         }
     }
 
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <Header header={`Modify List ${local.id}`} />
+                <View>
+                    <Header header={`Modify List ${local.id}`} backButton={true} backLink={"/shopping"}></Header>
+                </View>
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color="white" />
+                    <Icon name="heart-outline" size={24} color={Colors.light.background} />
                 </TouchableOpacity>
             </SafeAreaView>
             <Footer />

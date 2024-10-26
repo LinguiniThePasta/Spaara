@@ -1,12 +1,22 @@
 import React, {useState} from 'react';
-import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from "@/styles/Colors";
+import Icon from 'react-native-vector-icons/Ionicons';
+import {router} from "expo-router";
 
-export default function Header({header}) {
+export default function Header({header, backButton, backLink}) {
     return (
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>{header}</Text>
+            <View style={styles.left}>
+                {backButton && (
+                    <Pressable onPress={() => router.push(backLink)} style={{paddingRight: 10}}>
+                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText} />
+                    </Pressable>
+                )}
+                <Text style={styles.headerTitle}>{header}</Text>
+            </View>
+
             <View style={styles.profileIconContainer}>
                 <View style={styles.profileIcon}/>
             </View>
@@ -20,6 +30,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
+        color: Colors.light.primaryText,
+    },
+    left: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         color: Colors.light.primaryText,
     },
     headerTitle: {
