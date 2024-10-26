@@ -13,12 +13,21 @@
       "backgroundColor": "#fffbee"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.spaara.frontend",
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyCChCuNvZk1j4E1MTaC3ykYEyMjtLyIeP4"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
       }
     },
     "web": {
@@ -28,13 +37,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsVersion": "11.0.0"
-        }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
