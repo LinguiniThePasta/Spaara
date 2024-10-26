@@ -1,28 +1,22 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, SafeAreaView, StyleSheet, Dimensions} from 'react-native';
 import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header"; // Assuming you have a Colors file for styling
+import Mapbox, {MapView} from "@rnmapbox/maps";
+import {MAP_API_URL} from "@/scripts/config";
 
 export default function MapScreen() {
-    const [region, setRegion] = useState({
-        latitude: 40.4237,
-        longitude: -86.9212,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-    });
-
-    const [markerCoordinate] = useState({
-        latitude: 40.4237,
-        longitude: -86.9212,
-    });
-
+    Mapbox.setAccessToken(MAP_API_URL);
+    useEffect(() => {
+        Mapbox.setTelemetryEnabled(false);
+    }, []);
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <Header header={"Map"}/>
                 <View>
-
+                    <MapView style={styles.map}/>
                 </View>
 
                 <View style={styles.informationBox}>
