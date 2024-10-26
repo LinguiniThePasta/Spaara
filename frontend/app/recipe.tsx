@@ -1,5 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
+    Keyboard,
+    Animated,
+    TouchableWithoutFeedback,
+    Alert,
     View,
     Text,
     TextInput,
@@ -7,21 +11,21 @@ import {
     FlatList,
     Pressable,
     StyleSheet,
-    Image,
-    Keyboard,
-    Animated, Alert, TouchableWithoutFeedback, Modal, KeyboardAvoidingView, Platform
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    Modal
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons'; // Assuming you're using Ionicons for icons
+import Icon from 'react-native-vector-icons/Ionicons';
+import {API_BASE_URL} from '@/scripts/config';
+import {Link, router} from 'expo-router';
 import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
-import axios from "axios";
-import {API_BASE_URL} from "@/scripts/config";
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import shortenTime from "@/scripts/shortenTime";
-import {router} from "expo-router";
-
 
 export default function Recipe() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +34,6 @@ export default function Recipe() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
     const [showDeleteOptions, setShowDeleteOptions] = useState(false);
-    const [editMode, setEditMode] = useState(false);
     const [editedTitle, setEditedTitle] = useState('');
     const [animations, setAnimations] = useState({});
 
@@ -63,10 +66,10 @@ export default function Recipe() {
                 animations[list.id] = new Animated.Value(0);
             });
 
-            console.log("Correctly fetched recipes!");
+            console.log("Correctly fetched shopping lists!");
             setRecipes(lists);
         } catch (error) {
-            console.error('Error fetching recipes:', error);
+            console.error('Error fetching shopping lists:', error);
         }
     }
 
@@ -86,7 +89,7 @@ export default function Recipe() {
             // Close modal
             setModalVisible(false);
         } catch (error) {
-            console.error('Error adding new recipe:', error);
+            console.error('Error adding new shopping list:', error);
         }
     };
 
@@ -103,7 +106,7 @@ export default function Recipe() {
             // Refresh the shopping lists after deleting one
             fetchShoppingLists();
         } catch (error) {
-            console.error('Error deleting recipe:', error);
+            console.error('Error deleting shopping list:', error);
         }
     };
 
@@ -117,7 +120,6 @@ export default function Recipe() {
             }).start(() => {
                 setSelectedList(list);
                 setShowDeleteOptions(true);
-                setEditMode(true);
                 setEditedTitle(list.title);
                 // Start the animation for the newly selected list
                 Animated.timing(animations[list.id], {
@@ -129,7 +131,6 @@ export default function Recipe() {
         } else {
             setSelectedList(list);
             setShowDeleteOptions(true);
-            setEditMode(true);
             setEditedTitle(list.title);
             // Start the animation for the newly selected list
             Animated.timing(animations[list.id], {
@@ -166,7 +167,6 @@ export default function Recipe() {
         setRecipes(recipes.map(list =>
             list.id === selectedList.id ? {...list, title: editedTitle} : list
         ));
-        setEditMode(false);
         setShowDeleteOptions(false);
         Animated.timing(animations[selectedList.id], {
             toValue: 0,
@@ -178,7 +178,7 @@ export default function Recipe() {
     const handleDeleteButtonPress = () => {
         Alert.alert(
             "Delete Confirmation",
-            "Are you sure you want to delete this recipe? Deleted recipes cannot be restored.",
+            "Are you sure you want to delete this list? Deleted lists cannot be restored.",
             [
                 {
                     text: "Cancel",
@@ -194,7 +194,6 @@ export default function Recipe() {
     const handleDelete = () => {
         setRecipes(recipes.filter(list => list.id !== selectedList.id));
         setShowDeleteOptions(false);
-        setEditMode(false);
         Animated.timing(animations[selectedList.id], {
             toValue: 0,
             duration: 300,
@@ -203,15 +202,14 @@ export default function Recipe() {
     };
 
     const handleOutsideClick = () => {
-        if (editMode) {
+        if (selectedList) {
             Animated.timing(animations[selectedList.id], {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
             }).start(() => {
-                setEditMode(false);
-                setShowDeleteOptions(false);
                 setSelectedList(null);
+                setShowDeleteOptions(false);
             });
         }
         Keyboard.dismiss();
@@ -219,30 +217,34 @@ export default function Recipe() {
 
     const renderItem = ({item}) => (
         <Pressable
-            onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onPress={() => router.push(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
             onLongPress={() => handleLongPress(item)}
         >
             <View style={styles.listItem}>
                 {selectedList?.id === item.id && showDeleteOptions && (
                     <Animated.View
-                        style={[styles.deleteBlock, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
-                        <Pressable onPress={handleDeleteButtonPress}>
-                            <Text style={styles.deleteBlockText}>Delete</Text>
+                        style={[
+                            styles.deleteBlock,
+                            {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}
+                        ]}
+                    >
+                        <Pressable
+                            onPress={handleDeleteButtonPress}
+                            style={StyleSheet.absoluteFill} // Fills the entire red area
+                        >
+                            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                                <Icon
+                                    name="close-outline"
+                                    size={24}
+                                    color={Colors.light.background}
+                                />
+                            </View>
                         </Pressable>
                     </Animated.View>
                 )}
                 <Animated.View
                     style={[styles.listItemLeft, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
-                    {editMode && selectedList?.id === item.id ? (
-                        <TextInput
-                            style={styles.renameInput}
-                            value={editedTitle}
-                            onChangeText={setEditedTitle}
-                            onSubmitEditing={handleRename}
-                        />
-                    ) : (
-                        <Text style={styles.listItemTitle}>{item.title}</Text>
-                    )}
+                    <Text style={styles.listItemTitle}>{item.title}</Text>
                     <Text style={styles.listItemDate}>{item.date}</Text>
                 </Animated.View>
             </View>
@@ -274,7 +276,7 @@ export default function Recipe() {
                     <Pressable style={styles.addButton} onPress={() => {
                         setModalVisible(true)
                     }}>
-                        <Icon name="add" size={24} color="white"/>
+                        <Icon name="add" size={24} color={Colors.light.background}/>
                     </Pressable>
                     <Modal
                         visible={modalVisible}
@@ -297,12 +299,9 @@ export default function Recipe() {
                                         placeholder="Enter Name"
                                         value={newItem.title}
                                         onChangeText={handleTitleChange}
-                                        onSubmitEditing={handleAddList}
+                                        onEndEditing={handleAddList}
                                         autoFocus
                                     />
-                                    <Pressable onPress={handleAddList} style={styles.submitButton}>
-                                        <Text style={styles.submitButtonText}>Submit</Text>
-                                    </Pressable>
                                 </View>
                             </KeyboardAvoidingView>
                         </TouchableWithoutFeedback>
@@ -445,7 +444,7 @@ const styles = StyleSheet.create({
         left: -120,
         top: 0,
         bottom: 0,
-        width: 100,
+        width: 75,
         backgroundColor: '#FF6347',
         justifyContent: 'center',
         alignItems: 'center',
