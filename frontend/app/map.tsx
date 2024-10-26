@@ -3,25 +3,19 @@ import {View, Text, SafeAreaView, StyleSheet, Dimensions} from 'react-native';
 import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header"; // Assuming you have a Colors file for styling
-import Mapbox, {MapView} from "@rnmapbox/maps";
-import {MAP_API_URL} from "@/scripts/config";
-
+import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 export default function MapScreen() {
-    Mapbox.setAccessToken(MAP_API_URL);
-    useEffect(() => {
-        Mapbox.setTelemetryEnabled(false);
-    }, []);
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <Header header={"Map"}/>
+                <Header header={"Map"} backButton={false} backLink={""}/>
                 <View>
-                    <MapView style={styles.map}/>
+                    {/*<MapView style={styles.map} provider={PROVIDER_GOOGLE}/>*/}
                 </View>
 
-                <View style={styles.informationBox}>
-                    <Text style={styles.informationText}>Information</Text>
-                </View>
+                {/*<View style={styles.informationBox}>*/}
+                {/*    <Text style={styles.informationText}>Information</Text>*/}
+                {/*</View>*/}
 
             </SafeAreaView>
             <Footer/>
@@ -64,6 +58,7 @@ const styles = StyleSheet.create({
     map: {
         flex: 1,
         width: Dimensions.get('window').width,
+        height: '100%'
     },
     informationBox: {
         position: 'absolute',
