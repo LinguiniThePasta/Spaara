@@ -9,7 +9,7 @@ import { Stack, useRouter, Link, Href, router } from 'expo-router';
 //import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
-import {API_BASE_URL} from "@/components/config";
+import {API_BASE_URL} from "@/scripts/config";
 
 
 

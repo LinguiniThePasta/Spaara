@@ -1,37 +1,49 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Dimensions, Pressable} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {Colors} from "@/styles/Colors";  // You can use a different icon set if you prefer
 const {width, height} = Dimensions.get('window');
+import { useDispatch, useSelector } from 'react-redux';
+import { setLastAccessedList, setShoppingLists, setSearchQuery } from '../store/shoppingListSlice';
 
 export default function Footer() {
+    const lastAccessedList = useSelector((state) => state.shoppingList.lastAccessedList);
+
+    const goToLastAccessedList = () => {
+        if (lastAccessedList) {
+            router.push(`/modifyshopping?id=${lastAccessedList}`);
+        } else {
+            router.push('/shopping');
+        }
+    };
+
     return (
         <View style={styles.footerContainer}>
-            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/favorite")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/favorite")}>
                 <Icon name="heart-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Favorites</Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/map")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/map")}>
                 <Icon name="location-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Map</Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/shopping")}>
+            <Pressable style={styles.footerItem} onPress={() => goToLastAccessedList()}>
                 <Icon name="cart-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>List</Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/recipe")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/recipe")}>
                 <Icon name="book-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Recipes</Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.footerItem} onPress={() => router.push("/")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/")}>
                 <Icon name="person-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Profile</Text>
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 }
