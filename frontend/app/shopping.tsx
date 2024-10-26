@@ -34,9 +34,9 @@ export default function Shopping() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
     const [showDeleteOptions, setShowDeleteOptions] = useState(false);
-    const [editMode, setEditMode] = useState(false);
     const [editedTitle, setEditedTitle] = useState('');
     const [animations, setAnimations] = useState({});
+    const [isDisabled, setIsDisabled] = useState(false);
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
@@ -75,6 +75,8 @@ export default function Shopping() {
     }
 
     const handleAddList = async () => {
+        if (isDisabled) return;
+        setIsDisabled(true);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery/`, {
@@ -91,6 +93,8 @@ export default function Shopping() {
             setModalVisible(false);
         } catch (error) {
             console.error('Error adding new shopping list:', error);
+        } finally {
+            setIsDisabled(false); // Re-enable button after 2 seconds
         }
     };
 
@@ -121,7 +125,6 @@ export default function Shopping() {
             }).start(() => {
                 setSelectedList(list);
                 setShowDeleteOptions(true);
-                setEditMode(true);
                 setEditedTitle(list.title);
                 // Start the animation for the newly selected list
                 Animated.timing(animations[list.id], {
@@ -133,7 +136,6 @@ export default function Shopping() {
         } else {
             setSelectedList(list);
             setShowDeleteOptions(true);
-            setEditMode(true);
             setEditedTitle(list.title);
             // Start the animation for the newly selected list
             Animated.timing(animations[list.id], {
@@ -170,7 +172,6 @@ export default function Shopping() {
         setShoppingLists(shoppingLists.map(list =>
             list.id === selectedList.id ? {...list, title: editedTitle} : list
         ));
-        setEditMode(false);
         setShowDeleteOptions(false);
         Animated.timing(animations[selectedList.id], {
             toValue: 0,
@@ -198,7 +199,6 @@ export default function Shopping() {
     const handleDelete = () => {
         setShoppingLists(shoppingLists.filter(list => list.id !== selectedList.id));
         setShowDeleteOptions(false);
-        setEditMode(false);
         Animated.timing(animations[selectedList.id], {
             toValue: 0,
             duration: 300,
@@ -207,15 +207,14 @@ export default function Shopping() {
     };
 
     const handleOutsideClick = () => {
-        if (editMode) {
+        if (selectedList) {
             Animated.timing(animations[selectedList.id], {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
             }).start(() => {
-                setEditMode(false);
-                setShowDeleteOptions(false);
                 setSelectedList(null);
+                setShowDeleteOptions(false);
             });
         }
         Keyboard.dismiss();
@@ -229,24 +228,28 @@ export default function Shopping() {
             <View style={styles.listItem}>
                 {selectedList?.id === item.id && showDeleteOptions && (
                     <Animated.View
-                        style={[styles.deleteBlock, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
-                        <Pressable onPress={handleDeleteButtonPress}>
-                            <Text style={styles.deleteBlockText}>Delete</Text>
+                        style={[
+                            styles.deleteBlock,
+                            {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}
+                        ]}
+                    >
+                        <Pressable
+                            onPress={handleDeleteButtonPress}
+                            style={StyleSheet.absoluteFill} // Fills the entire red area
+                        >
+                            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                                <Icon
+                                    name="close-outline"
+                                    size={24}
+                                    color={Colors.light.background}
+                                />
+                            </View>
                         </Pressable>
                     </Animated.View>
                 )}
                 <Animated.View
                     style={[styles.listItemLeft, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
-                    {editMode && selectedList?.id === item.id ? (
-                        <TextInput
-                            style={styles.renameInput}
-                            value={editedTitle}
-                            onChangeText={setEditedTitle}
-                            onSubmitEditing={handleRename}
-                        />
-                    ) : (
-                        <Text style={styles.listItemTitle}>{item.title}</Text>
-                    )}
+                    <Text style={styles.listItemTitle}>{item.title}</Text>
                     <Text style={styles.listItemDate}>{item.date}</Text>
                 </Animated.View>
             </View>
@@ -278,7 +281,7 @@ export default function Shopping() {
                     <Pressable style={styles.addButton} onPress={() => {
                         setModalVisible(true)
                     }}>
-                        <Icon name="add" size={24} color="white"/>
+                        <Icon name="add" size={24} color={Colors.light.background}/>
                     </Pressable>
                     <Modal
                         visible={modalVisible}
@@ -301,12 +304,9 @@ export default function Shopping() {
                                         placeholder="Enter Name"
                                         value={newItem.title}
                                         onChangeText={handleTitleChange}
-                                        onSubmitEditing={handleAddList}
+                                        onEndEditing={handleAddList}
                                         autoFocus
                                     />
-                                    <Pressable onPress={handleAddList} style={styles.submitButton}>
-                                        <Text style={styles.submitButtonText}>Submit</Text>
-                                    </Pressable>
                                 </View>
                             </KeyboardAvoidingView>
                         </TouchableWithoutFeedback>
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
         left: -120,
         top: 0,
         bottom: 0,
-        width: 100,
+        width: 75,
         backgroundColor: '#FF6347',
         justifyContent: 'center',
         alignItems: 'center',

@@ -18,40 +18,12 @@ export default function ShoppingListScreen() {
     const [isEditing, setIsEditing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
 
-
-    const fetchAllItems = async() => {
-        try {
-            const response = await axios.get(
-                `${API_BASE_URL}/api/grocery_items/${selectedList.id}/`
-            )
-        }
-    }
-
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <Header header={`Modify List ${local.id}`} />
-                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color="white" />
-                </TouchableOpacity>
             </SafeAreaView>
             <Footer />
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeButtonText}>X</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Add Favorite Item</Text>
-                        {/* Remove text inputs */}
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }
