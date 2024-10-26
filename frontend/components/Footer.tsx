@@ -40,7 +40,7 @@ export default function Footer() {
                 <Text style={styles.footerText}>Recipes</Text>
             </Pressable>
 
-            <Pressable style={styles.footerItem} onPress={() => router.push("/")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/profile")}>
                 <Icon name="person-outline" size={24} color="#000" />
                 <Text style={styles.footerText}>Profile</Text>
             </Pressable>
