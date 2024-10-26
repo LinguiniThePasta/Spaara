@@ -26,25 +26,30 @@ import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import shortenTime from "@/scripts/shortenTime";
+import { useDispatch, useSelector } from 'react-redux';
+import { setLastAccessedList, setShoppingLists, setSearchQuery } from '../store/shoppingListSlice';
 
 export default function Shopping() {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [shoppingLists, setShoppingLists] = useState([]);
-    const [newItem, setNewItem] = useState({title: ''});
+    const [newItem, setNewItem] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
     const [showDeleteOptions, setShowDeleteOptions] = useState(false);
-    const [editedTitle, setEditedTitle] = useState('');
     const [animations, setAnimations] = useState({});
     const [isDisabled, setIsDisabled] = useState(false);
+
+    const dispatch = useDispatch();
+    const shoppingLists = useSelector((state) => state.shoppingList.lists);
+    const lastAccessedList = useSelector((state) => state.shoppingList.lastAccessedList);
+    const searchQuery = useSelector((state) => state.shoppingList.searchQuery);
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
         fetchShoppingLists();
+        dispatch(setLastAccessedList(null));
     }, []);
     const dismissModal = () => {
         Keyboard.dismiss(); // Dismiss keyboard if open
-        setModalVisible(false); // Close the modal
+        closeModal(); // Close the modal
     };
     const fetchShoppingLists = async () => {
         try {
@@ -68,7 +73,7 @@ export default function Shopping() {
             });
 
             console.log("Correctly fetched shopping lists!");
-            setShoppingLists(lists);
+            dispatch(setShoppingLists(lists));
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
@@ -80,7 +85,7 @@ export default function Shopping() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery/`, {
-                name: newItem.title,
+                name: newItem,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -89,8 +94,7 @@ export default function Shopping() {
 
             // Refresh the shopping lists after adding a new one
             await fetchShoppingLists();
-            // Close modal
-            setModalVisible(false);
+            closeModal();
         } catch (error) {
             console.error('Error adding new shopping list:', error);
         } finally {
@@ -125,7 +129,6 @@ export default function Shopping() {
             }).start(() => {
                 setSelectedList(list);
                 setShowDeleteOptions(true);
-                setEditedTitle(list.title);
                 // Start the animation for the newly selected list
                 Animated.timing(animations[list.id], {
                     toValue: 100,
@@ -136,7 +139,6 @@ export default function Shopping() {
         } else {
             setSelectedList(list);
             setShowDeleteOptions(true);
-            setEditedTitle(list.title);
             // Start the animation for the newly selected list
             Animated.timing(animations[list.id], {
                 toValue: 100,
@@ -147,37 +149,7 @@ export default function Shopping() {
     };
 
     const handleTitleChange = (text) => {
-        setNewItem({...newItem, title: text});
-    };
-
-    const handleRename = async () => {
-        try {
-            const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.put(`${API_BASE_URL}/api/grocery/${selectedList.id}/`,
-                {
-                    name: `${editedTitle}`
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`,
-                    }
-                });
-
-            // Refresh the shopping lists after deleting one
-            fetchShoppingLists();
-        } catch (error) {
-            console.error('Error updating name:', error);
-        }
-
-        setShoppingLists(shoppingLists.map(list =>
-            list.id === selectedList.id ? {...list, title: editedTitle} : list
-        ));
-        setShowDeleteOptions(false);
-        Animated.timing(animations[selectedList.id], {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
+        setNewItem(text);
     };
 
     const handleDeleteButtonPress = () => {
@@ -196,16 +168,6 @@ export default function Shopping() {
         );
     };
 
-    const handleDelete = () => {
-        setShoppingLists(shoppingLists.filter(list => list.id !== selectedList.id));
-        setShowDeleteOptions(false);
-        Animated.timing(animations[selectedList.id], {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    };
-
     const handleOutsideClick = () => {
         if (selectedList) {
             Animated.timing(animations[selectedList.id], {
@@ -220,9 +182,19 @@ export default function Shopping() {
         Keyboard.dismiss();
     };
 
+    const handlePress = (item) => {
+        router.push(`/modifyshopping?id=${item.id}`);
+        dispatch(setLastAccessedList(item.id));
+    }
+
+    const closeModal = () => {
+        setNewItem("");
+        setModalVisible(false);
+    }
+
     const renderItem = ({item}) => (
         <Pressable
-            onPress={() => router.push(`/modifyshopping?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onPress={() => handlePress(item)}
             onLongPress={() => handleLongPress(item)}
         >
             <View style={styles.listItem}>
@@ -235,7 +207,7 @@ export default function Shopping() {
                     >
                         <Pressable
                             onPress={handleDeleteButtonPress}
-                            style={StyleSheet.absoluteFill} // Fills the entire red area
+                            style={StyleSheet.absoluteFill}
                         >
                             <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                                 <Icon
@@ -269,7 +241,7 @@ export default function Shopping() {
                             placeholder="Search"
                             placeholderTextColor={Colors.light.secondaryText}
                             value={searchQuery}
-                            onChangeText={setSearchQuery}
+                            onChangeText={(text) => dispatch(setSearchQuery(text))}
                         />
                     </View>
                     <FlatList
@@ -287,22 +259,19 @@ export default function Shopping() {
                         visible={modalVisible}
                         transparent={true}
                         animationType="slide"
-                        onRequestClose={() => setModalVisible(false)}
+                        onRequestClose={() => closeModal()}
                     >
                         <TouchableWithoutFeedback onPress={dismissModal}>
                             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                                                   style={styles.modalContainer}>
                                 <View style={styles.modalContent}>
                                     <View style={styles.modalHeader}>
-                                        {/*<Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>*/}
-                                        {/*    <Icon name="close" size={24} color={Colors.light.primaryText}/>*/}
-                                        {/*</Pressable>*/}
                                         <Text style={styles.modalTitle}>Add New Shopping List</Text>
                                     </View>
                                     <TextInput
                                         style={styles.input}
                                         placeholder="Enter Name"
-                                        value={newItem.title}
+                                        value={newItem}
                                         onChangeText={handleTitleChange}
                                         onEndEditing={handleAddList}
                                         autoFocus
