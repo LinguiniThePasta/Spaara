@@ -1,33 +1,21 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, SafeAreaView, StyleSheet, Dimensions} from 'react-native';
 import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header"; // Assuming you have a Colors file for styling
-
+import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 export default function MapScreen() {
-    const [region, setRegion] = useState({
-        latitude: 40.4237,
-        longitude: -86.9212,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-    });
-
-    const [markerCoordinate] = useState({
-        latitude: 40.4237,
-        longitude: -86.9212,
-    });
-
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <Header header={"Map"}/>
+                <Header header={"Map"} backButton={false} backLink={""}/>
                 <View>
-
+                    {/*<MapView style={styles.map} provider={PROVIDER_GOOGLE}/>*/}
                 </View>
 
-                <View style={styles.informationBox}>
-                    <Text style={styles.informationText}>Information</Text>
-                </View>
+                {/*<View style={styles.informationBox}>*/}
+                {/*    <Text style={styles.informationText}>Information</Text>*/}
+                {/*</View>*/}
 
             </SafeAreaView>
             <Footer/>
@@ -70,6 +58,7 @@ const styles = StyleSheet.create({
     map: {
         flex: 1,
         width: Dimensions.get('window').width,
+        height: '100%'
     },
     informationBox: {
         position: 'absolute',
