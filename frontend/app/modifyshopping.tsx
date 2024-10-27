@@ -17,6 +17,13 @@ export default function ShoppingListScreen() {
     const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [selectedButton, setSelectedButton] = useState('Favorite');
+    const [notSelectedButton, setNotSelectedButton] = useState(false);
+
+
+    const handlePress = (button) => {
+        setSelectedButton(button);
+    };
 
     //This doesn't work right now
     const fetchAllItems = async() => {
@@ -49,9 +56,44 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={40} />
+
+                            <Text style={styles.closeButtonText}><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#232528"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></Text>
                         </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <Text style={styles.modalTitle}></Text>
+                        <View style={styles.favoriteRecipeContainer}>
+                            <TouchableOpacity 
+                                style={[styles.favoriteRecipeButton, 
+                                    selectedButton === 'Recipe' && styles.unselectedButton,
+                                    selectedButton === 'Favorite' && styles.selectedButton]}
+                                onPress={() => handlePress('Favorite')}
+                            >
+                                <Text style={[
+                                    styles.selectedText,
+                                    selectedButton === 'Recipe' && styles.unselectedText,
+                                    selectedButton === 'Favorite' && styles.selectedText,
+                                ]}>
+                                    Favorite
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.favoriteRecipeButton, 
+                                    selectedButton === 'Recipe' && styles.selectedButton,
+                                    selectedButton === 'Favorite' && styles.unselectedButton]}
+                                onPress={() => handlePress('Recipe')}
+                            >
+                                <Text style={[
+                                    styles.selectedText,
+                                    selectedButton === 'Recipe' && styles.selectedText,
+                                    selectedButton === 'Favorite' && styles.unselectedText,
+                                ]}>
+                                    Recipe
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.favoriteHeaderText}>Add Favorites</Text>
+                        
+                        {/* Remove text inputs */}
+
                     </View>
                 </View>
             </Modal>
@@ -152,4 +194,47 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
+    favoriteRecipeContainer: {
+        flexDirection: 'row',
+        width: "100%",
+        alignItems: 'stretch',
+    },
+    favoriteRecipeButton: {
+        flex: 1,
+        borderRadius: 50,
+        padding: 10,
+        alignItems: 'center',
+        marginLeft: 20,
+        marginRight: 20,
+        marginTop: 20,
+    },
+    selectedButton: {
+        backgroundColor: Colors.light.primaryColor,
+        
+    },
+    unselectedButton: {
+        backgroundColor: 'white',
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 2,
+    },
+    selectedText: {
+        fontSize: 16,
+        color: 'black',
+    },
+    unselectedText: {
+        fontSize: 16,
+        color: Colors.light.primaryText,
+    },
+    favoriteHeaderText: {
+        fontSize: 28,
+        color: 'black',
+        marginLeft: 20,
+        marginTop: 15,
+    },
+    favoiteContainer: {
+
+    },
+    recipeContainer: {
+
+    }
 });
