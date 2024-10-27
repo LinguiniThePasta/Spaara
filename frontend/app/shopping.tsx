@@ -232,7 +232,11 @@ export default function Shopping() {
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <View style={styles.container}>
                 <SafeAreaView style={styles.container}>
-                    <Header header={"Shopping Lists"}/>
+                <Header 
+                    header={"Shopping Lists"} 
+                    backButton={false} 
+                    backLink={""} 
+                />
                     <View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
                               style={styles.searchIcon}/>

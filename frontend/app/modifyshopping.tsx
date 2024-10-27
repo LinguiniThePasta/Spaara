@@ -49,10 +49,9 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={24} color={Colors.light.background} />
+                            <Icon name="close-outline" size={40} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
-                        {/* Remove text inputs */}
                     </View>
                 </View>
             </Modal>
@@ -124,21 +123,23 @@ const styles = StyleSheet.create({
         minHeight: '50%',
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 24,
+        top: 5,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
     },
     closeButton: {
         position: 'absolute',
-        top: 10,
-        left: 10,
+        top: 0,
+        left: 0,
         padding: 20, // Increased padding for larger clickable area
+        color: 'black',
     },
     closeButtonText: {
-        fontSize: 18,
+        fontSize: 40,
         fontWeight: 'bold',
-        color: '#FF6347',
+        color: 'black',
     },
     modalButton: {
         backgroundColor: '#FF6347',
