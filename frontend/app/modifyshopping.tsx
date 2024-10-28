@@ -16,6 +16,10 @@ export default function ShoppingListScreen() {
     const [shoppingLists, setShoppingLists] = useState([]);
     const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
     const [isEditing, setIsEditing] = useState(false);
+    const [favoriteItems, setFavoriteItems] = useState([
+        { id: 1, title: 'Milk', favorited: true },
+        { id: 2, title: 'Rice', favorited: true },
+    ]);
     const [modalVisible, setModalVisible] = useState(false);
 
     //This doesn't work right now
@@ -28,6 +32,26 @@ export default function ShoppingListScreen() {
             console.error('Error fetching shopping lists:', error);
         }
     }
+
+    const handleFavorite = async (id) => {
+        // Simulate favoriting an item
+        setShoppingLists(prevLists =>
+            prevLists.map(item =>
+                item.id === id ? { ...item, favorited: !item.favorited } : item
+            )
+        );
+        setFavoriteItems(prevFavorites =>
+            prevFavorites.map(item =>
+                item.id === id ? { ...item, favorited: !item.favorited } : item
+            )
+        );
+    };
+
+    const renderFavoriteItem = ({ item }) => (
+        <View style={styles.itemContainer}>
+            <Text style={styles.itemText}>{item.title}</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -52,6 +76,11 @@ export default function ShoppingListScreen() {
                             <Icon name="close-outline" size={40} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <FlatList
+                            data={favoriteItems}
+                            renderItem={renderFavoriteItem}
+                            keyExtractor={item => item.id.toString()}
+                        />
                     </View>
                 </View>
             </Modal>
@@ -66,6 +95,17 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingHorizontal: 20,
+    },
+    itemContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.secondaryText,
+    },
+    itemText: {
+        fontSize: 18,
     },
     listItem: {
         flexDirection: 'row',
