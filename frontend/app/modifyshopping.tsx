@@ -8,18 +8,31 @@ import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";
 import Header from "@/components/Header";
+import { useDispatch, useSelector } from 'react-redux';
+//import { setSearchQuery } from '../store/shoppingListSlice';
 
 export default function ShoppingListScreen() {
     const router = useRouter();
+    const dispatch = useDispatch();
     const local = useLocalSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
-    const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
+    const [newItem, setNewItem] = useState({ id: -1, title: '', price: 0, favorited: false });
     const [isEditing, setIsEditing] = useState(false);
+    const [shoppingItems, setShoppingItems] = useState([
+        { id: 998, title: 'Ham', price: 3.99, favorited: false },
+        { id: 999, title: 'Cheese', price: 4.99, favorited: false },
+        //{ id: -1, title: '', price: 0, favorited: false },
+    ]);
     const [favoriteItems, setFavoriteItems] = useState([
         { id: 1, title: 'Milk', favorited: true },
         { id: 2, title: 'Rice', favorited: true },
     ]);
+    useEffect(() => {
+        //setNewItem({ id: -1, title: '', price: 0, favorited: false })
+        //setNewItem(shoppingItems[0])
+        //addItem();
+    });
     const [modalVisible, setModalVisible] = useState(false);
 
     //This doesn't work right now
@@ -47,9 +60,56 @@ export default function ShoppingListScreen() {
         );
     };
 
+    const addItem = () => {
+        var items = [...shoppingItems, { id: -1, title: '', price: 0, favorited: false }];
+        setShoppingItems(items);
+    };
+
+    const renderItem = ({ item }) => {
+        const priceText = item.id === -1 ? '' : '$' + item.price;
+        const checkbox = <Icon name="ellipse-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
+        return (
+        <View style={styles.itemContainer}>
+            <View style={styles.itemLeftContainer}>
+                {/* Star Icon */}
+                <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
+                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
+                </Pressable>
+                <View style={styles.itemTextContainer}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <View style={styles.itemInfoContainer}>
+                        <Text style={styles.itemPrice}>{priceText}</Text>
+                    </View>
+                </View>
+            </View>
+            {/*<View style={styles.itemTextContainer}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+                <View style={styles.itemInfoContainer}>
+                    <Text style={styles.itemPrice}>{priceText}</Text>
+                </View>
+            </View>*/}
+            <View style={styles.itemIconContainer}>
+                {/* Star Icon */}
+                <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
+                    <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
+                </Pressable>
+
+                {/* Trash Icon */}
+                <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                    <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
+                </Pressable>
+
+                {/* Plus Icon */}
+                <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                    <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
+                </Pressable>
+            </View>
+        </View>
+    )};
+
     const renderFavoriteItem = ({ item }) => (
         <View style={styles.itemContainer}>
-            <Text style={styles.itemText}>{item.title}</Text>
+            <Text style={styles.itemTitle}>{item.title}</Text>
         </View>
     );
 
@@ -58,7 +118,31 @@ export default function ShoppingListScreen() {
             <SafeAreaView style={styles.container}>
                 <View>
                     <Header header={`Modify List ${local.id}`} backButton={true} backLink={"/shopping"}></Header>
+                    {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
+
+
+
+                {/*<View style={globalStyles.searchBar}>
+                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
+                              style={styles.searchIcon}/>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search"
+                            placeholderTextColor={Colors.light.secondaryText}
+                            value={searchQuery}
+                            onChangeText={(text) => dispatch(setSearchQuery(text))}
+                        />
+                    </View>*/}
+                    <FlatList
+                        data={shoppingItems}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderItem}
+                        contentContainerStyle={styles.listContainer}
+                    />
+
+
+
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background} />
                 </TouchableOpacity>
@@ -93,6 +177,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.light.background,
     },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: Colors.light.primaryText,
+    },
     listContainer: {
         paddingHorizontal: 20,
     },
@@ -104,8 +196,32 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: Colors.light.secondaryText,
     },
-    itemText: {
+    itemLeftContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        //paddingVertical: 15,
+        //borderBottomWidth: 1,
+        //borderBottomColor: Colors.light.secondaryText,
+    },
+    itemTextContainer: {
+        flexDirection: 'column',
+        marginHorizontal: 10,
+    },
+    itemTitle: {
         fontSize: 18,
+    },
+    itemInfoContainer: {
+        flexDirection: 'row',
+    },
+    itemPrice: {
+        fontSize: 14,
+    },
+    itemIconContainer: {
+        flexDirection: 'row',
+    },
+    icon: {
+        marginLeft: 10,
     },
     listItem: {
         flexDirection: 'row',
