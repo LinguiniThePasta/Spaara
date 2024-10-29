@@ -100,15 +100,14 @@ class Recipe(ListBase):
 
 @receiver(pre_save)
 def update_favorite(sender, instance, **kwargs):
-    if sender not in FavoriteManager.receivers:
-        return
-    old_instance = sender.objects.get(pk=instance.pk)
-
-    if (instance.favorited == old_instance.favorited):
-        return
-
-    if sender in FavoriteManager.receivers:
-        FavoriteManager.sync(instance)
+    try:
+        old_instance = sender.objects.get(pk=instance.pk)
+        if old_instance.favorited != instance.favorited:
+            # Handle the favorite update logic here
+            pass
+    except sender.DoesNotExist:
+        # Handle the case where the old instance does not exist
+        pass
 
 class FavoriteManager:
     receivers = []
@@ -131,6 +130,7 @@ class FavoriteManager:
                                                 )
         else:
             FavoritedItem.objects.filter(id=instance.id).delete()
+
 class ItemBase(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)

@@ -39,21 +39,6 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
-    def validate(self, data):
-        email = data.get('email')
-        password = data.get('password')
-        errorDict = collections.defaultdict(str)
-        # Check if password is okay
-        if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict['error'] = 'Invalid credentials.'
-        try:
-            validate_email(email)
-        except serializers.ValidationError:
-            errorDict['error'] = "Invalid credentials."
-        if errorDict:
-            raise serializers.ValidationError(errorDict)
-        return data
-
 
 class UpdateInfoSerializer(serializers.ModelSerializer):
     # TODO: Change this so that email and password can be changed separately
