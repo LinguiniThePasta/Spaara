@@ -5,6 +5,10 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import math
 
+g_normalized_s = 0
+g_normalized_c = 0
+g_normalized_distance = 0
+
 data = ["(45.605507, -73.61299629999999)", "(45.5505596, -73.54293129999999)", "(45.4949618, -73.6198824)",
         "(45.4801326, -73.57579489999999)", "(45.51975470000001, -73.6747391)", "(45.4932387, -73.5642154)",
         "(45.45227999999999, -73.6097408)", "(45.51034719999999, -73.5750221)", "(45.64389810000001, -73.8630829)",
@@ -61,12 +65,23 @@ def plot_inertias(inertias):
 def visualize_clusters(stores, home):
     colors = ['red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow', 'black', 'brown']
     plt.figure(figsize=(10, 8))
+    labeled_clusters = set()
+
     for store in stores:
         cluster = store['cluster']
-        plt.scatter(store['location'][1], store['location'][0],
-                    color=colors[cluster % len(colors)],
-                    label=f"Cluster {cluster}" if store['name'] == "Store 1" else "")
-        plt.text(store['location'][1] + 0.002, store['location'][0] + 0.002, store['name'], fontsize=8)
+        # Label only the first occurrence of each cluster
+        if cluster not in labeled_clusters:
+            plt.scatter(store['location'][1], store['location'][0],
+                        color=colors[cluster % len(colors)],
+                        label=f"Cluster {cluster}", s=100, alpha=0.6)
+            labeled_clusters.add(cluster)
+        else:
+            plt.scatter(store['location'][1], store['location'][0],
+                        color=colors[cluster % len(colors)], s=100, alpha=0.6)
+
+        # Add store name as a text label
+        plt.text(store['location'][1] + 0.002, store['location'][0] + 0.002,
+                 store['name'], fontsize=8)
     plt.scatter(
         home[1], home[0],  # Longitude (x), Latitude (y)
         color='black', marker='*', s=200,  # Star marker, larger size
@@ -122,9 +137,58 @@ def compute_distance(point1, point2):
     # For now it's just a euclidean distance thingy
     return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
 
+def rank_stores(cluster_stores, base_prices, grocery_list):
+    """
+    Rank stores within the cluster based on their individual cost savings and coverage.
+
+    Parameters:
+    - cluster_stores: List of stores within the selected cluster.
+    - base_prices: Dictionary of base prices.
+    - grocery_list: List of items to purchase.
+
+    Returns:
+    - ranked_stores: List of stores sorted by their score.
+    """
+    store_scores = []
+    for store in cluster_stores:
+        # Compute individual cost savings for the store
+        store_cs = 0.0
+        for item, base_price in base_prices.items():
+            if item in grocery_list and item in store["items"]:
+                store_price = store["items"].get(item, math.inf)
+                if store_price < base_price:
+                    store_cs += base_price - store_price
+        # Compute coverage: number of unique items the store can provide
+        store_sc = sum(1 for item in grocery_list if item in store["items"])
+        store_scores.append({
+            "store": store,
+            "cost_savings": store_cs,
+            "coverage": store_sc
+        })
+
+    # Determine maximums for normalization
+    max_cs = max([s["cost_savings"] for s in store_scores], default=0)
+    max_sc = max([s["coverage"] for s in store_scores], default=0)
+
+    # Assign scores based on normalized cost savings and coverage
+    for s in store_scores:
+        normalized_cs = normalize(s["cost_savings"], max_cs)
+        normalized_sc = normalize(s["coverage"], max_sc)
+        # You can adjust these weights as needed
+        score = (0.6 * normalized_cs) + (0.4 * normalized_sc)
+        s["score"] = score
+
+    # Sort stores by their score in descending order
+    store_scores.sort(key=lambda x: x["score"], reverse=True)
+
+    # Extract the sorted stores
+    ranked_stores = [s["store"] for s in store_scores]
+    return ranked_stores
+
+
 
 def select_best_cluster(stores, base_prices, grocery_list, home, kmeans, criteria='cost_coverage',
-                        w_s=0.7, w_c=0.3, w_d=0.0, distance_function=compute_distance):
+                        w_s=0.7, w_c=0.3, w_d=0.0, max_stores=3, distance_function=compute_distance):
     """
     Select the best single cluster based on coverage, cost savings, and distance.
 
@@ -173,6 +237,7 @@ def select_best_cluster(stores, base_prices, grocery_list, home, kmeans, criteri
     max_distance = max([c["distance"] for c in cluster_scores], default=0)
 
     # Compute scores based on criteria
+    print("\nCluster Evaluation Summary:")
     for c in cluster_scores:
         normalized_cs = normalize(c["cost_savings"], max_cs)
         normalized_sc = normalize(c["coverage"], max_sc)
@@ -194,6 +259,11 @@ def select_best_cluster(stores, base_prices, grocery_list, home, kmeans, criteri
             score = (w_s * normalized_cs) + (w_c * normalized_sc) - (w_d * normalized_distance)
 
         c["score"] = score
+        print(f"Cluster {c['cluster']}:")
+        print(f"  Normalized Cost Savings: {normalized_cs:.4f}")
+        print(f"  Normalized Coverage: {normalized_sc:.4f}")
+        print(f"  Normalized Distance: {normalized_distance:.4f}")
+        print(f"  Score: {c['score']:.4f}\n")
 
     # Select the cluster with the highest score
     cluster_scores.sort(key=lambda x: x["score"], reverse=True)
@@ -204,7 +274,10 @@ def select_best_cluster(stores, base_prices, grocery_list, home, kmeans, criteri
         return None, [], {}
 
     best_cluster_label = best_cluster["cluster"]
-    selected_stores = cluster_to_stores[best_cluster_label]
+    cluster_stores = cluster_to_stores[best_cluster_label]
+
+    ranked_stores = rank_stores(cluster_stores, base_prices, grocery_list)
+    selected_stores = ranked_stores[:max_stores]
 
     # Assign each item to the store within the cluster that offers it at the lowest price
     assignment = {}
@@ -254,6 +327,8 @@ def main():
     for i in range(len(store_locations)):
         store_number = i + 1
         location = store_locations[i]
+
+        # Generate store with complete item list first
         store = {
             "name": f"Store {store_number}",
             "location": location,
@@ -268,27 +343,31 @@ def main():
                 "cheese": round(3.40 + random.uniform(-0.2, 0.2), 2),
             }
         }
-        # Test to see if it selects store X every time
-        # if (store_number == 9):
+
+        # Randomly remove some items to simulate partial inventory
+        for item in list(store["items"].keys()):
+            #X chance to remove an item
+            if random.random() < 0.1:
+                del store["items"][item]
+
+        # Optional: Uncomment to simulate specific testing scenarios
+        # if store_number == 9:
         #     store = {
         #         "name": f"Store {store_number}",
         #         "location": location,
         #         "items": {
-        #             "eggs": round(1),  # Vary by up to $1.50
-        #             "milk": round(1),
-        #             "bread": round(1),
-        #             "beef": round(1),
-        #             "apples": round(1),
-        #             "chicken": round(1),
-        #             "rice": round(1),
-        #             "cheese": round(1),
+        #             "eggs": round(1), "milk": round(1), "bread": round(1),
+        #             "beef": round(1), "apples": round(1), "chicken": round(1),
+        #             "rice": round(1), "cheese": round(1),
         #         }
         #     }
 
-        # To ensure some variability in item availability, randomly remove some items
-        # For simplicity, let's assume every store has all items in this example
+        # Append store to the list
         stores.append(store)
-    print(stores)
+
+    # Print all generated stores and their available items
+    for store in stores:
+        print(f"{store['name']} at {store['location']} offers: {list(store['items'].keys())}")
 
     k = 8
     labels, kmeans = perform_kmeans_clustering(store_locations, n_clusters=k)
@@ -298,15 +377,15 @@ def main():
     criteria = 'cost_coverage'
     # Options: 'cost_coverage', 'coverage_cost', 'only_cost', 'only_coverage'
     # Weight for cost savings
-    w_s = 0.5
+    w_s = 0.6
     # Weight for coverage
-    w_c = 0.3
-    w_d = 0.9
+    w_c = 0.8
+    w_d = 0.4
 
     # Select the best cluster
     best_cluster_label, selected_stores, assignment = select_best_cluster(
         stores, base_prices, grocery_list, home, kmeans,
-        criteria=criteria, w_s=w_s, w_c=w_c, w_d=w_d, distance_function=compute_distance
+        criteria=criteria, w_s=w_s, w_c=w_c, w_d=w_d, max_stores=3, distance_function=compute_distance
     )
 
     # Display the results
