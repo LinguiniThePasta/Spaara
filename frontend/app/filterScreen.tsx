@@ -1,30 +1,65 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, Text, SafeAreaView, Pressable} from 'react-native';
 import Slider from '@react-native-community/slider';
 import {RadioButton, Button, Checkbox} from 'react-native-paper';
 import Header from "@/components/Header";
 import {Colors} from "@/styles/Colors";
 import {globalStyles} from "@/styles/globalStyles";
+import axios from "axios";
+import {API_BASE_URL} from "@/scripts/config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 export default function FilterScreen() {
     const [numberOfStores, setNumberOfStores] = useState(3);
-    const [distance, setDistance] = useState(5);
+    const [distance, setDistance] = useState(5.0);
     const [dietaryRestriction, setDietaryRestriction] = useState([]);
-    const dietRestrictionList = [
-        "Lactose free",
-        "Gluten free",
-        "Vegetarian",
-        "Vegan",
-        "Kosher",
-        "Halal",
-    ]
+    const [dietRestrictionList, setDietRestrictionList] = useState([]);
+    useEffect(() => {
+        const getDietRestrictions = async () => {
+            try {
+                const jwtToken = await SecureStore.getItemAsync("jwtToken");
+                const response = await axios.get(
+                    `${API_BASE_URL}/api/user/save_settings`, {
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`
+                        }
+                    })
+                setDietRestrictionList(response.data.all_restrictions)
+                setDietaryRestriction(response.data.user_restrictions)
+                setDistance(response.data.max_distance)
+                setNumberOfStores(response.data.max_stores)
+            } catch (error) {
+                console.error('Error fetching user settings:', error);
+
+            }
+        }
+        getDietRestrictions();
+    }, []);
+
     const handleClear = () => {
         setNumberOfStores(3);
         setDistance(5);
         setDietaryRestriction([]);
     };
 
-    const handleApplyFilters = () => {
+    const handleApplyFilters = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.post(
+                `${API_BASE_URL}/api/user/save_settings`, {
+                    "max_stores": numberOfStores,
+                    "max_distance": distance,
+                    "user_restrictions": dietaryRestriction
+                }, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+        } catch (error) {
+            console.error('Error fetching user settings:', error);
+        }
         console.log({
             numberOfStores,
             distance,
@@ -84,18 +119,20 @@ export default function FilterScreen() {
                     <Text style={styles.subHeader}>Dietary Restrictions</Text>
                     {
                         dietRestrictionList.map((checkListItem) => (
-                            <Checkbox.Item
-                                label={checkListItem}
-                                status={dietaryRestriction.includes(checkListItem) ? 'checked' : 'unchecked'}
-                                onPress={() => {
-                                    if (dietaryRestriction.find(item => item === checkListItem)) {
-                                        // Remove 'glutenFree' if found
-                                        setDietaryRestriction(dietaryRestriction.filter(item => item !== checkListItem));
-                                    } else {
-                                        setDietaryRestriction([...dietaryRestriction, checkListItem]);
-                                    }
-                                }}
-                            />
+                            <View>
+                                <Checkbox.Item
+                                    label={checkListItem.name}
+                                    status={dietaryRestriction.includes(checkListItem.id) ? 'checked' : 'unchecked'}
+                                    onPress={() => {
+                                        if (dietaryRestriction.find(item => item === checkListItem.id)) {
+                                            // Remove 'glutenFree' if found
+                                            setDietaryRestriction(dietaryRestriction.filter(item => item !== checkListItem.id));
+                                        } else {
+                                            setDietaryRestriction([...dietaryRestriction, checkListItem.id]);
+                                        }
+                                    }}
+                                />
+                            </View>
                         ))
                     }
                 </View>
@@ -104,7 +141,7 @@ export default function FilterScreen() {
             <View style={styles.buttonContainer}>
                 <Pressable
                     onPress={handleClear}
-                           style={styles.clearButton}>
+                    style={styles.clearButton}>
                     <Text>Clear</Text>
                 </Pressable>
                 <Pressable

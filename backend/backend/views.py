@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem
+from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
+    DietRestriction
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
 
 
 class RegisterView(APIView):
@@ -45,6 +46,58 @@ class LoginView(APIView):
             return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+class SettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        user_restrictions = request.data.get('user_restrictions', [])
+        restrictions = DietRestriction.objects.filter(id__in=user_restrictions)
+
+        if restrictions is None:
+            return Response(
+                {"error": "Invalid dietary restrictions provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        max_distance = request.data.get('max_distance', 5.00)
+        if max_distance < 0:
+            return Response(
+                {"error": "Invalid distance provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        max_stores = request.data.get('max_stores', 3)
+        if max_stores < 0:
+            return Response(
+                {"error": "Invalid store number provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.diet_restrictions.set(restrictions.all())
+        user.max_distance = max_distance
+        user.max_stores = max_stores
+        user.save()
+
+        return Response(
+            {"message": "Settings updated successfully."},
+            status=status.HTTP_200_OK
+        )
+    def get(self, request):
+        user = request.user
+
+        user_restrictions = user.diet_restrictions.all()
+
+        all_restrictions = DietRestriction.objects.all()
+        all_restrictions_serialized = DietRestrictionSerializer(all_restrictions, many=True).data
+
+        return Response(
+            {
+                "user_restrictions": [restriction.id for restriction in user_restrictions],
+                "all_restrictions": all_restrictions_serialized,
+                "max_distance": user.max_distance,
+                "max_stores": user.max_stores,
+            },
+            status=status.HTTP_200_OK
+        )
+
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -77,6 +130,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
@@ -161,6 +215,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RecipeItemViewSet(viewsets.ModelViewSet):
     queryset = RecipeItem.objects.all()
