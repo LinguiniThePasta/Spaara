@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet} from 'react-native';
-import {Colors} from '@/styles/Colors'; // Make sure Colors is configured
+import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router'; // Use router for navigation if needed
