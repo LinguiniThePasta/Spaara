@@ -39,13 +39,6 @@
       "expo-router",
       "expo-secure-store",
       [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsVersion": "11.4.0",
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoibGluZ3Vpbml0aGVwIiwiYSI6ImNtMnFhaHM0ZTB6b24yanB1dDk5eG42Zm8ifQ.Vor80vkda74ho2UpkcDxJQ"
-        }
-      ],
-      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Show current location on map."
