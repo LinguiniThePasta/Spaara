@@ -7,8 +7,11 @@ import {router} from 'expo-router';
 import axios from "axios";
 import {API_BASE_URL} from "@/scripts/config"; // Use router for navigation if needed
 import * as SecureStore from 'expo-secure-store';
+import {useSelector} from "react-redux";
 
 export default function SettingScreen() {
+
+    const role = useSelector((state) => state.role.role);
 
     const handleDelete = async () => {
         try {
@@ -54,21 +57,22 @@ export default function SettingScreen() {
                     noProfile={true}
             />
 
-            <View style={styles.content}>
-                <View>
-                    <Pressable style={styles.listItem} onPress={() => router.push('/filterScreen')}>
-                        <Text style={styles.optionText}>Configure Filters</Text>
-                    </Pressable>
-                    <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
-                        <Text style={styles.optionText}>Themes</Text>
+            {role === "User" && (
+                <View style={styles.content}>
+                    <View>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/filterScreen')}>
+                            <Text style={styles.optionText}>Configure Filters</Text>
+                        </Pressable>
+                        <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
+                            <Text style={styles.optionText}>Themes</Text>
+                        </Pressable>
+                    </View>
+
+                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={deleteConfirmation}>
+                        <Text style={[styles.optionText, {color: "red"}]}>Delete Account</Text>
                     </Pressable>
                 </View>
-
-                <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={deleteConfirmation}>
-                    <Text style={[styles.optionText, {color: "red"}]}>Delete Account</Text>
-                </Pressable>
-            </View>
-
+            )}
             <Footer/>
         </SafeAreaView>
     );

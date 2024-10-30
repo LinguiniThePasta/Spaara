@@ -5,6 +5,7 @@ from rest_framework import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
     DietRestriction
 from django.core.validators import validate_email
+import uuid
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -30,7 +31,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # This creates the user using the validated data and automatically hashes the password
         user = User.objects.create_user(
-            username=validated_data['email'],
+            username=uuid.uuid4().hex[:20],
             email=validated_data['email'],
             password=validated_data['password']
         )
@@ -87,6 +88,14 @@ class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Grocery
         fields = '__all__'
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if user.groups.filter(name='Guest').exists():
+            if user.groceryLists.count() >= 1:
+                raise serializers.ValidationError({
+                    "error": "Guest User can only have 1 grocery list at a time"
+                })
+        return attrs
 
     def create(self, validated_data):
         # Remove any fields that aren't accepted by Grocery.objects.create()

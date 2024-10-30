@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -7,11 +8,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
     DietRestriction
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
-
+import uuid
 
 class RegisterView(APIView):
     def post(self, request):
@@ -31,7 +32,13 @@ class DeleteUserView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
+
+        if request.data.get('guest', False):
+            return self.login_guest_user()
+
         serializer = serializers.LoginSerializer(data=request.data)
 
         # Check if the serializer is valid and return errors if not
@@ -52,6 +59,24 @@ class LoginView(APIView):
         except User.DoesNotExist:
             return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
 
+    def login_guest_user(self):
+        uuid_guest = uuid.uuid4().hex[:20]
+        guest_group, _ = Group.objects.get_or_create(name='Guest')
+        guest_user = User.objects.create(
+            username=f"guest_{uuid_guest}",
+            email=f"{uuid_guest}@example.com",
+        )
+        guest_user.set_unusable_password()
+        guest_user.groups.add(guest_group)
+        guest_user.save()
+
+
+        refresh = RefreshToken.for_user(guest_user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'username': guest_user.username,
+        }, status=status.HTTP_201_CREATED)
 
 class SettingsView(APIView):
     permission_classes = [IsAuthenticated]
