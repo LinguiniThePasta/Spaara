@@ -56,8 +56,8 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-
-                            <Text style={styles.closeButtonText}><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#232528"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg></Text>
+                            <Icon name="close-outline" size={"24"}></Icon>
+                            {/*<Text style={styles.closeButtonText}></Text>*/}
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}></Text>
                         <View style={styles.favoriteRecipeContainer}>
