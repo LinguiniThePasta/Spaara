@@ -88,8 +88,14 @@ export default function ShoppingListScreen() {
 
             const filteredItems = items.filter(item => item.list === local.id)
 
+            var array = [{ id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id }];
+            
+
             console.log("Correctly fetched shopping items!");
-            setShoppingItems([...filteredItems, { id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id } ]);
+            setShoppingItems([...filteredItems, { id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id },
+                                                { id: -2, title: '', price: 0, favorited: false, checked: false, list: local.id },
+                                                { id: -3, title: '', price: 0, favorited: false, checked: false, list: local.id }
+             ]);
         } catch (error) {
             console.error('Error fetching shopping items:', error);
         }
@@ -119,8 +125,9 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
+            //setNewItemName('');
             fetchShoppingItems();
+            setNewItemName('');
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
@@ -147,7 +154,85 @@ export default function ShoppingListScreen() {
     const renderItem = ({ item }) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
         const isInput = (item.id === -1);
+        const isSpacer = (item.id < -1);
         const dummyString = "-1";
+        console.log("Rendering this: " + item.title);
+        if (isInput) {
+            return (
+                <View style={styles.emptyItemContainer}>
+                    <View style={styles.itemLeftContainer}>
+                        {/* Star Icon */}
+                        <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
+                            <Icon name="ellipse-outline" size={24} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+                        <View style={styles.itemTextContainer}>
+                            <TextInput
+                                style={styles.itemTitle}
+                                placeholder={item.title}
+                                placeholderTextColor={Colors.light.secondaryText}
+                                // editable={isInput}
+                                defaultValue={newItemName}
+                                onChangeText={(text) => setNewItemName(text)}
+                                onSubmitEditing={() => handleAddItem()}
+                            />
+                            <View style={styles.itemInfoContainer}>
+                                <Text style={styles.itemPrice}>{priceText}</Text>
+                            </View>
+                        </View>
+                    </View>
+                    <View style={styles.itemIconContainer}>
+                        {/* Star Icon */}
+                        <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
+                            <Icon name="star-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+
+                        {/* Trash Icon */}
+                        <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                            <Icon name="trash-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+
+                        {/* Plus Icon */}
+                        <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                            <Icon name="add-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+                    </View>
+                </View>
+            )
+        }
+
+
+        if (isSpacer) {
+            return (
+                <View style={styles.emptyItemContainer}>
+                    <View style={styles.itemLeftContainer}>
+                        {/* Star Icon */}
+                        <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
+                            <Icon name="ellipse-outline" size={24} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+                        <View style={styles.itemTextContainer}/>
+                    </View>
+                    <View style={styles.itemIconContainer}>
+                        {/* Star Icon */}
+                        <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
+                            <Icon name="star-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+
+                        {/* Trash Icon */}
+                        <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                            <Icon name="trash-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+
+                        {/* Plus Icon */}
+                        <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                            <Icon name="add-outline" size={20} color={Colors.light.background} style={styles.icon} />
+                        </Pressable>
+                    </View>
+                </View>
+            )
+        }
+
+
+
         return (
         <View style={styles.itemContainer}>
             <View style={styles.itemLeftContainer}>
@@ -156,17 +241,10 @@ export default function ShoppingListScreen() {
                     <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
                 </Pressable>
                 <View style={styles.itemTextContainer}>
-                    <TextInput
-                        style={styles.itemTitle}
-                        placeholder={item.title}
-                        placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
-                        editable={isInput}
-                        onChangeText={(text) => setNewItemName(text)}
-                        onSubmitEditing={() => handleAddItem()}
-                    />
-                    <View style={styles.itemInfoContainer}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    {/*<View style={styles.itemInfoContainer}>
                         <Text style={styles.itemPrice}>{priceText}</Text>
-                    </View>
+                    </View>*/}
                 </View>
             </View>
             <View style={styles.itemIconContainer}>
@@ -201,7 +279,7 @@ export default function ShoppingListScreen() {
                     <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
-                {/*<View style={globalStyles.searchBar}>
+                <View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
                               style={styles.searchIcon}/>
                         <TextInput
@@ -211,13 +289,21 @@ export default function ShoppingListScreen() {
                             value={searchQuery}
                             onChangeText={(text) => dispatch(setSearchQuery(text))}
                         />
-                    </View>*/}
-                    <FlatList
+                    </View>
+                    <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
+                        <FlatList
+                            data={shoppingItems}
+                            keyExtractor={(item) => item.id}
+                            renderItem={renderItem}
+                            contentContainerStyle={styles.listContainer}
+                        />
+                    </KeyboardAvoidingView>
+                    {/*<FlatList
                         data={shoppingItems}
                         keyExtractor={(item) => item.id}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
-                    />
+                    />*/}
 
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background} />
@@ -253,6 +339,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.light.background,
     },
+    shoppingListContainer: {
+        flex: 1,
+    },
     searchIcon: {
         marginRight: 10,
     },
@@ -271,6 +360,12 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         borderBottomWidth: 1,
         borderBottomColor: Colors.light.secondaryText,
+    },
+    emptyItemContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
     },
     itemLeftContainer: {
         flexDirection: 'row',
