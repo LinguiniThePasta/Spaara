@@ -39,7 +39,6 @@ export default function Shopping() {
 
     const dispatch = useDispatch();
     const shoppingLists = useSelector((state) => state.shoppingList.lists);
-    const lastAccessedList = useSelector((state) => state.shoppingList.lastAccessedList);
     const searchQuery = useSelector((state) => state.shoppingList.searchQuery);
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
@@ -75,7 +74,7 @@ export default function Shopping() {
             console.log("Correctly fetched shopping lists!");
             dispatch(setShoppingLists(lists));
         } catch (error) {
-            console.error('Error fetching shopping lists:', error);
+            console.error('Error fetching shopping lists:', error.message);
         }
     }
 
@@ -96,7 +95,8 @@ export default function Shopping() {
             await fetchShoppingLists();
             closeModal();
         } catch (error) {
-            console.error('Error adding new shopping list:', error);
+            console.error('Error adding new shopping list:', error.error);
+            Alert.alert(`Error adding new shopping list: ${error.message}`)
         } finally {
             setIsDisabled(false);
         }

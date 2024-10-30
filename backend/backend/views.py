@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -7,11 +8,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
     DietRestriction
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
-
+import uuid
 
 class RegisterView(APIView):
     def post(self, request):
@@ -22,9 +23,22 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request):
+        user = request.user
+        User.objects.filter(id=user.id).delete()
+        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
+
+        if request.data.get('guest', False):
+            return self.login_guest_user()
+
         serializer = serializers.LoginSerializer(data=request.data)
 
         # Check if the serializer is valid and return errors if not
@@ -45,6 +59,24 @@ class LoginView(APIView):
         except User.DoesNotExist:
             return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
 
+    def login_guest_user(self):
+        uuid_guest = uuid.uuid4().hex[:20]
+        guest_group, _ = Group.objects.get_or_create(name='Guest')
+        guest_user = User.objects.create(
+            username=f"guest_{uuid_guest}",
+            email=f"{uuid_guest}@example.com",
+        )
+        guest_user.set_unusable_password()
+        guest_user.groups.add(guest_group)
+        guest_user.save()
+
+
+        refresh = RefreshToken.for_user(guest_user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'username': guest_user.username,
+        }, status=status.HTTP_201_CREATED)
 
 class SettingsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -139,16 +171,16 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
 
         grocery_list = Grocery.objects.get(pk=grocery_list_id)
 
@@ -174,16 +206,16 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
         serializer = self.get_serializer(data=data)
@@ -206,6 +238,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if user:
+            queryset = queryset.filter(user=user.id)
+
+        return queryset
 
     def create(self, request):
         user = request.user

@@ -39,13 +39,6 @@
       "expo-router",
       "expo-secure-store",
       [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsVersion": "11.4.0",
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoibGluZ3Vpbml0aGVwIiwiYSI6ImNtMnFhaHM0ZTB6b24yanB1dDk5eG42Zm8ifQ.Vor80vkda74ho2UpkcDxJQ"
-        }
-      ],
-      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Show current location on map."
@@ -55,17 +48,9 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "ae2a5df3-73e6-4537-9d1c-4888def5f24c"
-      }
-    },
     "owner": "linguinithep",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/ae2a5df3-73e6-4537-9d1c-4888def5f24c"
     }
   }
 }
