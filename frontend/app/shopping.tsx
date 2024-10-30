@@ -235,7 +235,7 @@ export default function Shopping() {
                 <Header 
                     header={"Shopping Lists"} 
                     backButton={false} 
-                    backLink={""} 
+                    backLink={""}
                 />
                     <View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
