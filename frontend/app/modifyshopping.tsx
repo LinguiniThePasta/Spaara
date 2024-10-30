@@ -31,23 +31,8 @@ export default function ShoppingListScreen() {
         { id: 1, title: 'Milk', favorited: true },
         { id: 2, title: 'Rice', favorited: true },
     ]);
-    /*useEffect(() => {
-        //setNewItem({ id: -1, title: '', price: 0, favorited: false })
-        //setNewItem(shoppingItems[0])
-        //addItem();
-    });*/
-    const [modalVisible, setModalVisible] = useState(false);
 
-    //This doesn't work right now
-    /*const fetchAllItems = async() => {
-        try {
-            const response = await axios.get(
-                `${API_BASE_URL}/api/grocery_items/${local.id}/`
-            )
-        } catch (error) {
-            console.error('Error fetching shopping lists:', error);
-        }
-    }*/
+    const [modalVisible, setModalVisible] = useState(false);
 
 
 
@@ -64,13 +49,7 @@ export default function ShoppingListScreen() {
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
-                //date: shortenTime(item.update_time)
             }));
-    
-            // Initialize animations for each list item
-            /*lists.forEach(list => {
-                animations[list.id] = new Animated.Value(0);
-            });*/
 
             let listName = "Unnamed List";
             lists.forEach(list => {
@@ -80,7 +59,6 @@ export default function ShoppingListScreen() {
             });
             
             console.log("Correctly fetched shopping lists!");
-            //dispatch(setShoppingLists(lists));
             setShoppingListName(listName);
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
@@ -108,31 +86,10 @@ export default function ShoppingListScreen() {
                 list: item.list.toString()
             }));
 
-            // Initialize animations for each list item
-            /*lists.forEach(list => {
-                animations[list.id] = new Animated.Value(0);
-            });*/
-
-            //console.log(response.data);
-
-            /*
-            items.forEach(item => {
-                console.log(item.title+": "+item.list);
-            });
-
-            let filtereditems = items.filter(item => item.list === '1');
-
-            filtereditems.forEach(item => {
-                console.log(item.title+": "+item.list);
-            });
-            */
-
             const filteredItems = items.filter(item => item.list === local.id)
 
             console.log("Correctly fetched shopping items!");
-            //dispatch(setShoppingLists(lists));
             setShoppingItems([...filteredItems, { id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id } ]);
-            //addItem();
         } catch (error) {
             console.error('Error fetching shopping items:', error);
         }
@@ -144,30 +101,17 @@ export default function ShoppingListScreen() {
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
-    /*const addItem = (name) => {
-        handleAddItem(name);
-    };*/
 
     const handleAddItem = async () => {
-        //console.log("Adding this: " + event);
-        //const { text } = event.target;
         console.log("Adding this: " + newItemName);
-        //if (isDisabled) return;
-        //setIsDisabled(true);
         if (newItemName === "-1") return;
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                //name: newItem,
-                //item: newItem
                 list_id: local.id,
-                //id: newItem.id,
-                //name: newItem.title,
                 name: newItemName,
                 quantity: 1,
                 units: "units",
-                //favorited: newItem.favorited,
-                //checked: newItem.checked,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -175,12 +119,10 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
+            setNewItemName('');
             fetchShoppingItems();
-            //closeModal();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
-        //} finally {
-            //setIsDisabled(false);
         }
     };
 
@@ -200,11 +142,7 @@ export default function ShoppingListScreen() {
         );
     };
 
-    /*const addItem = () => {
-        //var items = [...shoppingItems, { id: -1, title: '', price: 0, favorited: false, checked: false, list: local.id }];
-        //setShoppingItems(items);
-        setShoppingItems([...shoppingItems, { id: -1, title: '', price: 0, favorited: false, checked: false, list: local.id }]);
-    };*/
+
 
     const renderItem = ({ item }) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
@@ -218,16 +156,11 @@ export default function ShoppingListScreen() {
                     <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
                 </Pressable>
                 <View style={styles.itemTextContainer}>
-                    {/*<Text style={styles.itemTitle}>{item.title}</Text>*/}
                     <TextInput
                         style={styles.itemTitle}
                         placeholder={item.title}
                         placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
                         editable={isInput}
-                        //value={searchQuery}
-                        //onChangeText={(text) => dispatch(setSearchQuery(text))}
-                        //onChangeText={(isInput) ? (text) => handleAddItem(text) : (dummyString) => handleAddItem(dummyString)}
-                        //onSubmitEditing={(isInput) ? (event) => handleAddItem(event) : (dummyString) => handleAddItem(dummyString)}
                         onChangeText={(text) => setNewItemName(text)}
                         onSubmitEditing={() => handleAddItem()}
                     />
@@ -268,9 +201,6 @@ export default function ShoppingListScreen() {
                     <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
-
-
-
                 {/*<View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
                               style={styles.searchIcon}/>
@@ -289,9 +219,7 @@ export default function ShoppingListScreen() {
                         contentContainerStyle={styles.listContainer}
                     />
 
-{/*onPress={() => setModalVisible(true)}*/}
-
-                <TouchableOpacity style={styles.heartButton} onPress={() => handleAddItem("Eggs")}>
+                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background} />
                 </TouchableOpacity>
             </SafeAreaView>
@@ -348,9 +276,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        //paddingVertical: 15,
-        //borderBottomWidth: 1,
-        //borderBottomColor: Colors.light.secondaryText,
     },
     itemTextContainer: {
         flexDirection: 'column',
