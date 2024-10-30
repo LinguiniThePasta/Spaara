@@ -232,15 +232,48 @@ export default function ShoppingListScreen() {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={40} />
-                        </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                            <Icon name="close-outline" size={40} color={Colors.light.primaryText}/>
+                        </Pressable>
+
+                        <View style={styles.favoriteRecipeContainer}>
+                            <Pressable
+                                style={[
+                                    styles.favoriteRecipeButton,
+                                    selectedButton === 'Recipe' && styles.unselectedButton,
+                                    selectedButton === 'Favorite' && styles.selectedButton
+                                ]}
+                                onPress={() => handlePress('Favorite')}
+                            >
+                                <Text style={styles.selectedText}>
+                                    Favorite
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                style={[
+                                    styles.favoriteRecipeButton,
+                                    selectedButton === 'Recipe' && styles.selectedButton,
+                                    selectedButton === 'Favorite' && styles.unselectedButton
+                                ]}
+                                onPress={() => handlePress('Recipe')}
+                            >
+                                <Text style={styles.selectedText}>
+                                    Recipe
+                                </Text>
+                            </Pressable>
+                        </View>
+                        {selectedButton === 'Favorite' && (
+                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>)}
+                        {selectedButton === 'Recipe' && (<Text style={styles.favoriteHeaderText}>Add Recipes</Text>)}
+
                         <FlatList
                             data={favoriteItems}
                             renderItem={renderFavoriteItem}
                             keyExtractor={item => item.id.toString()}
+                            style={styles.flatList}
                         />
+                        {/* Remove text inputs */}
+
                     </View>
                 </View>
             </Modal>
