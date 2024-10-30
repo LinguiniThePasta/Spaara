@@ -21,6 +21,7 @@ export default function Signup() {
         if (isDisabled) return;
         setIsDisabled(true);
         try {
+            console.log(`${API_BASE_URL}/api/grocery/`)
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/register`,
                 {
@@ -35,9 +36,14 @@ export default function Signup() {
             );
 
             router.push('/login');
-        } catch (error) {
-            console.log(error.response.data);
-            alert(parseErrors(error.response.data));
+        } catch (error) { 
+            if (error.response && error.response.data) {
+                console.log(error);
+                alert(parseErrors(error.response.data));
+            } else {
+                console.error(error);
+                alert("An unexpected error occurred. Please try again.");
+            }
         } finally {
             setIsDisabled(false);
         }
