@@ -22,6 +22,13 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request):
+        user = request.user
+        User.objects.filter(id=user.id).delete()
+        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -139,16 +146,16 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
 
         grocery_list = Grocery.objects.get(pk=grocery_list_id)
 
@@ -174,16 +181,16 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
         serializer = self.get_serializer(data=data)
@@ -206,6 +213,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if user:
+            queryset = queryset.filter(user=user.id)
+
+        return queryset
 
     def create(self, request):
         user = request.user
