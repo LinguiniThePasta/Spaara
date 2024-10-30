@@ -50,9 +50,11 @@ export default function ShoppingListScreen() {
     const [notSelectedButton, setNotSelectedButton] = useState(false);
 
 
+
     const handlePress = (button) => {
         setSelectedButton(button);
     };
+
 
 
     const fetchShoppingLists = async () => {
@@ -85,6 +87,7 @@ export default function ShoppingListScreen() {
     };
 
 
+
     const fetchShoppingItems = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -99,6 +102,7 @@ export default function ShoppingListScreen() {
                 id: item.id.toString(),
                 title: item.name,
                 price: 0,
+                quantity: item.quantity,
                 favorited: item.favorited,
                 checked: false,
                 list: item.list.toString()
@@ -123,6 +127,7 @@ export default function ShoppingListScreen() {
         fetchShoppingLists();
         fetchShoppingItems();
     }, []); // Empty dependency array ensures this runs only on component mount
+
 
 
     const handleAddItem = async () => {
@@ -151,9 +156,10 @@ export default function ShoppingListScreen() {
     };
 
 
+
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
-        setShoppingLists(prevLists =>
+        setShoppingItems(prevLists =>
             prevLists.map(item =>
                 item.id === id ? {...item, favorited: !item.favorited} : item
             )
@@ -166,12 +172,24 @@ export default function ShoppingListScreen() {
     };
 
 
+
+    const handleCheckChanged = (id) => {
+        setShoppingItems(shoppingItems =>
+            shoppingItems.map(item =>
+                item.id === id ? {...item, checked: !item.checked} : item
+            )
+        );
+    }
+
+
+
     const renderItem = ({item}) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
+        //const checked = item.checked;
         const isInput = (item.id === -1);
         const isSpacer = (item.id < -1);
         const dummyString = "-1";
-        console.log("Rendering this: " + item.title);
+        //console.log("Rendering this: " + item.title);
 
         if (isInput) {
             return (
@@ -250,8 +268,8 @@ export default function ShoppingListScreen() {
             <View style={styles.itemContainer}>
                 <View style={styles.itemLeftContainer}>
                     {/* Star Icon */}
-                    <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
-                        <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
+                    <Pressable onPress={() => handleCheckChanged(item.id)}>
+                        <Icon name={item.checked ? "checkmark-circle" : "ellipse-outline"} size={24} color={item.checked ? Colors.light.primaryColor : Colors.light.secondaryText} style={styles.icon} />
                     </Pressable>
                     <View style={styles.itemTextContainer}>
                         <Text style={styles.itemTitle}>{item.title}</Text>
@@ -259,22 +277,26 @@ export default function ShoppingListScreen() {
                             <Text style={styles.itemPrice}>{priceText}</Text>
                         </View>*/}
                     </View>
-                    <View style={styles.itemIconContainer}>
-                        {/* Star Icon */}
-                        <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                            <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                        </Pressable>
+                </View>
+                <View style={styles.itemIconContainer}>
+                    {/* Star Icon */}
+                    <Pressable onPress={() => handleFavorite(item.id)}>
+                        <Icon name={item.favorited ? "star" : "star-outline"} size={20} color={item.favorited ? Colors.light.primaryColor : Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
 
-                        {/* Trash Icon */}
-                        <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                            <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                        </Pressable>
+                    {/* Trash Icon */}
+                    <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                        <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
 
-                        {/* Plus Icon */}
-                        <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                            <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                        </Pressable>
+                    <View style={styles.itemTextContainer}>
+                        <Text style={styles.itemTitle}>{item.quantity}</Text>
                     </View>
+
+                    {/* Plus Icon */}
+                    <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
                 </View>
             </View>
         )
@@ -298,41 +320,44 @@ export default function ShoppingListScreen() {
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
                 <View style={globalStyles.searchBar}>
-                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
-                              style={styles.searchIcon}/>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search"
-                            placeholderTextColor={Colors.light.secondaryText}
-                            value={searchQuery}
-                            onChangeText={(text) => dispatch(setSearchQuery(text))}
-                        />
-                    </View>
-                    <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
-                        <FlatList
-                            data={shoppingItems}
-                            keyExtractor={(item) => item.id}
-                            renderItem={renderItem}
-                            contentContainerStyle={styles.listContainer}
-                        />
-                    </KeyboardAvoidingView>
-                    {/*<FlatList
+                    <Icon name="search-outline"
+                          size={20}
+                          color={Colors.light.primaryColor}
+                          style={styles.searchIcon}
+                    />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search"
+                        placeholderTextColor={Colors.light.secondaryText}
+                        value={searchQuery}
+                        onChangeText={(text) => dispatch(setSearchQuery(text))}
+                    />
+                </View>
+                <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
+                    <FlatList
                         data={shoppingItems}
                         keyExtractor={(item) => item.id}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
-                    />*/}
+                    />
+                </KeyboardAvoidingView>
+                {/*<FlatList
+                    data={shoppingItems}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />*/}
 
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
 
-                <FlatList
+                {/*<FlatList
                     data={shoppingItems}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
-                />
+                />*/}
             </SafeAreaView>
 
             <Footer/>
@@ -451,6 +476,11 @@ const styles = StyleSheet.create({
     },
     icon: {
         marginLeft: 10,
+    },
+    rightIcon: {
+        marginVertical: 5,
+        borderLeftWidth: 2,
+        borderLeftColor: Colors.light.secondaryText,
     },
     listItem: {
         flexDirection: 'row',

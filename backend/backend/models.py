@@ -98,7 +98,7 @@ class ListBase(models.Model):
         return self.name
 
 class Grocery(ListBase):
-    pass
+    pass #budget = models.IntegerField(default=0)
 class Recipe(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
 
@@ -146,10 +146,11 @@ class ItemBase(models.Model):
         abstract = True
 
 class GroceryItemOptimized(ItemBase):
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=1)
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.BooleanField(default=False)
+    #checked = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
 
     # def __init__(self, *args, **kwargs):
@@ -158,9 +159,10 @@ class GroceryItemOptimized(ItemBase):
     #     FavoriteManager.register(self.__class__)
 
 class GroceryItemUnoptimized(ItemBase):
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(default=1)
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
+    #checked = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
 
     # def __init__(self, *args, **kwargs):
