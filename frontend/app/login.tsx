@@ -10,6 +10,8 @@ import {API_BASE_URL} from "@/scripts/config";
 import {Colors} from "@/styles/Colors";
 import {globalStyles} from "@/styles/globalStyles";
 import parseErrors from "@/scripts/parseErrors";
+import {setRole} from "@/store/roleSlice";
+import {useDispatch} from "react-redux";
 
 const {width, height} = Dimensions.get('window');
 
@@ -19,6 +21,7 @@ export default function Login() {
     const [username, onUsernameChange] = React.useState('');
     const [password, onPasswordChange] = React.useState('');
     const [isDisabled, setIsDisabled] = useState(false);
+    const dispatch = useDispatch();
 
     const handleLogin = async () => {
         if (isDisabled) return;
@@ -39,6 +42,9 @@ export default function Login() {
 
             await SecureStore.setItemAsync('jwtToken', response.data.access);
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
+
+            dispatch(setRole("User"));
+
             router.push('/shopping');
         } catch (error) {
             console.log(error);
