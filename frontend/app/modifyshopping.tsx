@@ -1,16 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, SafeAreaView, FlatList, Pressable, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Modal } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import Icon from 'react-native-vector-icons/Ionicons'; // Assuming you're using Ionicons for icons
+import React, {useState, useEffect} from 'react';
+import {
+    View,
+    Text,
+    TextInput,
+    SafeAreaView,
+    FlatList,
+    Pressable,
+    StyleSheet,
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    Modal
+} from 'react-native';
+import {useRouter, useLocalSearchParams} from 'expo-router';
+import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
-import { API_BASE_URL } from '@/scripts/config';
-import { Colors } from '@/styles/Colors';
+import {API_BASE_URL} from '@/scripts/config';
+import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
-import { globalStyles } from "@/styles/globalStyles";
+import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
 //import { setSearchQuery } from '../store/shoppingListSlice';
+
 
 export default function ShoppingListScreen() {
     const router = useRouter();
@@ -19,7 +32,7 @@ export default function ShoppingListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
-    const [newItem, setNewItem] = useState({ id: -1, title: "EYES!", favorited: false, checked: false });
+    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
     const [newItemName, setNewItemName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [shoppingItems, setShoppingItems] = useState([
@@ -28,24 +41,30 @@ export default function ShoppingListScreen() {
         { id: -1, title: '', price: 0, favorited: false, checked: false },*/
     ]);
     const [favoriteItems, setFavoriteItems] = useState([
-        { id: 1, title: 'Milk', favorited: true },
-        { id: 2, title: 'Rice', favorited: true },
+        {id: 1, title: 'Milk', favorited: true},
+        {id: 2, title: 'Rice', favorited: true},
     ]);
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [selectedButton, setSelectedButton] = useState('Favorite');
+    const [notSelectedButton, setNotSelectedButton] = useState(false);
 
+
+    const handlePress = (button) => {
+        setSelectedButton(button);
+    };
 
 
     const fetchShoppingLists = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    
+
             const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
-    
+
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
@@ -57,14 +76,13 @@ export default function ShoppingListScreen() {
                     listName = list.title;
                 }
             });
-            
+
             console.log("Correctly fetched shopping lists!");
             setShoppingListName(listName);
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
     };
-
 
 
     const fetchShoppingItems = async () => {
@@ -89,7 +107,14 @@ export default function ShoppingListScreen() {
             const filteredItems = items.filter(item => item.list === local.id)
 
             console.log("Correctly fetched shopping items!");
-            setShoppingItems([...filteredItems, { id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id } ]);
+            setShoppingItems([...filteredItems, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id
+            }]);
         } catch (error) {
             console.error('Error fetching shopping items:', error);
         }
@@ -99,7 +124,6 @@ export default function ShoppingListScreen() {
         fetchShoppingLists();
         fetchShoppingItems();
     }, []); // Empty dependency array ensures this runs only on component mount
-
 
 
     const handleAddItem = async () => {
@@ -127,68 +151,67 @@ export default function ShoppingListScreen() {
     };
 
 
-
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
         setShoppingLists(prevLists =>
             prevLists.map(item =>
-                item.id === id ? { ...item, favorited: !item.favorited } : item
+                item.id === id ? {...item, favorited: !item.favorited} : item
             )
         );
         setFavoriteItems(prevFavorites =>
             prevFavorites.map(item =>
-                item.id === id ? { ...item, favorited: !item.favorited } : item
+                item.id === id ? {...item, favorited: !item.favorited} : item
             )
         );
     };
 
 
-
-    const renderItem = ({ item }) => {
+    const renderItem = ({item}) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
         const isInput = (item.id === -1);
         const dummyString = "-1";
         return (
-        <View style={styles.itemContainer}>
-            <View style={styles.itemLeftContainer}>
-                {/* Star Icon */}
-                <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
-                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
-                </Pressable>
-                <View style={styles.itemTextContainer}>
-                    <TextInput
-                        style={styles.itemTitle}
-                        placeholder={item.title}
-                        placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
-                        editable={isInput}
-                        onChangeText={(text) => setNewItemName(text)}
-                        onSubmitEditing={() => handleAddItem()}
-                    />
-                    <View style={styles.itemInfoContainer}>
-                        <Text style={styles.itemPrice}>{priceText}</Text>
+            <View style={styles.itemContainer}>
+                <View style={styles.itemLeftContainer}>
+                    {/* Star Icon */}
+                    <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
+                        <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/>
+                    </Pressable>
+                    <View style={styles.itemTextContainer}>
+                        <TextInput
+                            style={styles.itemTitle}
+                            placeholder={item.title}
+                            placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
+                            editable={isInput}
+                            onChangeText={(text) => setNewItemName(text)}
+                            onSubmitEditing={() => handleAddItem()}
+                        />
+                        <View style={styles.itemInfoContainer}>
+                            <Text style={styles.itemPrice}>{priceText}</Text>
+                        </View>
                     </View>
                 </View>
+                <View style={styles.itemIconContainer}>
+                    {/* Star Icon */}
+                    <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
+                        <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+
+                    {/* Trash Icon */}
+                    <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                        <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+
+                    {/* Plus Icon */}
+                    <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+                </View>
             </View>
-            <View style={styles.itemIconContainer}>
-                {/* Star Icon */}
-                <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                    <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
+        )
+    };
 
-                {/* Trash Icon */}
-                <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                    <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-
-                {/* Plus Icon */}
-                <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                    <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-            </View>
-        </View>
-    )};
-
-    const renderFavoriteItem = ({ item }) => (
+    const renderFavoriteItem = ({item}) => (
         <View style={styles.itemContainer}>
             <Text style={styles.itemTitle}>{item.title}</Text>
         </View>
@@ -201,29 +224,19 @@ export default function ShoppingListScreen() {
                     <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
-                {/*<View style={globalStyles.searchBar}>
-                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
-                              style={styles.searchIcon}/>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search"
-                            placeholderTextColor={Colors.light.secondaryText}
-                            value={searchQuery}
-                            onChangeText={(text) => dispatch(setSearchQuery(text))}
-                        />
-                    </View>*/}
-                    <FlatList
-                        data={shoppingItems}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderItem}
-                        contentContainerStyle={styles.listContainer}
-                    />
-
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color={Colors.light.background} />
+                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
+
+                <FlatList
+                    data={shoppingItems}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />
             </SafeAreaView>
-            <Footer />
+
+            <Footer/>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -232,15 +245,48 @@ export default function ShoppingListScreen() {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={40} />
-                        </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Add Favorite Item</Text>
+                        <Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                            <Icon name="close-outline" size={40} color={Colors.light.primaryText}/>
+                        </Pressable>
+
+                        <View style={styles.favoriteRecipeContainer}>
+                            <Pressable
+                                style={[
+                                    styles.favoriteRecipeButton,
+                                    selectedButton === 'Recipe' && styles.unselectedButton,
+                                    selectedButton === 'Favorite' && styles.selectedButton
+                                ]}
+                                onPress={() => handlePress('Favorite')}
+                            >
+                                <Text style={styles.selectedText}>
+                                    Favorite
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                style={[
+                                    styles.favoriteRecipeButton,
+                                    selectedButton === 'Recipe' && styles.selectedButton,
+                                    selectedButton === 'Favorite' && styles.unselectedButton
+                                ]}
+                                onPress={() => handlePress('Recipe')}
+                            >
+                                <Text style={styles.selectedText}>
+                                    Recipe
+                                </Text>
+                            </Pressable>
+                        </View>
+                        {selectedButton === 'Favorite' && (
+                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>)}
+                        {selectedButton === 'Recipe' && (<Text style={styles.favoriteHeaderText}>Add Recipes</Text>)}
+
                         <FlatList
                             data={favoriteItems}
                             renderItem={renderFavoriteItem}
                             keyExtractor={item => item.id.toString()}
+                            style={styles.flatList}
                         />
+                        {/* Remove text inputs */}
+
                     </View>
                 </View>
             </Modal>
@@ -335,7 +381,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     heartButtonText: {
-        color: 'white',
+        color: Colors.light.background,
         marginLeft: 5,
         fontWeight: 'bold',
     },
@@ -345,11 +391,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
-        backgroundColor: 'white',
+        backgroundColor: Colors.light.background,
         padding: 20,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         minHeight: '50%',
+        flexDirection: 'column',
+        justifyContent: 'flex-start'
     },
     modalTitle: {
         fontSize: 24,
@@ -359,10 +407,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     closeButton: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        padding: 20, // Increased padding for larger clickable area
         color: 'black',
     },
     closeButtonText: {
@@ -378,7 +422,45 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     modalButtonText: {
-        color: 'white',
+        color: Colors.light.background,
         fontWeight: 'bold',
     },
+    favoriteRecipeContainer: {
+        flexDirection: 'row',
+        width: "100%",
+        alignItems: 'stretch',
+    },
+    favoriteRecipeButton: {
+        flex: 1,
+        borderRadius: 50,
+        padding: 10,
+        alignItems: 'center',
+        marginRight: 20,
+        marginLeft: 10,
+        marginTop: 20,
+    },
+    selectedButton: {
+        backgroundColor: Colors.light.primaryColor,
+        padding: 10
+    },
+    unselectedButton: {
+        backgroundColor: Colors.light.background,
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 2,
+        padding: 8
+    },
+    selectedText: {
+        fontSize: 16,
+        color: Colors.light.primaryText,
+    },
+    favoriteHeaderText: {
+        fontSize: 28,
+        color: Colors.light.primaryText,
+        marginLeft: 10,
+        marginTop: 15,
+    },
+    flatList: {
+        marginLeft: 10,
+    },
+    recipeContainer: {}
 });
