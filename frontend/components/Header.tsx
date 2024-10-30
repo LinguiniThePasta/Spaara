@@ -4,11 +4,8 @@ import {useNavigation} from '@react-navigation/native';
 import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
-import {useSelector} from "react-redux";
 
-export default function Header({header, backButton, backLink, noProfile}) {
-    const role = useSelector((state) => state.role.role);
-
+export default function Header({header, backButton, backLink}) {
     return (
         <View style={styles.header}>
             <View style={styles.left}>
@@ -19,14 +16,6 @@ export default function Header({header, backButton, backLink, noProfile}) {
                 )}
                 <Text style={styles.headerTitle}>{header}</Text>
             </View>
-            {noProfile && (
-                <View style={styles.noProfileIconContainer}>
-                </View>
-            )}
-            {!noProfile && role !== 'Guest' && (
-                <View style={styles.profileIconContainer}>
-                </View>
-            )}
 
             <View style={styles.profileIconContainer}>
                 <View style={styles.profileIcon}/>
