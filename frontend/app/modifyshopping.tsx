@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import { useDispatch, useSelector } from 'react-redux';
+import * as SecureStore from 'expo-secure-store';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 export default function ShoppingListScreen() {
@@ -17,26 +18,26 @@ export default function ShoppingListScreen() {
     const local = useLocalSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
-    const [newItem, setNewItem] = useState({ id: -1, title: '', price: 0, favorited: false });
+    const [newItem, setNewItem] = useState({ id: -1, title: '', price: 0, favorited: false, checked: false });
     const [isEditing, setIsEditing] = useState(false);
     const [shoppingItems, setShoppingItems] = useState([
-        { id: 998, title: 'Ham', price: 3.99, favorited: false },
-        { id: 999, title: 'Cheese', price: 4.99, favorited: false },
-        //{ id: -1, title: '', price: 0, favorited: false },
+        { id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false },
+        { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
+        { id: -1, title: '', price: 0, favorited: false, checked: false },
     ]);
     const [favoriteItems, setFavoriteItems] = useState([
         { id: 1, title: 'Milk', favorited: true },
         { id: 2, title: 'Rice', favorited: true },
     ]);
-    useEffect(() => {
+    /*useEffect(() => {
         //setNewItem({ id: -1, title: '', price: 0, favorited: false })
         //setNewItem(shoppingItems[0])
         //addItem();
-    });
+    });*/
     const [modalVisible, setModalVisible] = useState(false);
 
     //This doesn't work right now
-    const fetchAllItems = async() => {
+    /*const fetchAllItems = async() => {
         try {
             const response = await axios.get(
                 `${API_BASE_URL}/api/grocery_items/${local.id}/`
@@ -44,7 +45,46 @@ export default function ShoppingListScreen() {
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
-    }
+    }*/
+
+
+
+    const fetchShoppingItems = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/${local.id}/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            const items = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: item.favorited,
+                checked: false
+            }));
+
+            // Initialize animations for each list item
+            /*lists.forEach(list => {
+                animations[list.id] = new Animated.Value(0);
+            });*/
+
+            console.log("Correctly fetched shopping lists!");
+            //dispatch(setShoppingLists(lists));
+            setShoppingItems(items);
+        } catch (error) {
+            console.error('Error fetching shopping lists:', error);
+        }
+    };
+    useEffect(() => {
+        // Call the function to load shopping lists when the component mounts
+        fetchShoppingItems();
+    }, []); // Empty dependency array ensures this runs only on component mount
+
+
 
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
@@ -61,12 +101,12 @@ export default function ShoppingListScreen() {
     };
 
     const addItem = () => {
-        var items = [...shoppingItems, { id: -1, title: '', price: 0, favorited: false }];
+        var items = [...shoppingItems, { id: -1, title: '', price: 0, favorited: false, checked: false }];
         setShoppingItems(items);
     };
 
     const renderItem = ({ item }) => {
-        const priceText = item.id === -1 ? '' : '$' + item.price;
+        const priceText = item.price === 0 ? '' : '$' + item.price;
         const checkbox = <Icon name="ellipse-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
         return (
         <View style={styles.itemContainer}>
@@ -117,7 +157,7 @@ export default function ShoppingListScreen() {
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <View>
-                    <Header header={`Modify List ${local.id}`} backButton={true} backLink={"/shopping"}></Header>
+                    <Header header={`${local.id}`} backButton={true} backLink={"/shopping"}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
 
