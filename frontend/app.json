@@ -48,17 +48,9 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "ae2a5df3-73e6-4537-9d1c-4888def5f24c"
-      }
-    },
     "owner": "linguinithep",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/ae2a5df3-73e6-4537-9d1c-4888def5f24c"
     }
   }
 }
