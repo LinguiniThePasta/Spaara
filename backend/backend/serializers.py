@@ -42,8 +42,46 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UpdateInfoSerializer(serializers.ModelSerializer):
-    # TODO: Change this so that email and password can be changed separately
-    pass
+    old_email = serializers.EmailField(required=False)
+    old_password = serializers.CharField(write_only=True, required=False)
+    email = serializers.EmailField(required=False)
+    password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['old_email', 'old_password', 'email', 'password']
+
+    def validate_password(self, value):
+        if value:
+            if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", value):
+                raise serializers.ValidationError(
+                    'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
+                )
+        return value
+
+    def update(self, instance, validated_data):
+        old_email = validated_data.get('old_email', None)
+        old_password = validated_data.get('old_password', None)
+        email = validated_data.get('email', None)
+        password = validated_data.get('password', None)
+
+        # Verify old email if email is being changed
+        if email and instance.email != old_email:
+            raise serializers.ValidationError({'old_email': 'Old email does not match'})
+
+        # Verify old password if password is being changed
+        if password and not instance.check_password(old_password):
+            raise serializers.ValidationError({'old_password': 'Old password does not match'})
+
+        if email:
+            instance.email = email
+            instance.username = email  # Assuming username is the same as email
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
 
 class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
