@@ -1,35 +1,42 @@
 import React from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet} from 'react-native';
-import {Colors} from '@/styles/Colors'; // Make sure Colors is configured
+import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import {router} from 'expo-router'; // Use router for navigation if needed
+import {router} from 'expo-router';
+import {useSelector} from "react-redux"; // Use router for navigation if needed
 
 export default function ProfileScreen() {
+    const role = useSelector((state) => state.role.role);
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Profile"/>
+            <Header header="Profile"
+                    backButton={false}
+                    backLink={""}
+                    noProfile={true}
+            />
+            {role === "User" && (
+                <View style={styles.content}>
+                    <View>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/change-email')}>
+                            <Text style={styles.optionText}>Change email</Text>
+                        </Pressable>
 
-            <View style={styles.content}>
-                <View>
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-email')}>
-                        <Text style={styles.optionText}>Change email</Text>
-                    </Pressable>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/change-password')}>
+                            <Text style={styles.optionText}>Change password</Text>
+                        </Pressable>
 
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-password')}>
-                        <Text style={styles.optionText}>Change password</Text>
-                    </Pressable>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
+                            <Text style={styles.optionText}>Settings</Text>
+                        </Pressable>
+                    </View>
 
-                    <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
-                        <Text style={styles.optionText}>Settings</Text>
+
+                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.push('/login')}>
+                        <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
                     </Pressable>
                 </View>
-
-
-                <Pressable style={[styles.listItem, { marginBottom: 20 }]} onPress={() => router.push('/login')}>
-                    <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
-                </Pressable>
-            </View>
+            )}
 
             <Footer/>
         </SafeAreaView>
