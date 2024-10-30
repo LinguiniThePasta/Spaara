@@ -2,7 +2,8 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized
+from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
+    DietRestriction
 from django.core.validators import validate_email
 
 
@@ -38,21 +39,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-
-    def validate(self, data):
-        email = data.get('email')
-        password = data.get('password')
-        errorDict = collections.defaultdict(str)
-        # Check if password is okay
-        if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict['error'] = 'Invalid credentials.'
-        try:
-            validate_email(email)
-        except serializers.ValidationError:
-            errorDict['error'] = "Invalid credentials."
-        if errorDict:
-            raise serializers.ValidationError(errorDict)
-        return data
 
 
 class UpdateInfoSerializer(serializers.ModelSerializer):
@@ -97,4 +83,9 @@ class RecipeItemSerializer(serializers.ModelSerializer):
 class FavoritedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritedItem
+        fields = '__all__'
+
+class DietRestrictionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DietRestriction
         fields = '__all__'
