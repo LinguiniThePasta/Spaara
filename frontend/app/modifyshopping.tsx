@@ -20,7 +20,7 @@ import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
@@ -32,7 +32,7 @@ export default function ShoppingListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
-    const [newItem, setNewItem] = useState({ id: -1, title: "EYES!", favorited: false, checked: false });
+    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
     const [newItemName, setNewItemName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [shoppingItems, setShoppingItems] = useState([
@@ -53,7 +53,6 @@ export default function ShoppingListScreen() {
     const handlePress = (button) => {
         setSelectedButton(button);
     };
-
 
 
     const fetchShoppingLists = async () => {
@@ -86,7 +85,6 @@ export default function ShoppingListScreen() {
     };
 
 
-
     const fetchShoppingItems = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -109,7 +107,14 @@ export default function ShoppingListScreen() {
             const filteredItems = items.filter(item => item.list === local.id)
 
             console.log("Correctly fetched shopping items!");
-            setShoppingItems([...filteredItems, { id: -1, title: 'Add Item', price: 0, favorited: false, checked: false, list: local.id } ]);
+            setShoppingItems([...filteredItems, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id
+            }]);
         } catch (error) {
             console.error('Error fetching shopping items:', error);
         }
@@ -119,7 +124,6 @@ export default function ShoppingListScreen() {
         fetchShoppingLists();
         fetchShoppingItems();
     }, []); // Empty dependency array ensures this runs only on component mount
-
 
 
     const handleAddItem = async () => {
@@ -147,7 +151,6 @@ export default function ShoppingListScreen() {
     };
 
 
-
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
         setShoppingLists(prevLists =>
@@ -163,52 +166,52 @@ export default function ShoppingListScreen() {
     };
 
 
-
-    const renderItem = ({ item }) => {
+    const renderItem = ({item}) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
         const isInput = (item.id === -1);
         const dummyString = "-1";
         return (
-        <View style={styles.itemContainer}>
-            <View style={styles.itemLeftContainer}>
-                {/* Star Icon */}
-                <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
-                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon} />
-                </Pressable>
-                <View style={styles.itemTextContainer}>
-                    <TextInput
-                        style={styles.itemTitle}
-                        placeholder={item.title}
-                        placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
-                        editable={isInput}
-                        onChangeText={(text) => setNewItemName(text)}
-                        onSubmitEditing={() => handleAddItem()}
-                    />
-                    <View style={styles.itemInfoContainer}>
-                        <Text style={styles.itemPrice}>{priceText}</Text>
+            <View style={styles.itemContainer}>
+                <View style={styles.itemLeftContainer}>
+                    {/* Star Icon */}
+                    <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
+                        <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/>
+                    </Pressable>
+                    <View style={styles.itemTextContainer}>
+                        <TextInput
+                            style={styles.itemTitle}
+                            placeholder={item.title}
+                            placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
+                            editable={isInput}
+                            onChangeText={(text) => setNewItemName(text)}
+                            onSubmitEditing={() => handleAddItem()}
+                        />
+                        <View style={styles.itemInfoContainer}>
+                            <Text style={styles.itemPrice}>{priceText}</Text>
+                        </View>
                     </View>
                 </View>
+                <View style={styles.itemIconContainer}>
+                    {/* Star Icon */}
+                    <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
+                        <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+
+                    {/* Trash Icon */}
+                    <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
+                        <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+
+                    {/* Plus Icon */}
+                    <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
+                    </Pressable>
+                </View>
             </View>
-            <View style={styles.itemIconContainer}>
-                {/* Star Icon */}
-                <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                    <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
+        )
+    };
 
-                {/* Trash Icon */}
-                <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                    <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-
-                {/* Plus Icon */}
-                <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                    <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-            </View>
-        </View>
-    )};
-
-    const renderFavoriteItem = ({ item }) => (
+    const renderFavoriteItem = ({item}) => (
         <View style={styles.itemContainer}>
             <Text style={styles.itemTitle}>{item.title}</Text>
         </View>
@@ -224,7 +227,15 @@ export default function ShoppingListScreen() {
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
+
+                <FlatList
+                    data={shoppingItems}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />
             </SafeAreaView>
+
             <Footer/>
             <Modal
                 animationType="slide"
@@ -264,8 +275,9 @@ export default function ShoppingListScreen() {
                                 </Text>
                             </Pressable>
                         </View>
-                        { selectedButton === 'Favorite' && (<Text style={styles.favoriteHeaderText}>Add Favorites</Text>) }
-                        { selectedButton === 'Recipe' && (<Text style={styles.favoriteHeaderText}>Add Recipes</Text>) }
+                        {selectedButton === 'Favorite' && (
+                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>)}
+                        {selectedButton === 'Recipe' && (<Text style={styles.favoriteHeaderText}>Add Recipes</Text>)}
 
                         <FlatList
                             data={favoriteItems}
