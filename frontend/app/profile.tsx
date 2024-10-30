@@ -14,11 +14,11 @@ export default function ProfileScreen() {
 
             <View style={styles.content}>
                 <View>
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-email')}>
+                    <Pressable style={styles.listItem} onPress={() => router.push('/changeEmail')}>
                         <Text style={styles.optionText}>Change email</Text>
                     </Pressable>
 
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-password')}>
+                    <Pressable style={styles.listItem} onPress={() => router.push('/changePassword')}>
                         <Text style={styles.optionText}>Change password</Text>
                     </Pressable>
 
