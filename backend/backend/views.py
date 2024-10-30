@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -5,12 +6,13 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem
-from rest_framework.permissions import IsAuthenticated
+from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
+    DietRestriction
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer
-
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
+import uuid
 
 class RegisterView(APIView):
     def post(self, request):
@@ -21,9 +23,22 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request):
+        user = request.user
+        User.objects.filter(id=user.id).delete()
+        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
+
+        if request.data.get('guest', False):
+            return self.login_guest_user()
+
         serializer = serializers.LoginSerializer(data=request.data)
 
         # Check if the serializer is valid and return errors if not
@@ -44,6 +59,76 @@ class LoginView(APIView):
         except User.DoesNotExist:
             return Response({'error': ['Invalid credentials.']}, status=status.HTTP_401_UNAUTHORIZED)
 
+    def login_guest_user(self):
+        uuid_guest = uuid.uuid4().hex[:20]
+        guest_group, _ = Group.objects.get_or_create(name='Guest')
+        guest_user = User.objects.create(
+            username=f"guest_{uuid_guest}",
+            email=f"{uuid_guest}@example.com",
+        )
+        guest_user.set_unusable_password()
+        guest_user.groups.add(guest_group)
+        guest_user.save()
+
+
+        refresh = RefreshToken.for_user(guest_user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'username': guest_user.username,
+        }, status=status.HTTP_201_CREATED)
+
+class SettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        user_restrictions = request.data.get('user_restrictions', [])
+        restrictions = DietRestriction.objects.filter(id__in=user_restrictions)
+
+        if restrictions is None:
+            return Response(
+                {"error": "Invalid dietary restrictions provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        max_distance = request.data.get('max_distance', 5.00)
+        if max_distance < 0:
+            return Response(
+                {"error": "Invalid distance provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        max_stores = request.data.get('max_stores', 3)
+        if max_stores < 0:
+            return Response(
+                {"error": "Invalid store number provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.diet_restrictions.set(restrictions.all())
+        user.max_distance = max_distance
+        user.max_stores = max_stores
+        user.save()
+
+        return Response(
+            {"message": "Settings updated successfully."},
+            status=status.HTTP_200_OK
+        )
+    def get(self, request):
+        user = request.user
+
+        user_restrictions = user.diet_restrictions.all()
+
+        all_restrictions = DietRestriction.objects.all()
+        all_restrictions_serialized = DietRestrictionSerializer(all_restrictions, many=True).data
+
+        return Response(
+            {
+                "user_restrictions": [restriction.id for restriction in user_restrictions],
+                "all_restrictions": all_restrictions_serialized,
+                "max_distance": user.max_distance,
+                "max_stores": user.max_stores,
+            },
+            status=status.HTTP_200_OK
+        )
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -78,6 +163,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
     serializer_class = GroceryItemOptimizedSerializer
@@ -85,16 +171,16 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
 
         grocery_list = Grocery.objects.get(pk=grocery_list_id)
 
@@ -120,16 +206,16 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list_id')
+        grocery_id = self.request.query_params.get('list')
 
         if grocery_id:
-            queryset = queryset.filter(list_id=grocery_id)
+            queryset = queryset.filter(list=grocery_id)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        grocery_list_id = data.get('list_id')
+        grocery_list_id = data.get('list')
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
         serializer = self.get_serializer(data=data)
@@ -153,6 +239,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+
+        if user:
+            queryset = queryset.filter(user=user.id)
+
+        return queryset
+
     def create(self, request):
         user = request.user
         serializer = self.get_serializer(data=request.data)
@@ -161,6 +256,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RecipeItemViewSet(viewsets.ModelViewSet):
     queryset = RecipeItem.objects.all()
