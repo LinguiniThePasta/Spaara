@@ -77,7 +77,7 @@ export default function Shopping() {
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
-    }
+    };
 
     const handleAddList = async () => {
         if (isDisabled) return;
