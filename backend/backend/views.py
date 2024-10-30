@@ -6,12 +6,12 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem
-    # DietRestriction
+from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
+    DietRestriction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer #DietRestrictionSerializer
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
 import uuid
 
 class RegisterView(APIView):
