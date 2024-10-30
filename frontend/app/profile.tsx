@@ -8,9 +8,7 @@ import {router} from 'expo-router'; // Use router for navigation if needed
 export default function ProfileScreen() {
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Profile"
-                    noProfile={true}
-            />
+            <Header header="Profile"/>
 
             <View style={styles.content}>
                 <View>
@@ -52,7 +50,6 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 18,
         fontWeight: "bold",
-        fontFamily: 'Lato-Bold',
         color: Colors.light.primaryText,
     },
     listItem: {

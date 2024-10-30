@@ -2,8 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
-    DietRestriction
+from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized
 from django.core.validators import validate_email
 
 
@@ -83,9 +82,4 @@ class RecipeItemSerializer(serializers.ModelSerializer):
 class FavoritedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritedItem
-        fields = '__all__'
-
-class DietRestrictionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DietRestriction
         fields = '__all__'

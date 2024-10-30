@@ -9,12 +9,11 @@ class User(AbstractUser):
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
-    max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
-    max_stores = models.IntegerField(default=3)
+    # radius = models.IntegerField(default=0)
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    groceryLists = models.ManyToManyField("Grocery", related_name='users')
-    diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
+    groceryLists = models.ManyToManyField("Grocery", related_name='groceryLists')
+
     def __str__(self):
         return self.email
 
@@ -79,11 +78,7 @@ class Carbohydrates(models.Model):
     total_sugar = models.DecimalField(max_digits=10, decimal_places=2)
     added_sugar = models.DecimalField(max_digits=10, decimal_places=2)
 '''
-class DietRestriction(models.Model):
-    name = models.CharField(max_length=50, unique=True)
 
-    def __str__(self):
-        return self.name
 
 class ListBase(models.Model):
     id = models.AutoField(primary_key=True)
@@ -103,38 +98,38 @@ class Recipe(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
 
 
-# @receiver(pre_save)
-# def update_favorite(sender, instance, **kwargs):
-#     try:
-#         old_instance = sender.objects.get(pk=instance.pk)
-#         if old_instance.favorited != instance.favorited:
-#             # Handle the favorite update logic here
-#             pass
-#     except sender.DoesNotExist:
-#         # Handle the case where the old instance does not exist
-#         pass
+@receiver(pre_save)
+def update_favorite(sender, instance, **kwargs):
+    try:
+        old_instance = sender.objects.get(pk=instance.pk)
+        if old_instance.favorited != instance.favorited:
+            # Handle the favorite update logic here
+            pass
+    except sender.DoesNotExist:
+        # Handle the case where the old instance does not exist
+        pass
 
-# class FavoriteManager:
-#     receivers = []
-#
-#     @classmethod
-#     def register(cls, model):
-#         cls.receivers.append(model)
-#
-#     @classmethod
-#     def sync(self, instance, favorited):
-#         for receiver in self.receivers:
-#             if isinstance(instance, receiver):
-#                 continue
-#             receiver.objects.filter(id=instance.id).update(favorited=favorited)
-#         if favorited:
-#             FavoritedItem.objects.get_or_create(id=instance.id,
-#                                                 name=instance.name,
-#                                                 description=instance.description,
-#                                                 store=instance.store,
-#                                                 )
-#         else:
-#             FavoritedItem.objects.filter(id=instance.id).delete()
+class FavoriteManager:
+    receivers = []
+
+    @classmethod
+    def register(cls, model):
+        cls.receivers.append(model)
+
+    @classmethod
+    def sync(self, instance, favorited):
+        for receiver in self.receivers:
+            if isinstance(instance, receiver):
+                continue
+            receiver.objects.filter(id=instance.id).update(favorited=favorited)
+        if favorited:
+            FavoritedItem.objects.get_or_create(id=instance.id,
+                                                name=instance.name,
+                                                description=instance.description,
+                                                store=instance.store,
+                                                )
+        else:
+            FavoritedItem.objects.filter(id=instance.id).delete()
 
 class ItemBase(models.Model):
     id = models.AutoField(primary_key=True)
@@ -152,10 +147,10 @@ class GroceryItemOptimized(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
 
 class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
@@ -163,10 +158,10 @@ class GroceryItemUnoptimized(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
 
 
 class RecipeItem(ItemBase):
@@ -175,16 +170,16 @@ class RecipeItem(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)
 
 class FavoritedItem(ItemBase):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
     favorited = models.BooleanField(default=False)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register the class when an instance is created
+        FavoriteManager.register(self.__class__)

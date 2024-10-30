@@ -10,7 +10,6 @@ const {width, height} = Dimensions.get('window');
 export default function WelcomeScreen() {
     const [fontsLoaded] = useFonts({
         'Lato-Regular': require('../assets/fonts/Lato/Lato-Regular.ttf'),
-        'Lato-Bold': require('../assets/fonts/Lato/Lato-Bold.ttf'),
     });
 
     return (
