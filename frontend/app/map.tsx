@@ -4,6 +4,10 @@ import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header"; // Assuming you have a Colors file for styling
 import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
+
+MapboxGL.setAccessToken("pk.eyJ1IjoibGluZ3Vpbml0aGVwIiwiYSI6ImNsMzgyb2ExdDB2bGgzYm9iNzh0eGZqbmgifQ.D3xqHelb9emMsrLKEC5Hmw")
+
 export default function MapScreen() {
     return (
         <View style={styles.container}>
@@ -11,6 +15,7 @@ export default function MapScreen() {
                 <Header header={"Map"} backButton={false} backLink={""}/>
                 <View>
                     {/*<MapView style={styles.map} provider={PROVIDER_GOOGLE}/>*/}
+                    <MapboxGL.MapView style={styles.map}></MapboxGL.MapView>
                 </View>
 
                 {/*<View style={styles.informationBox}>*/}
