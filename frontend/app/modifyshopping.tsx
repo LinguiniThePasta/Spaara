@@ -16,6 +16,10 @@ export default function ShoppingListScreen() {
     const [shoppingLists, setShoppingLists] = useState([]);
     const [newItem, setNewItem] = useState({ id: '', title: '', date: '' });
     const [isEditing, setIsEditing] = useState(false);
+    const [favoriteItems, setFavoriteItems] = useState([
+        { id: 1, title: 'Milk', favorited: true },
+        { id: 2, title: 'Rice', favorited: true },
+    ]);
     const [modalVisible, setModalVisible] = useState(false);
 
     //This doesn't work right now
@@ -28,6 +32,26 @@ export default function ShoppingListScreen() {
             console.error('Error fetching shopping lists:', error);
         }
     }
+
+    const handleFavorite = async (id) => {
+        // Simulate favoriting an item
+        setShoppingLists(prevLists =>
+            prevLists.map(item =>
+                item.id === id ? { ...item, favorited: !item.favorited } : item
+            )
+        );
+        setFavoriteItems(prevFavorites =>
+            prevFavorites.map(item =>
+                item.id === id ? { ...item, favorited: !item.favorited } : item
+            )
+        );
+    };
+
+    const renderFavoriteItem = ({ item }) => (
+        <View style={styles.itemContainer}>
+            <Text style={styles.itemText}>{item.title}</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
@@ -49,10 +73,14 @@ export default function ShoppingListScreen() {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={24} color={Colors.light.background} />
+                            <Icon name="close-outline" size={40} />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Add Favorite Item</Text>
-                        {/* Remove text inputs */}
+                        <FlatList
+                            data={favoriteItems}
+                            renderItem={renderFavoriteItem}
+                            keyExtractor={item => item.id.toString()}
+                        />
                     </View>
                 </View>
             </Modal>
@@ -67,6 +95,17 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         paddingHorizontal: 20,
+    },
+    itemContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.secondaryText,
+    },
+    itemText: {
+        fontSize: 18,
     },
     listItem: {
         flexDirection: 'row',
@@ -124,21 +163,23 @@ const styles = StyleSheet.create({
         minHeight: '50%',
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 24,
+        top: 5,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
     },
     closeButton: {
         position: 'absolute',
-        top: 10,
-        left: 10,
+        top: 0,
+        left: 0,
         padding: 20, // Increased padding for larger clickable area
+        color: 'black',
     },
     closeButtonText: {
-        fontSize: 18,
+        fontSize: 40,
         fontWeight: 'bold',
-        color: '#FF6347',
+        color: 'black',
     },
     modalButton: {
         backgroundColor: '#FF6347',

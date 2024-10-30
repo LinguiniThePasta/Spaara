@@ -19,6 +19,7 @@ export default function Login() {
     const [username, onUsernameChange] = React.useState('');
     const [password, onPasswordChange] = React.useState('');
     const [isDisabled, setIsDisabled] = useState(false);
+
     const handleLogin = async () => {
         if (isDisabled) return;
         setIsDisabled(true);
@@ -40,8 +41,13 @@ export default function Login() {
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
             router.push('/shopping');
         } catch (error) {
-            console.log(error.response.data);
-            alert(parseErrors(error.response.data));
+            console.log(error);
+            // Check if error.response and error.response.data exist before calling parseErrors
+            if (error.response && error.response.data) {
+                alert(parseErrors(error.response.data));
+            } else {
+                alert('An unexpected error occurred. Please try again later.');
+            }
         } finally {
             setIsDisabled(false);
         }
