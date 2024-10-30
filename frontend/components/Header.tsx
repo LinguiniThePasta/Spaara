@@ -5,21 +5,26 @@ import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 
-export default function Header({header, backButton, backLink}) {
+export default function Header({header, backButton, backLink, noProfile}) {
     return (
         <View style={styles.header}>
             <View style={styles.left}>
                 {backButton && (
-                    <Pressable onPress={() => router.push(backLink)} style={{paddingRight: 10}}>
-                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText} />
+                    <Pressable onPress={() => router.push(backLink)} style={{paddingRight: 10, marginLeft: -10}}>
+                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                     </Pressable>
                 )}
                 <Text style={styles.headerTitle}>{header}</Text>
             </View>
+            {noProfile && (
+                <View style={styles.noProfileIconContainer}>
+                </View>
+            )}
+            {!noProfile && (
+                <View style={styles.profileIconContainer}>
+                </View>
+            )}
 
-            <View style={styles.profileIconContainer}>
-                <View style={styles.profileIcon}/>
-            </View>
         </View>
     );
 }
@@ -48,6 +53,14 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         backgroundColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noProfileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(0, 0, 0, 0)",
         justifyContent: 'center',
         alignItems: 'center',
     },

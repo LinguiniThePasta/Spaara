@@ -5,32 +5,24 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router'; // Use router for navigation if needed
 
-export default function ProfileScreen() {
+export default function SettingScreen() {
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Profile"
+            <Header header="Settings"
+                    backButton={true}
+                    backLink={"profile"}
                     noProfile={true}
             />
 
             <View style={styles.content}>
                 <View>
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-email')}>
-                        <Text style={styles.optionText}>Change email</Text>
+                    <Pressable style={styles.listItem} onPress={() => router.push('/filterScreen')}>
+                        <Text style={styles.optionText}>Configure Filters</Text>
                     </Pressable>
-
-                    <Pressable style={styles.listItem} onPress={() => router.push('/change-password')}>
-                        <Text style={styles.optionText}>Change password</Text>
-                    </Pressable>
-
-                    <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
-                        <Text style={styles.optionText}>Settings</Text>
+                    <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
+                        <Text style={styles.optionText}>Themes</Text>
                     </Pressable>
                 </View>
-
-
-                <Pressable style={[styles.listItem, { marginBottom: 20 }]} onPress={() => router.push('/login')}>
-                    <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
-                </Pressable>
             </View>
 
             <Footer/>
@@ -52,7 +44,6 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 18,
         fontWeight: "bold",
-        fontFamily: 'Lato-Bold',
         color: Colors.light.primaryText,
     },
     listItem: {
