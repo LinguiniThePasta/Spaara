@@ -22,6 +22,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
+import Recipe from './recipe';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -45,13 +46,21 @@ export default function ShoppingListScreen() {
         {id: 2, title: 'Rice', favorited: true},
     ]);
 
+    const [recipeTemp, setRecipe] = useState([
+        {id: 1, title: 'Beefed Banana'},
+        {id: 2, title: 'Porked Lemons'},
+    ]);
+
+
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedButton, setSelectedButton] = useState('Favorite');
     const [notSelectedButton, setNotSelectedButton] = useState(false);
+    const [contentVisable, setContentVisable] = useState('Favorite');
 
 
     const handlePress = (button) => {
         setSelectedButton(button);
+        setContentVisable(button);
     };
 
 
@@ -217,16 +226,26 @@ export default function ShoppingListScreen() {
         </View>
     );
 
+    const renderRecipe = ({item}) => (
+        <View style={styles.recipeContainer}>
+            <View style={styles.recipeLeft}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+            </View>
+            <View style={styles.recipeRight}>
+                <Pressable onPress={() => console.log('Add pressed for ${item.title}')}>
+                    <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>                    
+                </Pressable>
+            </View>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <View>
-                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
+                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"} noProfile={false}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
-                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
-                </TouchableOpacity>
 
                 <FlatList
                     data={shoppingItems}
@@ -234,6 +253,12 @@ export default function ShoppingListScreen() {
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
                 />
+
+                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
+                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
+                </TouchableOpacity>
+
+                
             </SafeAreaView>
 
             <Footer/>
@@ -275,16 +300,30 @@ export default function ShoppingListScreen() {
                                 </Text>
                             </Pressable>
                         </View>
-                        {selectedButton === 'Favorite' && (
-                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>)}
-                        {selectedButton === 'Recipe' && (<Text style={styles.favoriteHeaderText}>Add Recipes</Text>)}
 
-                        <FlatList
+                        {selectedButton === 'Favorite' && (
+                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>
+                        )}
+                        {selectedButton === 'Recipe' && (
+                            <Text style={styles.favoriteHeaderText}>Add Recipes</Text>)
+                        }
+                        {contentVisable === 'Favorite' && (
+                            <FlatList
                             data={favoriteItems}
                             renderItem={renderFavoriteItem}
                             keyExtractor={item => item.id.toString()}
                             style={styles.flatList}
-                        />
+                            />
+                        )}
+                        {contentVisable === 'Recipe' && (
+                            <FlatList
+                                data={recipeTemp}
+                                renderItem={renderRecipe}
+                                keyExtractor={item => item.id.toString()}
+                                style={styles.flatList}
+                            />
+                        )}
+                        
                         {/* Remove text inputs */}
 
                     </View>
@@ -462,5 +501,25 @@ const styles = StyleSheet.create({
     flatList: {
         marginLeft: 10,
     },
-    recipeContainer: {}
+    recipeContainer: {
+        width: '100%',
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    recipeLeft: {
+        alignSelf: 'flex-start',
+        alignItems: 'center',
+        flexDirection: 'row',
+    },
+    recipeRight: {
+        alignItems: 'center',
+        alignSelf: 'flex-end',
+        flexDirection: 'row',
+    },
+    plusButton: {
+        borderWidth: 2,
+        borderColor: Colors.light.secondaryText,
+    },
+
 });
