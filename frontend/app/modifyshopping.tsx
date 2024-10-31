@@ -224,9 +224,6 @@ export default function ShoppingListScreen() {
                     <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
-                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
-                </TouchableOpacity>
 
                 <FlatList
                     data={shoppingItems}
@@ -234,6 +231,12 @@ export default function ShoppingListScreen() {
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
                 />
+
+                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
+                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
+                </TouchableOpacity>
+
+                
             </SafeAreaView>
 
             <Footer/>
