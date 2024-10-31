@@ -8,9 +8,11 @@ class User(AbstractUser):
     id = models.AutoField(primary_key=True)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
+    email_pending = models.EmailField(unique=True, default='')     # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
+    is_active = models.BooleanField(default=False)     # This is used to determine if the user has verified their email
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     groceryLists = models.ManyToManyField("Grocery", related_name='users')
