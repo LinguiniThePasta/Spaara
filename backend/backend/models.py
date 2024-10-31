@@ -1,11 +1,16 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.shortcuts import get_object_or_404
 
 
 class User(AbstractUser):
-    id = models.AutoField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4(),editable=False)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
@@ -13,8 +18,8 @@ class User(AbstractUser):
     max_stores = models.IntegerField(default=3)
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    groceryLists = models.ManyToManyField("Grocery", related_name='users')
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
+
     def __str__(self):
         return self.email
 
@@ -79,14 +84,17 @@ class Carbohydrates(models.Model):
     total_sugar = models.DecimalField(max_digits=10, decimal_places=2)
     added_sugar = models.DecimalField(max_digits=10, decimal_places=2)
 '''
+
+
 class DietRestriction(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
 
+
 class ListBase(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4(), editable=False)
     name = models.CharField(max_length=100)
     creation_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -97,53 +105,65 @@ class ListBase(models.Model):
     def __str__(self):
         return self.name
 
+
 class Grocery(ListBase):
-    pass
+    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="groceries", default=None)
+
+
+
 class Recipe(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
 
 
-# @receiver(pre_save)
-# def update_favorite(sender, instance, **kwargs):
-#     try:
-#         old_instance = sender.objects.get(pk=instance.pk)
-#         if old_instance.favorited != instance.favorited:
-#             # Handle the favorite update logic here
-#             pass
-#     except sender.DoesNotExist:
-#         # Handle the case where the old instance does not exist
-#         pass
+@receiver(pre_save)
+def update_favorite(sender, instance, **kwargs):
+    try:
+        if (sender not in FavoriteManager.receivers):
+            return
+        old_instance = sender.objects.get(pk=instance.pk)
+        if old_instance.favorited != instance.favorited:
+            FavoriteManager.sync(instance)
+    except sender.DoesNotExist:
+        # Handle the case where the old instance does not exist
+        pass
 
-# class FavoriteManager:
-#     receivers = []
-#
-#     @classmethod
-#     def register(cls, model):
-#         cls.receivers.append(model)
-#
-#     @classmethod
-#     def sync(self, instance, favorited):
-#         for receiver in self.receivers:
-#             if isinstance(instance, receiver):
-#                 continue
-#             receiver.objects.filter(id=instance.id).update(favorited=favorited)
-#         if favorited:
-#             FavoritedItem.objects.get_or_create(id=instance.id,
-#                                                 name=instance.name,
-#                                                 description=instance.description,
-#                                                 store=instance.store,
-#                                                 )
-#         else:
-#             FavoritedItem.objects.filter(id=instance.id).delete()
+
+class FavoriteManager:
+    receivers = []
+
+    @classmethod
+    def register(cls, model):
+        cls.receivers.append(model)
+
+    @classmethod
+    def sync(self, instance):
+        for receiver in self.receivers:
+            if receiver == FavoritedItem:
+                continue
+            if isinstance(instance, receiver) or receiver == FavoritedItem:
+                continue
+            receiver.objects.filter(id=instance.id).update(favorited=instance.favorited)
+        if instance.favorited:
+            # print(instance.list.user.id)
+            FavoritedItem.objects.get_or_create(id=instance.id,
+                                                name=instance.name,
+                                                description=instance.description,
+                                                store=instance.store,
+                                                user=get_object_or_404(User, id=instance.list.user.id)
+                                                )
+        else:
+            FavoritedItem.objects.filter(id=instance.id).delete()
+
 
 class ItemBase(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     store = models.CharField(blank=True)
 
     class Meta:
         abstract = True
+
 
 class GroceryItemOptimized(ItemBase):
     quantity = models.IntegerField()
@@ -152,10 +172,10 @@ class GroceryItemOptimized(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        FavoriteManager.register(self.__class__)
+
 
 class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
@@ -163,10 +183,9 @@ class GroceryItemUnoptimized(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        FavoriteManager.register(self.__class__)
 
 
 class RecipeItem(ItemBase):
@@ -175,16 +194,13 @@ class RecipeItem(ItemBase):
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        FavoriteManager.register(self.__class__)
+
 
 class FavoritedItem(ItemBase):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
-    favorited = models.BooleanField(default=False)
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Register the class when an instance is created
-    #     FavoriteManager.register(self.__class__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        FavoriteManager.register(self.__class__)

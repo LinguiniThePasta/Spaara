@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, mixins
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
@@ -14,6 +14,7 @@ from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedS
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
 import uuid
 
+
 class RegisterView(APIView):
     def post(self, request):
         serializer = serializers.RegisterSerializer(data=request.data)
@@ -23,8 +24,10 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request):
         user = request.user
         User.objects.filter(id=user.id).delete()
@@ -70,7 +73,6 @@ class LoginView(APIView):
         guest_user.groups.add(guest_group)
         guest_user.save()
 
-
         refresh = RefreshToken.for_user(guest_user)
         return Response({
             'access': str(refresh.access_token),
@@ -78,8 +80,10 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+
 class SettingsView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
         user_restrictions = request.data.get('user_restrictions', [])
@@ -112,6 +116,7 @@ class SettingsView(APIView):
             {"message": "Settings updated successfully."},
             status=status.HTTP_200_OK
         )
+
     def get(self, request):
         user = request.user
 
@@ -129,6 +134,7 @@ class SettingsView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -151,14 +157,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.groceryLists.all()
+        return user.groceries.all()
 
     def create(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            grocery_list = serializer.save(user=user)
-            user.groceryLists.add(grocery_list)
+            serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -290,7 +295,24 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(item).data)
 
 
-class FavoritedItemViewSet(viewsets.ModelViewSet):
+class FavoritedItemViewSet(mixins.RetrieveModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
     queryset = FavoritedItem.objects.all()
     serializer_class = FavoritedItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        user_id = request.user
+
+        user = get_object_or_404(User, id=user_id)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
