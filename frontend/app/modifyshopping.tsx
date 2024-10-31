@@ -22,7 +22,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
-import {CheckItem} from '@/components/Item';
+import {CheckItem, InputItem} from '@/components/Item';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -106,7 +106,8 @@ export default function ShoppingListScreen() {
                 price: 0,
                 favorited: item.favorited,
                 checked: false,
-                list: item.list.toString()
+                list: item.list.toString(),
+                quantity: item.quantity,
             }));
 
             const filteredItems = items.filter(item => item.list === local.id)
@@ -118,7 +119,8 @@ export default function ShoppingListScreen() {
                 price: 0,
                 favorited: false,
                 checked: false,
-                list: local.id
+                list: local.id,
+                quantity: 0,
             }]);
         } catch (error) {
             console.error('Error fetching shopping items:', error);
@@ -148,7 +150,7 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
+            setNewItemName("");
             fetchShoppingItems();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
@@ -170,7 +172,7 @@ export default function ShoppingListScreen() {
         );
     };
 
-
+/*
     const renderItem = ({item}) => {
         const priceText = item.price === 0 ? '' : '$' + item.price;
         const isInput = (item.id === -1);
@@ -178,7 +180,7 @@ export default function ShoppingListScreen() {
         return (
             <View style={styles.itemContainer}>
                 <View style={styles.itemLeftContainer}>
-                    {/* Star Icon */}
+                    {/* Star Icon *\/
                     <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
                         <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/>
                     </Pressable>
@@ -197,17 +199,17 @@ export default function ShoppingListScreen() {
                     </View>
                 </View>
                 <View style={styles.itemIconContainer}>
-                    {/* Star Icon */}
+                    {/* Star Icon *\/}
                     <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
                         <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
                     </Pressable>
 
-                    {/* Trash Icon */}
+                    {/* Trash Icon *\/}
                     <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
                         <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
                     </Pressable>
 
-                    {/* Plus Icon */}
+                    {/* Plus Icon *\/}
                     <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
                         <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
                     </Pressable>
@@ -215,10 +217,19 @@ export default function ShoppingListScreen() {
             </View>
         )
     };
-
-    const testRender = ({item}) => {
+*/
+    const renderItem = ({item}) => {
+        const isInput = (item.id === -1);
         return (
-            <CheckItem item={item}></CheckItem>
+            <View>
+                {isInput === false ? (
+                    <CheckItem item={item}></CheckItem>
+                ) : (
+                    <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
+                )}
+            </View>
+            
+            
         );
     };
 
@@ -238,10 +249,12 @@ export default function ShoppingListScreen() {
                 <FlatList
                     data={shoppingItems}
                     keyExtractor={(item) => item.id}
-                    renderItem={testRender}
+                    renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
                     
                 />
+                
+                
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
