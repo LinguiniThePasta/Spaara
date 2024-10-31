@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+import uuid
 from django.shortcuts import get_object_or_404
 
 
@@ -13,9 +14,11 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4(),editable=False)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
+    email_pending = models.EmailField(unique=True, default='')     # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
+    is_active = models.BooleanField(default=False)     # This is used to determine if the user has verified their email
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')

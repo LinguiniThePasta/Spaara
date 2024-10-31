@@ -6,6 +6,7 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
     DietRestriction
 from django.core.validators import validate_email
 import uuid
+from .utils import send_verification_email, send_password_reset_confirmation
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -41,6 +42,9 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
+    def validate_email(self, value):
+        return value.lower()
+
 
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
@@ -75,11 +79,12 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'old_password': 'Old password does not match'})
 
         if email:
-            instance.email = email
-            instance.username = email  # Assuming username is the same as email
+            instance.email_pending = email
+            send_verification_email(instance)
 
         if password:
             instance.set_password(password)
+            send_password_reset_confirmation(instance)
 
         instance.save()
         return instance
