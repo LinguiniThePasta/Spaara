@@ -224,7 +224,6 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
         serializer = self.get_serializer(data=data)
-        print(serializer)
         if serializer.is_valid():
             serializer.save(list=grocery_list)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -315,4 +314,32 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def add_to_shopping_list(self, request, pk=None):
+        grocery_id = request.data["list"]
+        favorited_item = self.get_object()
+        print(grocery_id)
+        data = {
+            'name': favorited_item.name,
+            'quantity': 1,
+            'units': 'units',
+            'favorited': True,
+            'description': favorited_item.description,
+            'store': favorited_item.store,
+            'list': grocery_id
+        }
 
+        serializer = GroceryItemUnoptimizedSerializer(data=data)
+        if serializer.is_valid():
+            GroceryItemUnoptimized.objects.update_or_create(
+                id=favorited_item.id,
+                defaults=serializer.validated_data
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@action(detail=True, methods=['post'])
+def add_to_recipe(self, request, pk=None):
+    pass
