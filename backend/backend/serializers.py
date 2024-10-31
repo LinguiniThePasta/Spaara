@@ -32,7 +32,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # This creates the user using the validated data and automatically hashes the password
         user = User.objects.create_user(
-            username=uuid.uuid4().hex[:20],
+            username=validated_data['email'],
             email=validated_data['email'],
             password=validated_data['password']
         )

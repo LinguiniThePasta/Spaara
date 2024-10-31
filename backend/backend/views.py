@@ -311,6 +311,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
+
         recipe_id = request.data.get('recipe_id')
         recipe = get_object_or_404(Recipe, id=recipe_id)
         serializer = self.get_serializer(data=request.data)
@@ -326,7 +327,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
-
 
 class FavoritedItemViewSet(mixins.RetrieveModelMixin,
                            mixins.UpdateModelMixin,
@@ -352,7 +352,7 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
     def add_to_shopping_list(self, request, pk=None):
         grocery_id = request.data["list"]
         favorited_item = self.get_object()
-        print(grocery_id)
+        grocery = Grocery.objects.all().filter(id=grocery_id).get()
         data = {
             'name': favorited_item.name,
             'quantity': 1,
@@ -360,20 +360,41 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
             'favorited': True,
             'description': favorited_item.description,
             'store': favorited_item.store,
-            'list': grocery_id
+            'list': grocery.id
         }
 
         serializer = GroceryItemUnoptimizedSerializer(data=data)
         if serializer.is_valid():
+            data['list'] = grocery
             GroceryItemUnoptimized.objects.update_or_create(
                 id=favorited_item.id,
-                defaults=serializer.validated_data
+                defaults=data
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=['post'])
+    def add_to_recipe(self, request, pk=None):
+        recipe_id = request.data["list"]
+        favorited_item = self.get_object()
+        recipe = Recipe.objects.all().filter(id=recipe_id).get()
+        data = {
+            'name': favorited_item.name,
+            'quantity': 1,
+            'units': 'units',
+            'favorited': True,
+            'description': favorited_item.description,
+            'store': favorited_item.store,
+            'list': recipe.id
+        }
 
-
-@action(detail=True, methods=['post'])
-def add_to_recipe(self, request, pk=None):
-    pass
+        serializer = RecipeItemSerializer(data=data)
+        if serializer.is_valid():
+            data['list'] = recipe
+            RecipeItem.objects.update_or_create(
+                id=favorited_item.id,
+                defaults=data
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -11,10 +11,10 @@ from django.shortcuts import get_object_or_404
 
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4(),editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
-    email_pending = models.EmailField(unique=True, default='')     # Email pending is used to store the email that the user wants to change to until verification
+    email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
@@ -97,7 +97,7 @@ class DietRestriction(models.Model):
 
 
 class ListBase(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4(), editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     creation_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
