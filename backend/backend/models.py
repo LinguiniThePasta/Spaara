@@ -16,8 +16,6 @@ class User(AbstractUser):
     is_active = models.BooleanField(default=False)     # This is used to determine if the user has verified their email
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
-    groceryLists = models.ManyToManyField("Grocery", related_name='users')
-    diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
     def __str__(self):
         return self.email
 

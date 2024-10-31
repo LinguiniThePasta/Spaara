@@ -12,18 +12,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
-from .utils import send_verification_email
+from .utils import send_verification_email, send_delete_confirmation_email
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 import uuid
+import rest_framework.mixins as mixins
 
 class RegisterView(APIView):
     def post(self, request):
         serializer = serializers.RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            print("Sending email")
             send_verification_email(user)
             return Response({'message': 'User registered successfully. Please check your email to verify your account.'}, status=status.HTTP_201_CREATED)
         else:
@@ -38,9 +38,17 @@ class VerifyEmailView(APIView):
             user = None
 
         if user is not None and default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
-            return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+            if user.is_active and user.email_pending is not None:
+                user.email = user.email_pending
+                user.email_pending = ''
+                user.save()
+                return Response({'message': 'Email updated successfully'}, status=status.HTTP_200_OK)
+            elif user.is_active and (user.email_pending is None or user.email == user.email_pending):
+                return Response({'message': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                user.is_active = True
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -49,8 +57,13 @@ class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
     def delete(self, request):
         user = request.user
-        User.objects.filter(id=user.id).delete()
-        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        email = user.email
+        try:
+            User.objects.filter(id=user.id).delete()
+            send_delete_confirmation_email(email)
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -70,7 +83,7 @@ class LoginView(APIView):
 
         # Authenticate using email and password
         try:
-            user = User.objects.get(email=serializer.data['email'])
+            user = User.objects.get(email__iexact=serializer.validated_data['email'])
             if user.check_password(serializer.data['password']):
                 if(user.is_active == False):
                     return Response({'error': ['Email must be verified before logging in.']}, status=status.HTTP_401_UNAUTHORIZED)
@@ -165,7 +178,6 @@ class UpdateInfoView(APIView):
             serializer.save()
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
-            print("Invalid serializer")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -176,14 +188,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.groceryLists.all()
+        return user.groceries.all()
 
     def create(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            grocery_list = serializer.save(user=user)
-            user.groceryLists.add(grocery_list)
+            serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -315,7 +326,22 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(item).data)
 
 
-class FavoritedItemViewSet(viewsets.ModelViewSet):
+class FavoritedItemViewSet(mixins.RetrieveModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
     queryset = FavoritedItem.objects.all()
     serializer_class = FavoritedItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        user_id = request.user
+
+        user = get_object_or_404(User, id=user_id)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
