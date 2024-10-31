@@ -56,8 +56,7 @@ export default function Footer() {
                 )
             }
         </View>
-    )
-        ;
+    );
 }
 
 const styles = StyleSheet.create({
