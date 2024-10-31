@@ -165,6 +165,7 @@ class UpdateInfoView(APIView):
             serializer.save()
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
+            print("Invalid serializer")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
