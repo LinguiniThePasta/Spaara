@@ -2,10 +2,11 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+import uuid
 
 
 class User(AbstractUser):
-    id = models.AutoField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4(),editable=False)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
     email_pending = models.EmailField(unique=True, default='')     # Email pending is used to store the email that the user wants to change to until verification
