@@ -42,6 +42,9 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
+    def validate_email(self, value):
+        return value.lower()
+
 
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
@@ -80,8 +83,8 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
             send_verification_email(instance)
 
         if password:
-            send_password_reset_confirmation(instance)
             instance.set_password(password)
+            send_password_reset_confirmation(instance)
 
         instance.save()
         return instance
