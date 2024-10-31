@@ -22,6 +22,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
+import {CheckItem} from '@/components/Item';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -43,6 +44,11 @@ export default function ShoppingListScreen() {
     const [favoriteItems, setFavoriteItems] = useState([
         {id: 1, title: 'Milk', favorited: true},
         {id: 2, title: 'Rice', favorited: true},
+    ]);
+
+    const [recipeTemp, setRecipe] = useState([
+        {id: 1, name: 'Beefed Banana'},
+        {id: 2, name: 'Porked Lemons'},
     ]);
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -210,6 +216,12 @@ export default function ShoppingListScreen() {
         )
     };
 
+    const testRender = ({item}) => {
+        return (
+            <CheckItem item={item}></CheckItem>
+        );
+    };
+
     const renderFavoriteItem = ({item}) => (
         <View style={styles.itemContainer}>
             <Text style={styles.itemTitle}>{item.title}</Text>
@@ -220,14 +232,15 @@ export default function ShoppingListScreen() {
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <View>
-                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"}></Header>
+                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"} noProfile={true}></Header>
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
                 <FlatList
                     data={shoppingItems}
                     keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
+                    renderItem={testRender}
                     contentContainerStyle={styles.listContainer}
+                    
                 />
                 <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
@@ -462,5 +475,7 @@ const styles = StyleSheet.create({
     flatList: {
         marginLeft: 10,
     },
-    recipeContainer: {}
+    recipeContainer: {
+
+    },
 });
