@@ -1,11 +1,10 @@
 import React, {useState} from 'react';
-import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
-import { TextInput } from 'react-native-gesture-handler';
 
 
 //<Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/> star
@@ -29,13 +28,14 @@ import { TextInput } from 'react-native-gesture-handler';
  * this is also the equivilant to unoptimized items
  */
 
-export const CheckItem = ({item}) => {
+
+export function CheckItem({item}) {
     const priceText = item.price === 0 ? '' : '$' + item.price;
     const isInput = (item.id === -1);
     const dummyString = "-1";
 
 
-    const [number, setNumber] = useState(0);
+    const [number, setNumber] = useState(item.quantity);
     const [shoppingItems, setShoppingItems] = useState([
         /*{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false },
         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
@@ -45,12 +45,13 @@ export const CheckItem = ({item}) => {
     function increaseItem() {
         setNumber(number + 1);
     }
+
     function decreaseItem() {
         setNumber(number - 1);
     }
+
     return (
-        <View style={styles.checkItem}>
-            
+        <View style={styles.checkItem}>    
             <View style={styles.leftContainer}>
                 <Pressable >
                     <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
@@ -77,8 +78,43 @@ export const CheckItem = ({item}) => {
     );
 };
 
-export const inputItem = () => {
+export function InputItem({onChangeText, handleAddItem}) {
+    const [number, setNumber] = useState(0);
+    return (
+        <View style={styles.checkItem}>
+            
+            <View style={styles.leftContainer}>
+                <Pressable >
+                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                </Pressable>
+                <TextInput 
+                    style={styles.itemText}
+                    placeholder='Add Item'
+                    placeholderTextColor={Colors.light.secondaryText}
+                    editable={true}
+                    onChangeText={(text) => onChangeText(text)}
+                    onSubmitEditing={() => handleAddItem()}
 
+                />
+            </View>
+
+            <View style={styles.rightContainer}>
+                <Pressable >
+                    <Icon name="star-outline" size={20} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                </Pressable>
+                <View style={styles.plusMinusContainer}>
+                    <Pressable>
+                        <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>
+                    </Pressable>
+                    <View style={styles.divider}></View>
+                    <Text style={styles.itemText}>{number}</Text>
+                    <Pressable>
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
+                    </Pressable>
+                </View>
+            </View>
+        </View>
+    );
 }
 
 
