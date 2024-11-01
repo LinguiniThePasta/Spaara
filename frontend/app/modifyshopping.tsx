@@ -210,18 +210,59 @@ export default function ShoppingListScreen() {
         }
     }
 
-    const handleFavorite = async (id) => {
-        // Simulate favoriting an item
-        setShoppingLists(prevLists =>
-            prevLists.map(item =>
-                item.id === id ? {...item, favorited: !item.favorited} : item
-            )
-        );
-        setFavoriteItems(prevFavorites =>
-            prevFavorites.map(item =>
-                item.id === id ? {...item, favorited: !item.favorited} : item
-            )
-        );
+    const handleFavorite = async (item) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/favorite/`, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new favorite:', error);
+        }
+        
+    }
+
+    const addFavoriteItem = async ({item}) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/${item.id}/favorite`, {
+                name: item.title,
+
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
+    };
+
+    const removeFavoriteItem = async (item) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.delete(`${API_BASE_URL}/api/favorited/items/${item.id}/?list=${local.id}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
     };
 
     const renderItem = ({item}) => {
@@ -229,7 +270,7 @@ export default function ShoppingListScreen() {
         return (
             <View style={styles.checkItemContainer}>
                 {isInput === false ? (
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={() => handleFavorite(item)} handleRemoveItem={() => handleRemove(item)}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}

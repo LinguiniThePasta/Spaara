@@ -54,7 +54,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
             </View>
 
             <View style={styles.rightContainer}>
-                <Pressable onPress={() => {handleFavoriteItem(); setFavorite(!favorite);}}>
+                <Pressable onPress={(item) => {handleFavoriteItem(item); setFavorite(!favorite);}}>
                     <Icon 
                         name={favorite ? "star" : "star-outline" }
                         size={20} 
