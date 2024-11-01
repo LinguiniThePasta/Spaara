@@ -99,7 +99,7 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
@@ -116,7 +116,7 @@ export default function ShoppingListScreen() {
             }));
 
             const filteredItems = items.filter(item => item.list === local.id)
-
+            console.log(filteredItems);
             console.log("Correctly fetched shopping items!");
             setShoppingItems([...filteredItems, {
                 id: -1,
@@ -190,8 +190,6 @@ export default function ShoppingListScreen() {
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
             </View>
-            
-            
         );
     };
 
