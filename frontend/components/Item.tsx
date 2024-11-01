@@ -23,6 +23,8 @@ import {useSelector} from "react-redux";
 
 export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
     const [number, setNumber] = useState(item.quantity);
+    const [favorite, setFavorite] = useState(item.favorited);
+    const [checked, setChecked] = useState(item.checked);
 
     function increaseItem() {
         setNumber(number + 1);
@@ -35,21 +37,31 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
         }
     }
 
+    function toggleCheck() {
+        setChecked(!checked);
+    }
+
+
     return (
         <View style={styles.item}>    
             <View style={styles.leftContainer}>
-                <Pressable >
-                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                <Pressable onPress={toggleCheck}>
+                    <Icon name={checked ? "ellipse" : "ellipse-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
                 </Pressable>
                 <Text style={styles.itemText}>{item.title}</Text>
             </View>
 
             <View style={styles.rightContainer}>
-                <Pressable onPress={handleFavoriteItem()}>
-                    <Icon name="star-outline" size={20} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                <Pressable onPress={() => {handleFavoriteItem(); setFavorite(!favorite);}}>
+                    <Icon 
+                        name={favorite ? "star" : "star-outline" }
+                        size={20} 
+                        color={Colors.light.secondaryText} 
+                        style={styles.checkboxText}
+                    />
                 </Pressable>
                 <View style={styles.plusMinusContainer}>
-                    <Pressable onPress={decreaseItem}>
+                    <Pressable onPress={(item) => {number - 1 === 0 ? handleRemoveItem(item) : decreaseItem()}}>
                         <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>
                     </Pressable>
                     <View style={styles.divider}></View>
@@ -194,5 +206,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         padding: 3,
+    },
+    favoriteButton: {
+        fontSize: 20,
+    },
+    isFavorite: {
+        color: Colors.light.primaryColor,
+    },
+    notFavorite: {
+        color: Colors.light.secondaryText,
     },
 });
