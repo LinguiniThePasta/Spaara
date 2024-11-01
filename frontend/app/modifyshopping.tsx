@@ -146,7 +146,7 @@ export default function ShoppingListScreen() {
             }));
 
             const filteredItems = items.filter(item => item.list === local.id)
-
+            console.log(filteredItems);
             console.log("Correctly fetched shopping items!");
             setShoppingItems([...filteredItems, {
                 id: -1,
@@ -220,8 +220,6 @@ export default function ShoppingListScreen() {
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
             </View>
-            
-            
         );
     };
 
