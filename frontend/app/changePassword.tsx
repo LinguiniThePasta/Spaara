@@ -38,7 +38,8 @@ export default function ChangePassword() {
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/update_info`,
                 {
-                    password: newPassword,
+                    old_password: currentPassword,
+                    password: newPassword
                 },
                 {
                     headers: {

@@ -12,17 +12,47 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
+from .utils import send_verification_email, send_delete_confirmation_email
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
 import uuid
+import rest_framework.mixins as mixins
 
 
 class RegisterView(APIView):
     def post(self, request):
         serializer = serializers.RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+            user = serializer.save()
+            send_verification_email(user)
+            return Response({'message': 'User registered successfully. Please check your email to verify your account.'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            if user.is_active and user.email_pending is not None:
+                user.email = user.email_pending
+                user.email_pending = ''
+                user.save()
+                return Response({'message': 'Email updated successfully'}, status=status.HTTP_200_OK)
+            elif user.is_active and (user.email_pending is None or user.email == user.email_pending):
+                return Response({'message': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                user.is_active = True
+                user.save()
+                return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class DeleteUserView(APIView):
@@ -30,8 +60,13 @@ class DeleteUserView(APIView):
 
     def delete(self, request):
         user = request.user
-        User.objects.filter(id=user.id).delete()
-        return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        email = user.email
+        try:
+            User.objects.filter(id=user.id).delete()
+            send_delete_confirmation_email(email)
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -51,8 +86,10 @@ class LoginView(APIView):
 
         # Authenticate using email and password
         try:
-            user = User.objects.get(email=serializer.data['email'])
+            user = User.objects.get(email__iexact=serializer.validated_data['email'])
             if user.check_password(serializer.data['password']):
+                if(user.is_active == False):
+                    return Response({'error': ['Email must be verified before logging in.']}, status=status.HTTP_401_UNAUTHORIZED)
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     'access': str(refresh.access_token),
@@ -157,14 +194,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.groceryLists.all()
+        return user.groceries.all()
 
     def create(self, request, *args, **kwargs):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            grocery_list = serializer.save(user=user)
-            user.groceryLists.add(grocery_list)
+            serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -206,34 +242,6 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
 
 class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
-    """
-    Retrieves the queryset of unoptimized grocery items, optionally filtered by grocery list ID.
-
-    :param:
-        None
-
-    :return:
-        QuerySet: A queryset of GroceryItemUnoptimized instances, filtered by the 'list' parameter
-                  if provided in the request query params.
-
-    query details:
-        - Retrieves all grocery items by default.
-        - If 'list' is provided as a query parameter, filters items by the grocery list ID.
-
-    usage:
-        - GET {URL} - retrieves all grocery items
-        - GET {URL}/list={list} - retrieves all grocery items associated with list
-        - POST {URL}/
-            - data (dict):
-                {
-                    name: name of the item
-                    store (optional): the store where the grocery item is stored
-                    description (optional): description of the item
-                    quantity: the number of items
-                    units: unit
-                    list: the id of the grocery list
-                }
-    """
     queryset = GroceryItemUnoptimized.objects.all()
     serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
@@ -394,6 +402,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                     }
         """
 
+
         recipe_id = request.data.get('recipe_id')
         recipe = get_object_or_404(Recipe, id=recipe_id)
         serializer = self.get_serializer(data=request.data)
@@ -410,8 +419,73 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         item.save()
         return Response(self.get_serializer(item).data)
 
-
-class FavoritedItemViewSet(viewsets.ModelViewSet):
+class FavoritedItemViewSet(mixins.RetrieveModelMixin,
+                           mixins.UpdateModelMixin,
+                           mixins.DestroyModelMixin,
+                           mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
     queryset = FavoritedItem.objects.all()
     serializer_class = FavoritedItemSerializer
     permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        user_id = request.user
+
+        user = get_object_or_404(User, id=user_id)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def add_to_shopping_list(self, request, pk=None):
+        grocery_id = request.data["list"]
+        favorited_item = self.get_object()
+        grocery = Grocery.objects.all().filter(id=grocery_id).get()
+        data = {
+            'name': favorited_item.name,
+            'quantity': 1,
+            'units': 'units',
+            'favorited': True,
+            'description': favorited_item.description,
+            'store': favorited_item.store,
+            'list': grocery.id
+        }
+
+        serializer = GroceryItemUnoptimizedSerializer(data=data)
+        if serializer.is_valid():
+            data['list'] = grocery
+            GroceryItemUnoptimized.objects.update_or_create(
+                id=favorited_item.id,
+                defaults=data
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=['post'])
+    def add_to_recipe(self, request, pk=None):
+        recipe_id = request.data["list"]
+        favorited_item = self.get_object()
+        recipe = Recipe.objects.all().filter(id=recipe_id).get()
+        data = {
+            'name': favorited_item.name,
+            'quantity': 1,
+            'units': 'units',
+            'favorited': True,
+            'description': favorited_item.description,
+            'store': favorited_item.store,
+            'list': recipe.id
+        }
+
+        serializer = RecipeItemSerializer(data=data)
+        if serializer.is_valid():
+            data['list'] = recipe
+            RecipeItem.objects.update_or_create(
+                id=favorited_item.id,
+                defaults=data
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
