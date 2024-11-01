@@ -1,8 +1,10 @@
 import uuid
+from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -11,14 +13,15 @@ from django.shortcuts import get_object_or_404
 
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.EmailField(unique=True)
     email = models.EmailField(unique=True)
-    email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
+    email_pending = models.EmailField(unique=True, null=True,
+                                      default=None)  # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
-    is_active = models.BooleanField(default=False)     # This is used to determine if the user has verified their email
+    is_active = models.BooleanField(default=False)  # This is used to determine if the user has verified their email
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
@@ -111,7 +114,11 @@ class ListBase(models.Model):
 
 class Grocery(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="groceries", default=None)
-
+    budget = models.DecimalField(max_digits=15,
+                                 decimal_places=2,
+                                 validators=[MinValueValidator(Decimal('0.01'))],
+                                 default=70.00
+                                 )
 
 
 class Recipe(ListBase):
@@ -171,8 +178,13 @@ class ItemBase(models.Model):
 class GroceryItemOptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=15,
+                                decimal_places=2,
+                                validators=[MinValueValidator(Decimal('0.00'))]
+                                )
     favorited = models.BooleanField(default=False)
+    checked = models.BooleanField(default=False)
+    index = models.PositiveIntegerField(blank=True)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
 
     def __init__(self, *args, **kwargs):
@@ -181,10 +193,14 @@ class GroceryItemOptimized(ItemBase):
 
 
 class GroceryItemUnoptimized(ItemBase):
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
+    checked = models.BooleanField(default=False)
+    index = models.PositiveIntegerField(blank=True)
     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
+
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -192,7 +208,7 @@ class GroceryItemUnoptimized(ItemBase):
 
 
 class RecipeItem(ItemBase):
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
     list = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
@@ -204,6 +220,7 @@ class RecipeItem(ItemBase):
 
 class FavoritedItem(ItemBase):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
