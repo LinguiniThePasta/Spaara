@@ -141,6 +141,7 @@ export function InputItem({onChangeText, handleAddItem}) {
  * 
  * @param item The Item you want to display
  * @param addFavoriteItem The function to add favorite item to list
+ * @param removeFromFavorite the function to remove favorite item from favorited
  */
 
 export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
