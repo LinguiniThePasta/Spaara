@@ -48,7 +48,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
         <View style={styles.item}>    
             <View style={styles.leftContainer}>
                 <Pressable onPress={toggleCheck}>
-                    <Icon name={checked ? "ellipse" : "ellipse-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                    <Icon name={checked ? "ellipse" : "ellipse-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxIcon}/>
                 </Pressable>
                 <Text style={styles.itemText}>{item.title}</Text>
             </View>
@@ -100,17 +100,16 @@ export function InputItem({onChangeText, handleAddItem}) {
             
             <View style={styles.leftContainer}>
                 <Pressable >
-                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                    <Icon name="ellipse-outline" size={30} color={Colors.light.secondaryText} style={styles.checkboxText}/>
                 </Pressable>
                 <TextInput 
                     style={styles.itemText}
                     placeholder='Add Item'
                     placeholderTextColor={Colors.light.secondaryText}
                     editable={true}
-                    defaultValue=''
                     onChangeText={(text) => onChangeText(text)}
                     onSubmitEditing={() => handleAddItem()}
-                    onFocus={() => handleAddItem()}
+                    
                 />
             </View>
 
@@ -124,6 +123,7 @@ export function InputItem({onChangeText, handleAddItem}) {
                     </Pressable>
                     <View style={styles.divider}></View>
                     <Text style={styles.itemText}>{number}</Text>
+                    <View style={styles.divider}></View>
                     <Pressable>
                         <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
                     </Pressable>
@@ -193,11 +193,15 @@ const styles = StyleSheet.create({
     },
     itemText: {
         color: Colors.light.primaryText,
-        fontSize: 20,
+        fontSize: 25,
+    },
+    checkboxIcon: {
+        marginRight: 5,
+        fontSize:25
     },
     checkboxText: {
         color: Colors.light.secondaryText,
-        fontSize: 20,
+        fontSize: 25,
     },
     rightContainer: {
         alignSelf: 'flex-end',
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
         padding: 3,
     },
     favoriteButton: {
-        fontSize: 20,
+        fontSize: 25,
     },
     isFavorite: {
         color: Colors.light.primaryColor,
