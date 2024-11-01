@@ -1,13 +1,15 @@
 from django.contrib.auth.models import Group
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction
+    DietRestriction, Subheading
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
@@ -320,18 +322,6 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''
         Retrieves the queryset of grocery lists belonging to the authenticated user.
-
-        :param:
-            None
-
-        :return:
-            QuerySet: A queryset of Grocery instances belonging to the current user.
-
-        query details:
-            - Returns only the grocery lists associated with the authenticated user.
-
-        usage:
-            - GET {URL} - retrieves all grocery lists for the authenticated user.
         '''
         user = self.request.user
         return user.groceries.all()
@@ -339,26 +329,6 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         '''
         Creates a new grocery list associated with the authenticated user.
-
-        :param:
-            request (Request): The incoming request containing grocery list data.
-
-        :return:
-            Response: Contains the serialized data of the newly created grocery list with status 201 on success,
-                      or error details with status 400 if validation fails.
-
-        creation details:
-            - Uses the authenticated user as the owner of the grocery list.
-            - Validates the data using the serializer.
-            - If valid, saves the grocery list associated with the user and returns the created list data.
-            - If invalid, returns error messages.
-
-        usage:
-            - POST {URL}/
-                - data (dict):
-                    {
-                        name: name of the grocery list
-                    }
         '''
         user = request.user
         serializer = self.get_serializer(data=request.data)
@@ -367,6 +337,211 @@ class GroceryListViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='add_recipe')
+    def add_recipe(self, request, pk=None):
+        """
+        Adds a recipe to a specified grocery list, creating a new subheading for the recipe
+        if it does not already exist in the grocery list. This allows users to organize grocery
+        items by recipe within a list.
+
+        :param:
+            request (Request): The incoming request containing the 'recipe_id' in the data,
+            which identifies the recipe to be added to the grocery list.
+            pk (UUID): The primary key of the grocery list to which the recipe will be added.
+
+        :return:
+            Response: A success message and HTTP 200 status if the recipe was added successfully,
+            or an error message with the appropriate HTTP status if the request is invalid or
+            the recipe already exists in the grocery list.
+
+        addition details:
+            - Validates that the recipe belongs to the authenticated user.
+            - Checks if the recipe is already added to the grocery list; if so, returns an error.
+            - If valid, creates a new subheading in the grocery list with the recipe's name
+              and adds all items from the recipe to the grocery list under the new subheading.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/add-recipe/
+                - data (dict):
+                    {
+                        "recipe_id": <UUID>  # The ID of the recipe to be added
+                    }
+        """
+        grocery = self.get_object()
+        recipe_id = request.data.get('recipe_id')
+
+        if not recipe_id:
+            return Response({"error": "recipe_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate recipe ownership
+        try:
+            recipe = Recipe.objects.get(id=recipe_id, user=request.user)
+        except Recipe.DoesNotExist:
+            return Response({"error": "Recipe does not exist or does not belong to the user."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Use the service to add the recipe
+        try:
+            self.add_recipe_to_grocery(grocery, recipe)
+            return Response({"success": "Recipe added successfully."}, status=status.HTTP_200_OK)
+        except ValidationError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An unexpected error occurred."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='reorder_subheadings')
+    def reorder_subheadings(self, request, pk=None):
+        """
+        Reorders the subheadings within a specified grocery list according to the order
+        provided in the request. Allows users to customize the organization of their
+        grocery list's sections.
+
+        :param:
+            request (Request): The incoming request containing 'subheadings_order',
+            a list of subheading IDs arranged in the desired order.
+            pk (UUID): The primary key of the grocery list whose subheadings are being reordered.
+
+        :return:
+            Response: A success message and HTTP 200 status if the subheadings were reordered
+            successfully, or an error message with the appropriate HTTP status if the request
+            is invalid or if one or more subheadings do not exist in the grocery list.
+
+        reordering details:
+            - Validates that each subheading ID belongs to the specified grocery list.
+            - Updates the 'order' field of each subheading to match its position in
+              the 'subheadings_order' list.
+            - Ensures atomicity of the operation, so no changes are saved if any errors occur.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/reorder-subheadings/
+                - data (dict):
+                    {
+                        "subheadings_order": [<UUID>, <UUID>, ...]  # List of subheading IDs in desired order
+                    }
+        """
+        grocery = self.get_object()
+        subheadings_order = request.data.get('subheadings_order')
+
+        if not isinstance(subheadings_order, list):
+            return Response({"error": "subheadings_order must be a list of subheading IDs."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for index, subheading_id in enumerate(subheadings_order, start=1):
+                    subheading = Subheading.objects.get(id=subheading_id, grocery=grocery)
+                    subheading.order = index
+                    subheading.save()
+            return Response({"success": "Subheadings reordered successfully."}, status=status.HTTP_200_OK)
+        except Subheading.DoesNotExist:
+            return Response({"error": "One or more subheadings do not exist in this grocery list."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An error occurred while reordering subheadings."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='reorder-items')
+    def reorder_items(self, request, pk=None):
+        '''
+        Reorders the items within a specified subheading in a grocery list based on
+        the provided order. Allows users to organize items within a subheading
+        according to their preferred sequence.
+
+        :param:
+            request (Request): The incoming request containing 'items_order', a list of
+            dictionaries with each dictionary specifying 'item_id' and 'order' to define
+            the desired order for each item.
+            pk (UUID): The primary key of the grocery list containing the subheading
+            whose items are being reordered.
+
+        :return:
+            Response: A success message and HTTP 200 status if the items are reordered
+            successfully, or an error message with the appropriate HTTP status if the
+            request is invalid, if any items do not exist in the specified grocery list,
+            or if 'items_order' is not correctly formatted.
+
+        reordering details:
+            - Validates that each item ID in 'items_order' belongs to the specified grocery list.
+            - Updates the 'order' field of each item to match the specified order in
+              the 'items_order' list.
+            - Executes the reordering operation atomically to prevent partial updates.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/reorder-items/
+                - data (list of dicts):
+                    [
+                        {"item_id": <UUID>, "order": 1},
+                        {"item_id": <UUID>, "order": 2},
+                        ...
+                    ]  # Specifies each item's ID and its new order within the subheading
+        '''
+        grocery = self.get_object()
+        items_order = request.data.get('items_order')
+
+        if not isinstance(items_order, list):
+            return Response({"error": "items_order must be a list of item order mappings."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for item_data in items_order:
+                    item_id = item_data.get('item_id')
+                    order = item_data.get('order')
+                    if not item_id or not isinstance(order, int):
+                        raise ValidationError("Each item must have an 'item_id' and an integer 'order'.")
+                    item = GroceryItemUnoptimized.objects.get(id=item_id, grocery=grocery)
+                    item.order = order
+                    item.save()
+            return Response({"success": "Items reordered successfully."}, status=status.HTTP_200_OK)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "One or more items do not exist in this grocery list."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An error occurred while reordering items."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def add_recipe_to_grocery(self, grocery, recipe):
+        """
+        Adds a recipe to a grocery list by creating a subheading and associated items.
+        Prevents adding the same recipe multiple times to the same grocery list.
+        """
+        # Check if the recipe is already added via Subheading
+        if Subheading.objects.filter(grocery=grocery, recipe=recipe).exists():
+            raise ValidationError("This recipe has already been added to the grocery list.")
+
+        try:
+            with transaction.atomic():
+                # Create Subheading
+                subheading = Subheading.objects.create(
+                    name=recipe.name,
+                    grocery=grocery,
+                    recipe=recipe,
+                    order=self.calculate_next_subheading_order(grocery)
+                )
+
+                # Add RecipeItems to the Grocery list under the new Subheading
+                recipe_items = recipe.items.all()
+                for index, item in enumerate(recipe_items, start=1):
+                    GroceryItemUnoptimized.objects.create(
+                        name=item.name,
+                        description=item.description,
+                        store=item.store,
+                        quantity=item.quantity,
+                        units=item.units,
+                        favorited=item.favorited,
+                        subheading=subheading,
+                        order=index
+                    )
+        except Exception as e:
+            raise ValidationError(f"An error occurred while adding the recipe: {str(e)}")
+
+    def calculate_next_subheading_order(self, grocery):
+        last_subheading = grocery.subheadings.order_by('-order').first()
+        return last_subheading.order + 1 if last_subheading else 1
 
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
@@ -450,14 +625,13 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         queryset = super().get_queryset()
         grocery_id = self.request.query_params.get('list')
-
         if grocery_id:
             queryset = queryset.filter(list=grocery_id)
         else:
             queryset = queryset.filter(list=None)
 
         return queryset
-    
+
     def destroy(self, request, *args, **kwargs):
         '''
         Deletes a specific recipe item, validated by both recipe ID and item ID.
@@ -484,7 +658,7 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         # Check if item exists and belongs to the specified recipe
         item = get_object_or_404(GroceryItemUnoptimized, id=item_id, list=grocery_id)
-        
+
         # Proceed with deletion
         item.delete()
         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
@@ -518,17 +692,16 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
                         list: the id of the grocery list
                     }
         '''
-        data = request.data
-        grocery_list_id = data.get('list')
-        grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
-        serializer = self.get_serializer(data=data)
-        print(serializer)
-        if serializer.is_valid():
-            serializer.save(list=grocery_list)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Retrieve the grocery list from request data
+        grocery_list_id = request.data.get('list')
+        grocery = get_object_or_404(Grocery, id=grocery_list_id)
+
+        # Pass the grocery instance in the context
+        serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
@@ -583,7 +756,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user:
-            queryset = queryset.filter(user=user.id)
+            return Recipe.objects.filter(user=user)
 
         return queryset
 
@@ -647,7 +820,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         recipe_id = self.request.query_params.get('recipe_id')
 
         if recipe_id:
-            queryset = queryset.filter(list_id=recipe_id)
+            queryset.filter(recipe_id=recipe_id)
 
         return queryset
 
@@ -673,7 +846,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                 - data (dict):
                     {
                         name: name of the recipe item
-                        ingredient (optional): ingredient used in the recipe item
                         description (optional): description of the recipe item
                         quantity: quantity required for the recipe item
                         units: units of the quantity
@@ -681,12 +853,10 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                     }
         '''
         recipe_id = request.data.get('recipe_id')
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        print("EYYYYYY")
-        print(recipe)
+        recipe = get_object_or_404(Recipe, id=recipe_id, user=request.user)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(list=recipe)
+            serializer.save(recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
