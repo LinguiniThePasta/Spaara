@@ -149,11 +149,11 @@ export default function RecipeScreen() {
                 price: 0,
                 favorited: item.favorited,
                 checked: false,
-                list: item.list.toString(),
+                recipe: item.recipe.toString(),
                 quantity: item.quantity,
             }));
 
-            const filteredItems = items.filter(item => item.list === local.id)
+            const filteredItems = items.filter(item => item.recipe === local.id)
             //const filteredItems = items;
             console.log(filteredItems);
             console.log("Correctly fetched recipe items!");
