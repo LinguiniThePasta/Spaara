@@ -412,6 +412,9 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
             - Retrieves the grocery item instance specified by the primary key.
             - Toggles its 'favorited' attribute.
             - Saves the updated instance and returns the updated data.
+
+        usage:
+            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
         '''
         item = self.get_object()
         item.favorited = not item.favorited
@@ -512,6 +515,9 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             - Retrieves the grocery item instance specified by the primary key.
             - Toggles its 'favorited' attribute.
             - Saves the updated instance and returns the updated data.
+
+        usage:
+            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
         '''
         item = self.get_object()
         item.favorited = not item.favorited
@@ -668,6 +674,9 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
             - Retrieves the recipe item instance specified by the primary key.
             - Toggles its 'favorited' attribute.
             - Saves the updated instance and returns the updated data.
+
+        usage:
+            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
         '''
         item = self.get_object()
         item.favorited = not item.favorited
@@ -696,6 +705,29 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
 
     @action(detail=True, methods=['post'])
     def add_to_shopping_list(self, request, pk=None):
+        '''
+        Adds a favorited item to a specified shopping list.
+
+        :param:
+            request (Request): The incoming request containing 'list' with the ID of the target grocery list.
+            pk (int): The primary key of the favorited item to add to the shopping list.
+
+        :return:
+            Response: Contains the serialized data of the added grocery item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        action details:
+            - Retrieves the favorited item specified by the primary key.
+            - Creates a new grocery item based on the favorited item data and associates it with the specified grocery list.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/add_to_shopping_list/
+                - data (dict):
+                    {
+                        list: id of the grocery list
+                    }
+        '''
+
         grocery_id = request.data["list"]
         favorited_item = self.get_object()
         grocery = Grocery.objects.all().filter(id=grocery_id).get()
@@ -721,6 +753,28 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @action(detail=True, methods=['post'])
     def add_to_recipe(self, request, pk=None):
+        '''
+        Adds a favorited item to a specified recipe.
+
+        :param:
+            request (Request): The incoming request containing 'list' with the ID of the target recipe.
+            pk (int): The primary key of the favorited item to add to the recipe.
+
+        :return:
+            Response: Contains the serialized data of the added recipe item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        action details:
+            - Retrieves the favorited item specified by the primary key.
+            - Creates a new recipe item based on the favorited item data and associates it with the specified recipe.
+
+        usage:
+            - POST {URL}/{recipe_id}/add_to_shopping_list/
+                - data (dict):
+                    {
+                        list: id of the grocery list
+                    }
+        '''
         recipe_id = request.data["list"]
         favorited_item = self.get_object()
         recipe = Recipe.objects.all().filter(id=recipe_id).get()
