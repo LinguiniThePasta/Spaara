@@ -155,13 +155,16 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName("");
+            setNewItemName('');
             fetchShoppingItems();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
     };
 
+    const handleRemoveItem = ({item}) => {
+        console.log('Removing this: ' + item.title);
+    }
 
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
@@ -228,7 +231,7 @@ export default function ShoppingListScreen() {
         return (
             <View>
                 {isInput === false ? (
-                    <CheckItem item={item}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
