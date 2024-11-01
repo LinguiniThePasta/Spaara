@@ -25,8 +25,9 @@ import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
 import {ItemGroup} from '@/components/ItemGroup';
-import {CheckItem, FavoriteItem, InputItem} from '@/components/Item';
+import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
+import { getQualifiedRouteComponent } from 'expo-router/build/useScreens';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -64,11 +65,13 @@ export default function ShoppingListScreen() {
     const [contentVisable, setContentVisable] = useState('Favorite');
 
     const [itemGroups, setItemGroups] = useState([
-        {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+        {id: 1000, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
                                          { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
-        {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+        {id: 1001, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
                                          { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
     ]);
+
+    const [allRecipes, setAllRecipes] = useState([]);
 
 
     const handlePress = (button) => {
@@ -133,6 +136,8 @@ export default function ShoppingListScreen() {
     };
 
 
+    const [nextRecipeID, setNextRecipeID] = useState("");
+    const [nextRecipeItems, setNextRecipeItems] = useState([]);
     const fetchShoppingItems = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -154,8 +159,51 @@ export default function ShoppingListScreen() {
             }));
 
             const filteredItems = items.filter(item => item.list === local.id)
-            console.log(filteredItems);
+            //console.log(filteredItems);
             console.log("Correctly fetched shopping items!");
+
+
+            //setItemGroups
+            var recipes = [];
+            filteredItems.forEach((item) => {
+                if (item.quantity === -1) {
+                    recipes = [...recipes, item.title];
+                    console.log("-$- " + item.title);
+                }
+            });
+
+
+            recipes.forEach((id) => {
+                setNextRecipeID(id);
+                fetchNextRecipeItems();
+            });
+
+
+
+
+
+            //console.log("recipe fetch id: " + id);
+            /*const jwtToken2 = await SecureStore.getItemAsync('jwtToken');
+
+            const response2 = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken2}`
+                }
+            });
+
+            const recipeItems = response2.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: item.favorited,
+                checked: false,
+                list: item.list.toString(),
+                quantity: item.quantity,
+            }));*/
+
+
+
+
             setShoppingItems([...itemGroups, ...filteredItems, {
                 id: -1,
                 title: 'Add Item',
@@ -164,14 +212,148 @@ export default function ShoppingListScreen() {
                 checked: false,
                 list: local.id,
                 quantity: 0,
+            }, {
+                id: -2,
+                title: '',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            },
+            {
+                id: -3,
+                title: '',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
             }]);
 
-            shoppingItems.forEach(
+            /*shoppingItems.forEach(
+                (item) => {console.log(item.title + ": " + item.id)}
+            );*/
+
+        } catch (error) {
+            console.error('Error fetching shopping items:', error);
+        }
+    };
+
+
+
+    const fetchRecipes = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+            const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            const lists = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+            }));
+
+            setAllRecipes(lists);
+
+            /*let listName = "Unnamed List";
+            lists.forEach(list => {
+                if (list.id === local.id) {
+                    listName = list.title;
+                }
+            });*/
+
+            console.log("Correctly fetched recipes!");
+            //setRecipeName(listName);
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
+        }
+    };
+
+
+    const [recipeItems, setRecipeItems] = useState([]);
+    const fetchRecipeItems = async (id) => {
+        try {
+            console.log("recipe fetch id: " + id);
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+            const response = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            const items = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: item.favorited,
+                checked: false,
+                list: item.list.toString(),
+                quantity: item.quantity,
+            }));
+
+
+            items.forEach(
+                (item) => {console.log("   |   " + item.title + ": " + item.id)}
+            );
+
+
+            const filteredItems = items.filter(item => item.list === id)
+
+
+            filteredItems.forEach(
+                (item) => {console.log("      |   " + item.title + ": " + item.id)}
+            );
+            //const filteredItems = items;
+            //console.log(filteredItems);
+            console.log("Correctly fetched recipe items!");
+            setRecipeItems([...filteredItems, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            }])
+            /*setRecipeItems([...filteredItems, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            }, {
+                id: -2,
+                title: '',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            },
+            {
+                id: -3,
+                title: '',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            }]);*/
+
+            console.log("items:");
+            recipeItems.forEach(
                 (item) => {console.log(item.title + ": " + item.id)}
             );
 
         } catch (error) {
-            console.error('Error fetching shopping items:', error);
+            console.error('Error fetching recipe items:', error);
         }
     };
 
@@ -224,6 +406,7 @@ export default function ShoppingListScreen() {
         fetchShoppingLists();
         //fetchItemGroups();
         fetchShoppingItems();
+        fetchRecipes();
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
@@ -286,11 +469,12 @@ export default function ShoppingListScreen() {
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         const isGroup = (item.id >= 1000);
+        const isSpacer = (item.id < -1);
 
         if (isInput) {
             return (
                 <View>
-                    <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
+                    <InputItem initialText={newItemName} onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 </View>
             );
         }
@@ -298,18 +482,22 @@ export default function ShoppingListScreen() {
         if (isGroup) {
             return (
                 <View>
-                    <ItemGroup name={item.title} items={item.items} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+                    <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemove} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+                </View>
+            );
+        }
+
+        if (isSpacer) {
+            return (
+                <View>
+                    <SpacerItem></SpacerItem>
                 </View>
             );
         }
 
         return (
             <View style={styles.checkItemContainer}>
-                {isInput === false ? (
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
-                ) : (
-                    <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
-                )}
+                <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
             </View>
         );
     };
@@ -324,15 +512,64 @@ export default function ShoppingListScreen() {
                 <Text style={styles.itemTitle}>{item.title}</Text>
             </View>
             <View style={styles.recipeRight}>
-                <Pressable onPress={() => console.log('Add pressed for ${item.title}')}>
+                <Pressable onPress={() => handleAddRecipe(item)}>
                     <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>                    
                 </Pressable>
             </View>
         </View>
     );
 
+
+
+
+
+    const handleAddRecipe = async (item) => {
+
+        console.log("Adding this: " + item.id);
+        //if (newItemName === "-1") return;
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+                name: item.id,
+                quantity: -1,
+                units: "units",
+                list: local.id,
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
+
+        console.log("Recipe: " + item.title);
+
+        await fetchRecipeItems(item.id);
+
+        console.log("Recipe Items: ");
+        recipeItems.forEach((item) => console.log(" + " + item.title));
+
+
+        const newId = 1000 + itemGroups.length;
+        let newRecipe = {id: newId, title: item.title, items: recipeItems};
+
+        setItemGroups([...itemGroups, newRecipe]);
+        itemGroups.forEach((item) => console.log(item.title));
+        await fetchShoppingItems();
+        itemGroups.forEach((item) => console.log("--" + item.title));
+    };
+
+
+
+
+
     const renderItemGroup = ({item}) => (
-        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemove} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
     );
     const dismissModal = () => {
         setIsRenameModalVisible(false);
@@ -354,29 +591,21 @@ export default function ShoppingListScreen() {
                     <View style={styles.profileIconContainer}></View>
                 </View>
 
+                <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
+                    <FlatList
+                        data={shoppingItems}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderItem}
+                        contentContainerStyle={styles.listContainer}
+                    />
+                </KeyboardAvoidingView>
+
                 {/*<FlatList
                     data={shoppingItems}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContainer}
                 />*/}
-
-                {/*<ItemGroup name={"Smallga"} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>*/}
-
-                {/*<FlatList
-                    data={itemGroups}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItemGroup}
-                    contentContainerStyle={styles.listContainer}
-                />*/}
-
-                <FlatList
-                    data={shoppingItems}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.listContainer}
-                />
-                
                 
                 <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
@@ -473,7 +702,7 @@ export default function ShoppingListScreen() {
                         )}
                         {contentVisable === 'Recipe' && (
                             <FlatList
-                                data={recipeTemp}
+                                data={allRecipes}
                                 renderItem={renderRecipe}
                                 keyExtractor={item => item.id.toString()}
                                 style={styles.flatList}
@@ -493,6 +722,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.light.background,
+    },
+    shoppingListContainer: {
+        flex: 1,
     },
     searchIcon: {
         marginRight: 10,
@@ -675,6 +907,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginTop: 10,
     },
     recipeLeft: {
         alignSelf: 'flex-start',

@@ -48,7 +48,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
         <View style={styles.item}>    
             <View style={styles.leftContainer}>
                 <Pressable onPress={toggleCheck}>
-                    <Icon name={checked ? "ellipse" : "ellipse-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxIcon}/>
+                    <Icon name={checked ? "checkmark-circle" : "ellipse-outline"} size={24} color={checked ? Colors.light.primaryColor : Colors.light.secondaryText} style={styles.checkboxIcon}/>
                 </Pressable>
                 <Text style={styles.itemText}>{item.title}</Text>
             </View>
@@ -58,7 +58,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
                     <Icon 
                         name={favorite ? "star" : "star-outline" }
                         size={20} 
-                        color={Colors.light.secondaryText} 
+                        color={favorite ? Colors.light.primaryColor : Colors.light.secondaryText} 
                         style={styles.checkboxText}
                     />
                 </Pressable>
@@ -78,6 +78,40 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
     );
 };
 
+
+
+export function SpacerItem() {
+    return (
+        <View style={styles.item}>    
+            <View style={styles.leftContainer}>
+                <Pressable>
+                    <Icon name={"ellipse"} size={24} color={Colors.light.background} style={styles.checkboxIcon}/>
+                </Pressable>
+                <Text style={styles.itemText}></Text>
+            </View>
+        </View>
+    );
+};
+
+
+
+export function RecipeItem({item}) {
+    return (
+        <View style={styles.item}>    
+            <View style={styles.leftContainer}>
+                <Pressable>
+                    <Icon name={"remove-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxIcon}/>
+                </Pressable>
+                <Text style={styles.itemText}>{item.title}</Text>
+            </View>
+            <View style={styles.rightContainer}>
+            </View>
+        </View>
+    );
+};
+
+
+
 /**
  * InputItem Component
  * 
@@ -93,41 +127,26 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
  * @returns None
  */
 
-export function InputItem({onChangeText, handleAddItem}) {
+export function InputItem({initialText, onChangeText, handleAddItem}) {
     const [number, setNumber] = useState(0);
+    //const [initialText, setInitialText] = useState("");
     return (
         <View style={styles.item}>
             
             <View style={styles.leftContainer}>
                 <Pressable >
-                    <Icon name="ellipse-outline" size={30} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                    <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
                 </Pressable>
                 <TextInput 
                     style={styles.itemText}
                     placeholder='Add Item'
                     placeholderTextColor={Colors.light.secondaryText}
                     editable={true}
+                    defaultValue={initialText}
                     onChangeText={(text) => onChangeText(text)}
                     onSubmitEditing={() => handleAddItem()}
                     
                 />
-            </View>
-
-            <View style={styles.rightContainer}>
-                <Pressable >
-                    <Icon name="star-outline" size={20} color={Colors.light.secondaryText} style={styles.checkboxText}/>
-                </Pressable>
-                <View style={styles.plusMinusContainer}>
-                    <Pressable>
-                        <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>
-                    </Pressable>
-                    <View style={styles.divider}></View>
-                    <Text style={styles.itemText}>{number}</Text>
-                    <View style={styles.divider}></View>
-                    <Pressable>
-                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
-                    </Pressable>
-                </View>
             </View>
         </View>
     );
@@ -200,7 +219,6 @@ const styles = StyleSheet.create({
         fontSize: 25,
     },
     checkboxText: {
-        color: Colors.light.secondaryText,
         fontSize: 25,
     },
     rightContainer: {
