@@ -230,6 +230,7 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
+            fetchShoppingItems();
             setNewItemName("");
         } catch (error) {
             console.error('Error adding new shopping item:', error);
