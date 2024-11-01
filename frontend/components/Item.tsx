@@ -14,6 +14,8 @@ import {useSelector} from "react-redux";
  * item's name and allows users to increment or decrement its quantity.
  * 
  * @param item the Item you want to display 
+ * @param handleFavoriteItem the function to add an item to favorited
+ * @param handleRemoveItem the function to remove an item when the quantity is 0
  * 
  * @example 
  * <CheckItem item={{ id: 1, title: 'Milk', price: 3.99, quantity: 2 }}></CheckItem>
@@ -21,18 +23,10 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item}) {
-    const priceText = item.price === 0 ? '' : '$' + item.price;
-    const isInput = (item.id === -1);
-    const dummyString = "-1";
-
-
+export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
     const [number, setNumber] = useState(item.quantity);
-    const [shoppingItems, setShoppingItems] = useState([
-        /*{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false },
-        { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
-        { id: -1, title: '', price: 0, favorited: false, checked: false },*/
-    ]);
+    const [favorite, setFavorite] = useState(item.favorited);
+    const [checked, setChecked] = useState(item.checked);
 
     function increaseItem() {
         setNumber(number + 1);
@@ -40,27 +34,41 @@ export function CheckItem({item}) {
 
     function decreaseItem() {
         setNumber(number - 1);
+        if (number === 0) {
+            handleRemoveItem();
+        }
     }
 
+    function toggleCheck() {
+        setChecked(!checked);
+    }
+
+
     return (
-        <View style={styles.checkItem}>    
+        <View style={styles.item}>    
             <View style={styles.leftContainer}>
-                <Pressable >
-                    <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                <Pressable onPress={toggleCheck}>
+                    <Icon name={checked ? "ellipse" : "ellipse-outline"} size={24} color={Colors.light.secondaryText} style={styles.checkboxText}/>
                 </Pressable>
                 <Text style={styles.itemText}>{item.title}</Text>
             </View>
 
             <View style={styles.rightContainer}>
-                <Pressable >
-                    <Icon name="star-outline" size={20} color={Colors.light.secondaryText} style={styles.checkboxText}/>
+                <Pressable onPress={() => {handleFavoriteItem(); setFavorite(!favorite);}}>
+                    <Icon 
+                        name={favorite ? "star" : "star-outline" }
+                        size={20} 
+                        color={Colors.light.secondaryText} 
+                        style={styles.checkboxText}
+                    />
                 </Pressable>
                 <View style={styles.plusMinusContainer}>
-                    <Pressable onPress={decreaseItem}>
+                    <Pressable onPress={(item) => {number - 1 === 0 ? handleRemoveItem(item) : decreaseItem()}}>
                         <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>
                     </Pressable>
                     <View style={styles.divider}></View>
                     <Text style={styles.itemText}>{number}</Text>
+                    <View style={styles.divider}></View>
                     <Pressable onPress={increaseItem}>
                         <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
                     </Pressable>
@@ -88,7 +96,7 @@ export function CheckItem({item}) {
 export function InputItem({onChangeText, handleAddItem}) {
     const [number, setNumber] = useState(0);
     return (
-        <View style={styles.checkItem}>
+        <View style={styles.item}>
             
             <View style={styles.leftContainer}>
                 <Pressable >
@@ -99,9 +107,10 @@ export function InputItem({onChangeText, handleAddItem}) {
                     placeholder='Add Item'
                     placeholderTextColor={Colors.light.secondaryText}
                     editable={true}
+                    defaultValue=''
                     onChangeText={(text) => onChangeText(text)}
                     onSubmitEditing={() => handleAddItem()}
-
+                    onFocus={() => handleAddItem()}
                 />
             </View>
 
@@ -125,12 +134,39 @@ export function InputItem({onChangeText, handleAddItem}) {
 }
 
 
-export const UncheckItem = () => {
+/**
+ * FovariteItem Component
+ * 
+ * Renders a single favorited item with controls to add the item to the shopping list
+ * 
+ * @param item The Item you want to display
+ * @param addFavoriteItem The function to add favorite item to list
+ * @param removeFromFavorite the function to remove favorite item from favorited
+ */
 
+export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
+    return (
+        <View style={styles.item}>
+            <View style={styles.leftContainer}>
+                <Text style={styles.itemText}>{item.title}</Text>
+            </View>
+
+            <View style={styles.rightContainer}>
+                <Pressable onPress={removeFromFavorite}>
+                    <Icon name="star" size={20} color={Colors.light.primaryColor} style={styles.checkboxText}/>
+                </Pressable>
+                <View style={styles.plusMinusContainer}>
+                    <Pressable onPress={addFavoriteItem}>
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
+                    </Pressable>
+                </View>
+            </View>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
-    checkItem: {
+    item: {
         width: '100%',
         alignItems: 'center',
         flexDirection: 'row',
@@ -173,5 +209,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         padding: 3,
+    },
+    favoriteButton: {
+        fontSize: 20,
+    },
+    isFavorite: {
+        color: Colors.light.primaryColor,
+    },
+    notFavorite: {
+        color: Colors.light.secondaryText,
     },
 });
