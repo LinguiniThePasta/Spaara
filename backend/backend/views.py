@@ -457,6 +457,37 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(list=None)
 
         return queryset
+    
+    def destroy(self, request, *args, **kwargs):
+        '''
+        Deletes a specific recipe item, validated by both recipe ID and item ID.
+
+        :param:
+            request (Request): The incoming request containing user data.
+            args, kwargs: Additional arguments and keyword arguments.
+
+        :return:
+            Response: Success message upon successful deletion, or error if not found.
+
+        deletion details:
+            - Retrieves the item based on both recipe_id and item_id to ensure ownership.
+        '''
+        grocery_id = request.query_params.get('list')
+        item_id = kwargs.get('pk')
+
+        # Ensure both recipe_id and item_id are provided
+        if not grocery_id or not item_id:
+            return Response(
+                {'error': 'Recipe ID and Item ID must be provided.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if item exists and belongs to the specified recipe
+        item = get_object_or_404(GroceryItemUnoptimized, id=item_id, list=grocery_id)
+        
+        # Proceed with deletion
+        item.delete()
+        return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
         '''
