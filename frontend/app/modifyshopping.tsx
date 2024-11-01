@@ -129,7 +129,7 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
@@ -174,10 +174,10 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                list: local.id,
                 name: newItemName,
                 quantity: 1,
                 units: "units",
+                list: local.id,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
