@@ -132,7 +132,8 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemUnoptimized
-        fields = '__all__'
+        fields = ['name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
+
 
     def create(self, validated_data):
         # Check if 'subheading' is provided
@@ -141,9 +142,11 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         if not grocery:
             raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
 
+        item_id = validated_data.get('id')
+
         existing_item = GroceryItemUnoptimized.objects.filter(
-            id=validated_data['id'],
-            grocery=grocery,
+            id=item_id,
+            subheading__grocery=grocery,
             favorited=True  # Assuming this is a criterion for "favorited"
         ).exists()
 
