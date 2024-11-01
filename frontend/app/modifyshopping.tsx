@@ -207,8 +207,6 @@ export default function ShoppingListScreen() {
 
 
     useEffect(() => {
-        // Call the function to load shopping lists when the component mounts
-        fetchShoppingLists();
         //fetchItemGroups();
         fetchShoppingItems();
         fetchShoppingList();
