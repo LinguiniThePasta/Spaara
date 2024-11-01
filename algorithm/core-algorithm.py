@@ -367,7 +367,9 @@ def main():
 
     # Print all generated stores and their available items
     for store in stores:
-        print(f"{store['name']} at {store['location']} offers: {list(store['items'].keys())}")
+        print(f"{store['name']} at {store['location']} offers:")
+        for key, value in store['items'].items():
+            print(f"\t{key} at ${value}")
 
     k = 8
     labels, kmeans = perform_kmeans_clustering(store_locations, n_clusters=k)
@@ -389,6 +391,7 @@ def main():
     )
 
     # Display the results
+    sumA = 0.0
     if best_cluster_label is not None:
         print(f"Selected Cluster: {best_cluster_label}\n")
         print("Stores in the Selected Cluster:")
@@ -399,10 +402,20 @@ def main():
         for item, info in assignment.items():
             if info["store"]:
                 print(f"- {item.capitalize()}: Buy from {info['store']} at ${info['price']:.2f}")
+                sumA += info["price"]
             else:
                 print(f"- {item.capitalize()}: Not available in the selected cluster.")
     else:
         print("No suitable cluster found to cover the grocery list.")
+    print(f"Total price with given selection: ${sumA:.2f}")
+
+    print("\nTotal Prices by Individual Store:")
+    for store in stores:
+        total_price = sum(store["items"].get(item, math.inf) for item in grocery_list if item in store["items"])
+        print(f"- {store['name']}: Total cost ${total_price:.2f}")
+
+
+
     visualize_clusters(stores, home)
 
 
