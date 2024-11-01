@@ -22,6 +22,28 @@ import rest_framework.mixins as mixins
 
 class RegisterView(APIView):
     def post(self, request):
+        '''
+        Registers a new user with the provided data and sends a verification email.
+
+        :param:
+            request (Request): The incoming request containing user registration data.
+
+        :return:
+            Response: A success message indicating the user was registered, with status 201 on success,
+                      or validation error details with status 400 if validation fails.
+
+        registration details:
+            - Uses RegisterSerializer to validate user data.
+            - If valid, saves the user and sends a verification email.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        email: user email,
+                        password: user password
+                    }
+        '''
         serializer = serializers.RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -32,6 +54,25 @@ class RegisterView(APIView):
 
 class VerifyEmailView(APIView):
     def get(self, request, uidb64, token):
+        '''
+        Verifies the email address using a unique user ID and token.
+
+        :param:
+            request (Request): The incoming request.
+            uidb64 (str): Base64 encoded user ID.
+            token (str): Token for email verification.
+
+        :return:
+            Response: Success or error message depending on the verification status.
+
+        verification details:
+            - Decodes the user ID from uidb64.
+            - Checks the token for email verification.
+            - Activates the user if verification is successful or updates the email if pending.
+
+        usage:
+            - GET {URL}/{uidb64}/{token}/ - verifies the user's email with the provided token
+        '''
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
@@ -59,6 +100,22 @@ class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
+        '''
+        Deletes the authenticated user account.
+
+        :param:
+            request (Request): The incoming request containing the user to be deleted.
+
+        :return:
+            Response: A message confirming the user deletion or an error message if deletion fails.
+
+        deletion details:
+            - Deletes the user based on the authenticated user ID.
+            - Sends a confirmation email upon successful deletion.
+
+        usage:
+            - DELETE {URL}/ - deletes the authenticated user's account
+        '''
         user = request.user
         email = user.email
         try:
@@ -73,7 +130,29 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        '''
+        Authenticates a user with email and password or logs in a guest user if requested.
 
+        :param:
+            request (Request): The incoming request containing login data, with an optional 'guest' flag.
+
+        :return:
+            Response: Access and refresh tokens if login is successful, or error details if login fails.
+
+        login details:
+            - Checks for 'guest' in request data to log in a guest user.
+            - Authenticates registered users with email and password.
+            - Checks if the user is active before granting tokens.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        email: user email,
+                        password: user password,
+                        guest (optional): boolean flag for guest login
+                    }
+        '''
         if request.data.get('guest', False):
             return self.login_guest_user()
 
@@ -119,9 +198,37 @@ class LoginView(APIView):
 
 
 class SettingsView(APIView):
+    '''
+    APIView for managing user settings, including dietary restrictions, max distance, and max stores.
+    Allows updating and retrieving the settings for the authenticated user.
     permission_classes = [IsAuthenticated]
-
+    '''
     def post(self, request):
+        '''
+        Updates the settings for the authenticated user, including dietary restrictions, max distance, and max stores.
+
+        :param:
+            request (Request): The incoming request containing 'user_restrictions', 'max_distance', and 'max_stores'.
+
+        :return:
+            Response: A message indicating successful update with status 200 on success,
+                      or error details with status 400 if validation fails.
+
+        update details:
+            - Retrieves 'user_restrictions' from request data, which should be a list of dietary restriction IDs.
+            - Filters and sets the user's dietary restrictions based on valid IDs.
+            - Updates 'max_distance' and 'max_stores' based on the provided values, applying validation to ensure they are non-negative.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        user_restrictions: [list of dietary restriction IDs],
+                        max_distance (optional): maximum distance in miles (default: 5.00),
+                        max_stores (optional): maximum number of stores (default: 3)
+                    }
+        '''
+
         user = request.user
         user_restrictions = request.data.get('user_restrictions', [])
         restrictions = DietRestriction.objects.filter(id__in=user_restrictions)
@@ -155,6 +262,24 @@ class SettingsView(APIView):
         )
 
     def get(self, request):
+        '''
+        Retrieves the settings for the authenticated user, including their current dietary restrictions,
+        max distance, and max stores, along with all available dietary restrictions.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A dictionary containing user-specific settings and all available dietary restrictions.
+
+        retrieval details:
+            - Returns the IDs of the user's dietary restrictions.
+            - Returns all available dietary restrictions as serialized data.
+            - Returns the user's max distance and max stores.
+
+        usage:
+            - GET {URL} - retrieves the user's current settings and all dietary restrictions
+        '''
         user = request.user
 
         user_restrictions = user.diet_restrictions.all()
@@ -193,10 +318,48 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        '''
+        Retrieves the queryset of grocery lists belonging to the authenticated user.
+
+        :param:
+            None
+
+        :return:
+            QuerySet: A queryset of Grocery instances belonging to the current user.
+
+        query details:
+            - Returns only the grocery lists associated with the authenticated user.
+
+        usage:
+            - GET {URL} - retrieves all grocery lists for the authenticated user.
+        '''
         user = self.request.user
         return user.groceries.all()
 
     def create(self, request, *args, **kwargs):
+        '''
+        Creates a new grocery list associated with the authenticated user.
+
+        :param:
+            request (Request): The incoming request containing grocery list data.
+
+        :return:
+            Response: Contains the serialized data of the newly created grocery list with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        creation details:
+            - Uses the authenticated user as the owner of the grocery list.
+            - Validates the data using the serializer.
+            - If valid, saves the grocery list associated with the user and returns the created list data.
+            - If invalid, returns error messages.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        name: name of the grocery list
+                    }
+        '''
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -235,6 +398,21 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
+        '''
+        Toggles the 'favorited' status of a recipe item.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+            pk (int): The primary key of the recipe item to toggle favorite status.
+
+        :return:
+            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
+
+        action details:
+            - Retrieves the grocery item instance specified by the primary key.
+            - Toggles its 'favorited' attribute.
+            - Saves the updated instance and returns the updated data.
+        '''
         item = self.get_object()
         item.favorited = not item.favorited
         item.save()
@@ -242,11 +420,31 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
 
 class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
+
     queryset = GroceryItemUnoptimized.objects.all()
     serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        '''
+        Retrieves the queryset of unoptimized grocery items, optionally filtered by grocery list ID.
+
+        :param:
+            None
+
+        :return:
+            QuerySet: A queryset of GroceryItemUnoptimized instances, filtered by the 'list' parameter
+                      if provided in the request query params, or items with no list if 'list' is not specified.
+
+        query details:
+            - Retrieves all grocery items with no list by default.
+            - If 'list' is provided as a query parameter, filters items by the specified grocery list ID.
+
+        usage:
+            - GET {URL} - retrieves all grocery items with no associated list
+            - GET {URL}?list={list_id} - retrieves all grocery items associated with a specific grocery list
+        '''
+
         queryset = super().get_queryset()
         grocery_id = self.request.query_params.get('list')
 
@@ -258,7 +456,7 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        """
+        '''
         Creates a new unoptimized grocery item associated with a specific grocery list.
 
         :param:
@@ -273,7 +471,19 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             - Validates the data using the serializer.
             - If valid, saves the grocery item with the specified grocery list and returns the created item data.
             - If invalid, returns error messages.
-        """
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        name: name of the item
+                        store (optional): the store where the grocery item is stored
+                        description (optional): description of the item
+                        quantity: the number of items
+                        units: unit
+                        list: the id of the grocery list
+                    }
+        '''
         data = request.data
         grocery_list_id = data.get('list')
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
@@ -288,6 +498,21 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
+        '''
+        Toggles the 'favorited' status of a recipe item.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+            pk (int): The primary key of the recipe item to toggle favorite status.
+
+        :return:
+            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
+
+        action details:
+            - Retrieves the grocery item instance specified by the primary key.
+            - Toggles its 'favorited' attribute.
+            - Saves the updated instance and returns the updated data.
+        '''
         item = self.get_object()
         item.favorited = not item.favorited
         item.save()
@@ -299,31 +524,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
 
-    """
-    Retrieves the queryset of recipe items, optionally filtered by recipe ID.
-
-    :param:
-        None
-
-    :return:
-        QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
-                  if provided in the request query params.
-
-    query details:
-        - Retrieves all recipe items by default.
-        - If 'recipe_id' is provided as a query parameter, filters items by the specified recipe ID.
-
-    usage:
-        - GET {URL} - retrieves all recipe items
-        - GET {URL}?recipe_id={recipe_id} - retrieves all recipe items associated with a specific recipe
-        - POST {URL}/
-            - data (dict):
-                {
-                    name: name of the recipe
-                }
-    """
-
     def get_queryset(self):
+        '''
+        Retrieves the queryset of recipe items, optionally filtered by recipe ID.
+
+        :param:
+            None
+
+        :return:
+            QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
+                      if provided in the request query params.
+
+        query details:
+            - Retrieves all recipe items by default.
+            - If 'recipe_id' is provided as a query parameter, filters items by the specified recipe ID.
+
+        usage:
+            - GET {URL} - retrieves all recipe items
+        '''
         queryset = super().get_queryset()
         user = self.request.user
 
@@ -333,7 +551,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request):
-        """
+        '''
         Creates a new recipe item associated with a specific recipe.
 
         :param:
@@ -348,7 +566,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             - Validates the data using the serializer.
             - If valid, saves the recipe item with the specified recipe and returns the created item data.
             - If invalid, returns error messages.
-        """
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        name: name of the recipe
+                    }
+        '''
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -357,23 +582,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class RecipeItemViewSet(viewsets.ModelViewSet):
     queryset = RecipeItem.objects.all()
     serializer_class = RecipeItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        recipe_id = self.request.query_params.get('recipe_id')
-
-        if recipe_id:
-            queryset = queryset.filter(list_id=recipe_id)
-
-        return queryset
-
-    def create(self, request, *args, **kwargs):
-        """
+        '''
         Retrieves the queryset of recipe items, optionally filtered by recipe ID.
 
         :param:
@@ -390,6 +605,33 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         usage:
             - GET {URL} - retrieves all recipe items
             - GET {URL}?recipe_id={recipe_id} - retrieves all recipe items associated with a specific recipe
+        '''
+        queryset = super().get_queryset()
+        recipe_id = self.request.query_params.get('recipe_id')
+
+        if recipe_id:
+            queryset = queryset.filter(list_id=recipe_id)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        '''
+        Creates a new recipe item associated with a specific recipe.
+
+        :param:
+            request (Request): The incoming request, expected to contain 'recipe_id' as part of the data.
+
+        :return:
+            Response: Contains the serialized data of the newly created recipe item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        creation details:
+            - Retrieves the 'recipe_id' from request data, which is the recipe to associate the item with.
+            - Validates the data using the serializer.
+            - If valid, saves the recipe item with the specified recipe and returns the created item data.
+            - If invalid, returns error messages.
+
+        usage:
             - POST {URL}/
                 - data (dict):
                     {
@@ -400,9 +642,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                         units: units of the quantity
                         recipe_id: the id of the recipe this item belongs to
                     }
-        """
-
-
+        '''
         recipe_id = request.data.get('recipe_id')
         recipe = get_object_or_404(Recipe, id=recipe_id)
         serializer = self.get_serializer(data=request.data)
@@ -414,6 +654,21 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
+        '''
+        Toggles the 'favorited' status of a recipe item.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+            pk (int): The primary key of the recipe item to toggle favorite status.
+
+        :return:
+            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
+
+        action details:
+            - Retrieves the recipe item instance specified by the primary key.
+            - Toggles its 'favorited' attribute.
+            - Saves the updated instance and returns the updated data.
+        '''
         item = self.get_object()
         item.favorited = not item.favorited
         item.save()
