@@ -375,8 +375,27 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        '''
+        Retrieves the queryset of unoptimized grocery items belonging to grocery lists associated with the authenticated user,
+        optionally filtered by grocery list ID.
+
+        :return:
+            QuerySet: A queryset of GroceryItemUnoptimized instances belonging to the current user's grocery lists,
+                      filtered by the 'list' parameter if provided in the request query params.
+
+        query details:
+            - Retrieves all grocery items associated with the current user's grocery lists by default.
+            - If 'list' is provided as a query parameter, filters items by the specified grocery list ID.
+
+        usage:
+            - GET {URL} - retrieves all grocery items associated with the current user's grocery lists
+            - GET {URL}?list={list_id} - retrieves all grocery items associated with a specific grocery list ID owned by the user
+        '''
+        user = self.request.user
         grocery_id = self.request.query_params.get('list')
+
+        # Filter items by lists owned by the current user
+        queryset = GroceryItemOptimized.objects.filter(list__user=user)
 
         if grocery_id:
             queryset = queryset.filter(list=grocery_id)
@@ -415,6 +434,9 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
         usage:
             - POST {URL}/{item_id}/favorite - toggles the favorite status of items
+                - {
+                    list: {list_id} that is associated with item_id
+                  }
         '''
         item = self.get_object()
         item.favorited = not item.favorited
@@ -448,13 +470,14 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             - GET {URL}?list={list_id} - retrieves all grocery items associated with a specific grocery list
         '''
 
-        queryset = super().get_queryset()
+        user = self.request.user
         grocery_id = self.request.query_params.get('list')
+
+        # Filter items by lists owned by the current user
+        queryset = GroceryItemUnoptimized.objects.filter(list__user=user)
 
         if grocery_id:
             queryset = queryset.filter(list=grocery_id)
-        else:
-            queryset = queryset.filter(list=None)
 
         return queryset
     
@@ -643,11 +666,14 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
             - GET {URL} - retrieves all recipe items
             - GET {URL}?recipe_id={recipe_id} - retrieves all recipe items associated with a specific recipe
         '''
-        queryset = super().get_queryset()
+        user = self.request.user
         recipe_id = self.request.query_params.get('recipe_id')
 
+        # Filter items by lists owned by the current user
+        queryset = GroceryItemUnoptimized.objects.filter(list__user=user)
+
         if recipe_id:
-            queryset = queryset.filter(list_id=recipe_id)
+            queryset = queryset.filter(list=recipe_id)
 
         return queryset
 

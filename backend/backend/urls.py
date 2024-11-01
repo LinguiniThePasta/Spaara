@@ -39,7 +39,7 @@ Delete: DELETE /api/grocery/{id}
 
 
 urlpatterns = [
-
+    path('', include(router.urls)),
     path('accounts', include('allauth.urls')),
     path('admin', admin.site.urls),
     path('api/user/login', LoginView.as_view(), name='login'),
@@ -60,6 +60,5 @@ urlpatterns = [
     # path('api/favorites/get', FavoriteView.as_view(), name='get_favorite'),
     # path('api/favorites/add', FavoriteView.as_view(), name='add_favorite'),
     # path('api/favorites/delete', FavoriteView.as_view(), name='delete_favorite'),
-    path('', include(router.urls)),
 ]
 
