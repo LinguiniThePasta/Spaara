@@ -27,19 +27,16 @@ import * as SecureStore from 'expo-secure-store';
 import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem} from '@/components/Item';
 import Recipe from './recipe';
+import { Drawer, Divider, Button as PaperButton, List } from 'react-native-paper';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
 export default function ShoppingListScreen() {
     const router = useRouter();
-    const dispatch = useDispatch();
     const local = useLocalSearchParams();
-    const [searchQuery, setSearchQuery] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
-    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
     const [newItemName, setNewItemName] = useState("");
-    const [isEditing, setIsEditing] = useState(false);
     const [shoppingItems, setShoppingItems] = useState([
         /*{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false },
         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
@@ -52,6 +49,14 @@ export default function ShoppingListScreen() {
     const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
 
+    const toggleAccordion = (title) => {
+        setExpandedAccordions((prevState) => ({
+            ...prevState,
+            [title]: !prevState[title],
+        }));
+    };
+
+
     const [recipeTemp, setRecipe] = useState([
         {id: 1, title: 'Beefed Banana'},
         {id: 2, title: 'Porked Lemons'},
@@ -60,14 +65,21 @@ export default function ShoppingListScreen() {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedButton, setSelectedButton] = useState('Favorite');
-    const [notSelectedButton, setNotSelectedButton] = useState(false);
     const [contentVisable, setContentVisable] = useState('Favorite');
+    const [expandedAccordions, setExpandedAccordions] = useState({});
 
     const [itemGroups, setItemGroups] = useState([
         {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
                                          { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
         {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
                                          { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+    ]);
+
+    const [optimizedGroups, setOptimizedGroups] = useState([
+        {id: 1003, title: "Walmart", items: [{ id: 998, title: 'Sam I Am', price: 3.99, favorited: false, checked: false, quantity: 1 },
+                                         { id: 999, title: 'Ham', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        {id: 1004, title: "Kroger", items: [{ id: 998, title: 'Green Food Dye', price: 3.99, favorited: false, checked: false, quantity: 1 },
+                                         { id: 999, title: 'Eggs', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
     ]);
 
 
@@ -164,6 +176,7 @@ export default function ShoppingListScreen() {
 
     const handleOptimize = async () => {
         try {
+            /*
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
             const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
@@ -171,8 +184,18 @@ export default function ShoppingListScreen() {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
-
+            */
             // Process optimized data
+            setShoppingItems([...optimizedGroups, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            }]);
+
 
         } catch (error) {
             console.error('Error optimizing:', error);
@@ -266,7 +289,7 @@ export default function ShoppingListScreen() {
             setNewItemName('');
             fetchShoppingItems();
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error removing shopping item:', error);
         }
     }
 
@@ -370,6 +393,7 @@ export default function ShoppingListScreen() {
                     renderItem={renderItemGroup}
                     contentContainerStyle={styles.listContainer}
                 />*/}
+
 
                 <FlatList
                     data={shoppingItems}
@@ -745,5 +769,18 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
     },
-
+    // Optimization drawers
+    optContainer: {
+        marginTop: 16,
+        width: '100%',
+    },
+    drawer: {
+        marginTop: 16,
+    },
+    accordion: {
+        backgroundColor: 'transparent',
+    },
+    accordionTitle: {
+        color: Colors.light.primaryText,
+    },
 });
