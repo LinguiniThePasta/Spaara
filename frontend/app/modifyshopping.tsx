@@ -251,9 +251,22 @@ export default function ShoppingListScreen() {
         }
     };
 
-    const handleRemoveItem = async ({item}) => {
-        console.log('Removing this: ');
-        
+    const handleRemove = async (item) => {
+        console.log(`Removing item with ID: ${item.id}`);
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.delete(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
     }
 
     const handleFavorite = async (id) => {
@@ -291,9 +304,9 @@ export default function ShoppingListScreen() {
         }
 
         return (
-            <View>
+            <View style={styles.checkItemContainer}>
                 {isInput === false ? (
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
@@ -365,8 +378,16 @@ export default function ShoppingListScreen() {
                 />
                 
                 
-                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
+                <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
+                    <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.optimizeButton}>
+                    <Icon
+                        name="hammer-outline"
+                        size={24}
+                        color={Colors.light.primaryText}
+                    />
                 </TouchableOpacity>
 
                 <Modal
@@ -544,11 +565,21 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
     },
-    heartButton: {
+    starButton: {
         position: 'absolute',
         bottom: 30,
         right: 30,
-        backgroundColor: '#FF6347', // Tomato color
+        backgroundColor: Colors.light.primaryColor, // Tomato color
+        borderRadius: 50,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    optimizeButton: {
+        position: 'absolute',
+        bottom: 30,
+        left: 30,
+        backgroundColor: Colors.light.primaryColor, // Tomato color
         borderRadius: 50,
         padding: 15,
         flexDirection: 'row',
@@ -635,6 +666,9 @@ const styles = StyleSheet.create({
     },
     flatList: {
         marginLeft: 10,
+    },
+    checkItemContainer: {
+        marginBottom: 10, // Add margin to create space between items
     },
     recipeContainer: {
         width: '100%',
