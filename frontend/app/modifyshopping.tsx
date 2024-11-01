@@ -24,6 +24,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
+import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem} from '@/components/Item';
 import Recipe from './recipe';
 //import { setSearchQuery } from '../store/shoppingListSlice';
@@ -61,6 +62,13 @@ export default function ShoppingListScreen() {
     const [selectedButton, setSelectedButton] = useState('Favorite');
     const [notSelectedButton, setNotSelectedButton] = useState(false);
     const [contentVisable, setContentVisable] = useState('Favorite');
+
+    const [itemGroups, setItemGroups] = useState([
+        {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+                                         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+                                         { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+    ]);
 
 
     const handlePress = (button) => {
@@ -135,7 +143,7 @@ export default function ShoppingListScreen() {
             const filteredItems = items.filter(item => item.list === local.id)
             console.log(filteredItems);
             console.log("Correctly fetched shopping items!");
-            setShoppingItems([...filteredItems, {
+            setShoppingItems([...itemGroups, ...filteredItems, {
                 id: -1,
                 title: 'Add Item',
                 price: 0,
@@ -144,12 +152,64 @@ export default function ShoppingListScreen() {
                 list: local.id,
                 quantity: 0,
             }]);
+
+            shoppingItems.forEach(
+                (item) => {console.log(item.title + ": " + item.id)}
+            );
+
         } catch (error) {
             console.error('Error fetching shopping items:', error);
         }
     };
+
+
+
+    const fetchItemGroups = async () => {
+        try {
+            /*const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });*/
+
+            /*const items = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: item.favorited,
+                checked: false,
+                list: item.list.toString(),
+                quantity: item.quantity,
+            }));*/
+
+            //const filteredItems = items.filter(item => item.list === local.id)
+
+            const filteredItems = itemGroups
+
+            console.log("Correctly fetched item groups!");
+            /*setShoppingItems([...filteredItems, {
+                id: -1,
+                title: 'Add Item',
+                price: 0,
+                favorited: false,
+                checked: false,
+                list: local.id,
+                quantity: 0,
+            }]);*/
+            setShoppingItems([...shoppingItems, ...filteredItems])
+        } catch (error) {
+            console.error('Error fetching item groups:', error);
+        }
+    };
+
+
+
     useEffect(() => {
         // Call the function to load shopping lists when the component mounts
+        fetchShoppingLists();
+        //fetchItemGroups();
         fetchShoppingItems();
         fetchShoppingList();
     }, []); // Empty dependency array ensures this runs only on component mount
@@ -212,6 +272,24 @@ export default function ShoppingListScreen() {
 
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
+        const isGroup = (item.id >= 1000);
+
+        if (isInput) {
+            return (
+                <View>
+                    <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
+                </View>
+            );
+        }
+
+        if (isGroup) {
+            return (
+                <View>
+                    <ItemGroup name={item.title} items={item.items} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+                </View>
+            );
+        }
+
         return (
             <View style={styles.checkItemContainer}>
                 {isInput === false ? (
@@ -240,6 +318,9 @@ export default function ShoppingListScreen() {
         </View>
     );
 
+    const renderItemGroup = ({item}) => (
+        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+    );
     const dismissModal = () => {
         setIsRenameModalVisible(false);
     }
@@ -259,6 +340,22 @@ export default function ShoppingListScreen() {
                     </View>
                     <View style={styles.profileIconContainer}></View>
                 </View>
+
+                {/*<FlatList
+                    data={shoppingItems}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />*/}
+
+                {/*<ItemGroup name={"Smallga"} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>*/}
+
+                {/*<FlatList
+                    data={itemGroups}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItemGroup}
+                    contentContainerStyle={styles.listContainer}
+                />*/}
 
                 <FlatList
                     data={shoppingItems}
