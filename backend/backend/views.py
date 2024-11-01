@@ -362,7 +362,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
               and adds all items from the recipe to the grocery list under the new subheading.
 
         usage:
-            - POST {URL}/{grocery_list_id}/add-recipe/
+            - POST {URL}/{grocery_list_id}/add_recipe/
                 - data (dict):
                     {
                         "recipe_id": <UUID>  # The ID of the recipe to be added
@@ -527,6 +527,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                 recipe_items = recipe.items.all()
                 for index, item in enumerate(recipe_items, start=1):
                     GroceryItemUnoptimized.objects.create(
+                        id=item.id,
                         name=item.name,
                         description=item.description,
                         store=item.store,
@@ -797,9 +798,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         '''
         Retrieves the queryset of recipe items, optionally filtered by recipe ID.
 
-        :param:
-            None
-
         :return:
             QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
                       if provided in the request query params.
@@ -816,7 +814,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         recipe_id = self.request.query_params.get('recipe_id')
 
         if recipe_id:
-            queryset.filter(recipe_id=recipe_id)
+            queryset = queryset.filter(recipe__id=recipe_id)
 
         return queryset
 
