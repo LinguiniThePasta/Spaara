@@ -546,7 +546,6 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
         serializer = self.get_serializer(data=data)
-        print(serializer)
         if serializer.is_valid():
             serializer.save(list=grocery_list)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
