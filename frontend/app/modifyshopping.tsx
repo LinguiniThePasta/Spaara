@@ -268,8 +268,16 @@ export default function ShoppingListScreen() {
                 />
                 
                 
-                <TouchableOpacity style={styles.heartButton} onPress={() => setModalVisible(true)}>
-                    <Icon name="heart-outline" size={24} color={Colors.light.background}/>
+                <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
+                    <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.optimizeButton}>
+                    <Icon
+                        name="hammer-outline"
+                        size={24}
+                        color={Colors.light.primaryText}
+                    />
                 </TouchableOpacity>
 
                 <Modal
@@ -447,11 +455,21 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
     },
-    heartButton: {
+    starButton: {
         position: 'absolute',
         bottom: 30,
         right: 30,
-        backgroundColor: '#FF6347', // Tomato color
+        backgroundColor: Colors.light.primaryColor, // Tomato color
+        borderRadius: 50,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    optimizeButton: {
+        position: 'absolute',
+        bottom: 30,
+        left: 30,
+        backgroundColor: Colors.light.primaryColor, // Tomato color
         borderRadius: 50,
         padding: 15,
         flexDirection: 'row',
