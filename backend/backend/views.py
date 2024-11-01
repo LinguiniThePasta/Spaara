@@ -14,6 +14,7 @@ from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedS
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
 import uuid
 
+
 class RegisterView(APIView):
     def post(self, request):
         serializer = serializers.RegisterSerializer(data=request.data)
@@ -23,8 +24,10 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request):
         user = request.user
         User.objects.filter(id=user.id).delete()
@@ -70,7 +73,6 @@ class LoginView(APIView):
         guest_user.groups.add(guest_group)
         guest_user.save()
 
-
         refresh = RefreshToken.for_user(guest_user)
         return Response({
             'access': str(refresh.access_token),
@@ -78,8 +80,10 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+
 class SettingsView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
         user_restrictions = request.data.get('user_restrictions', [])
@@ -112,6 +116,7 @@ class SettingsView(APIView):
             {"message": "Settings updated successfully."},
             status=status.HTTP_200_OK
         )
+
     def get(self, request):
         user = request.user
 
@@ -129,6 +134,7 @@ class SettingsView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
 
 class UpdateInfoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -200,6 +206,34 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
 
 class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
+    """
+    Retrieves the queryset of unoptimized grocery items, optionally filtered by grocery list ID.
+
+    :param:
+        None
+
+    :return:
+        QuerySet: A queryset of GroceryItemUnoptimized instances, filtered by the 'list' parameter
+                  if provided in the request query params.
+
+    query details:
+        - Retrieves all grocery items by default.
+        - If 'list' is provided as a query parameter, filters items by the grocery list ID.
+
+    usage:
+        - GET {URL} - retrieves all grocery items
+        - GET {URL}/list={list} - retrieves all grocery items associated with list
+        - POST {URL}/
+            - data (dict):
+                {
+                    name: name of the item
+                    store (optional): the store where the grocery item is stored
+                    description (optional): description of the item
+                    quantity: the number of items
+                    units: unit
+                    list: the id of the grocery list
+                }
+    """
     queryset = GroceryItemUnoptimized.objects.all()
     serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
@@ -210,10 +244,28 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         if grocery_id:
             queryset = queryset.filter(list=grocery_id)
+        else:
+            queryset = queryset.filter(list=None)
 
         return queryset
 
     def create(self, request, *args, **kwargs):
+        """
+        Creates a new unoptimized grocery item associated with a specific grocery list.
+
+        :param:
+            request (Request): The incoming request, expected to contain 'list' as part of the data.
+
+        :return:
+            Response: Contains the serialized data of the newly created grocery item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        creation details:
+            - Retrieves the 'list' from request data, which is the grocery list to associate the item with.
+            - Validates the data using the serializer.
+            - If valid, saves the grocery item with the specified grocery list and returns the created item data.
+            - If invalid, returns error messages.
+        """
         data = request.data
         grocery_list_id = data.get('list')
         grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
@@ -239,6 +291,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
 
+    """
+    Retrieves the queryset of recipe items, optionally filtered by recipe ID.
+
+    :param:
+        None
+
+    :return:
+        QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
+                  if provided in the request query params.
+
+    query details:
+        - Retrieves all recipe items by default.
+        - If 'recipe_id' is provided as a query parameter, filters items by the specified recipe ID.
+
+    usage:
+        - GET {URL} - retrieves all recipe items
+        - GET {URL}?recipe_id={recipe_id} - retrieves all recipe items associated with a specific recipe
+        - POST {URL}/
+            - data (dict):
+                {
+                    name: name of the recipe
+                }
+    """
+
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
@@ -249,6 +325,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request):
+        """
+        Creates a new recipe item associated with a specific recipe.
+
+        :param:
+            request (Request): The incoming request, expected to contain 'recipe_id' as part of the data.
+
+        :return:
+            Response: Contains the serialized data of the newly created recipe item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        creation details:
+            - Retrieves the 'recipe_id' from request data, which is the recipe to associate the item with.
+            - Validates the data using the serializer.
+            - If valid, saves the recipe item with the specified recipe and returns the created item data.
+            - If invalid, returns error messages.
+        """
         user = request.user
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -273,6 +365,35 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
+        """
+        Retrieves the queryset of recipe items, optionally filtered by recipe ID.
+
+        :param:
+            None
+
+        :return:
+            QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
+                      if provided in the request query params.
+
+        query details:
+            - Retrieves all recipe items by default.
+            - If 'recipe_id' is provided as a query parameter, filters items by the specified recipe ID.
+
+        usage:
+            - GET {URL} - retrieves all recipe items
+            - GET {URL}?recipe_id={recipe_id} - retrieves all recipe items associated with a specific recipe
+            - POST {URL}/
+                - data (dict):
+                    {
+                        name: name of the recipe item
+                        ingredient (optional): ingredient used in the recipe item
+                        description (optional): description of the recipe item
+                        quantity: quantity required for the recipe item
+                        units: units of the quantity
+                        recipe_id: the id of the recipe this item belongs to
+                    }
+        """
+
         recipe_id = request.data.get('recipe_id')
         recipe = get_object_or_404(Recipe, id=recipe_id)
         serializer = self.get_serializer(data=request.data)

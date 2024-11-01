@@ -12,13 +12,35 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'password']
+
     def validate(self, data):
+        '''
+        :param:
+            data (dict): Contains 'email' and 'password' fields.
+
+        :return:
+            dict: Validated data if all checks pass.
+
+        :raises:
+            serializers.ValidationError: If the email format is invalid or if the password
+            does not meet complexity requirements or matches the email.
+
+        validation details:
+            - Password complexity: Must contain at least 8 characters, including at least:
+              - 1 uppercase letter
+              - 1 lowercase letter
+              - 1 number
+              - 1 special character (@$!%*?&)
+            - Password must not match the email.
+            - Email must be in a valid format.
+        '''
         email = data.get('email')
         password = data.get('password')
         errorDict = collections.defaultdict(str)
         # Check if password is okay
         if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict['password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
+            errorDict[
+                'password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
         if password == email:
             errorDict['password'] += 'Password cannot be the same as email.'
         try:
@@ -28,6 +50,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         if errorDict:
             raise serializers.ValidationError(errorDict)
         return data
+
     def create(self, validated_data):
         # This creates the user using the validated data and automatically hashes the password
         user = User.objects.create_user(
@@ -36,6 +59,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -84,10 +108,12 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Grocery
         fields = '__all__'
+
     def validate(self, attrs):
         user = self.context['request'].user
         if user.groups.filter(name='Guest').exists():
@@ -106,14 +132,19 @@ class GrocerySerializer(serializers.ModelSerializer):
         grocery = Grocery.objects.create(**validated_data)
 
         return grocery
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = '__all__'
+
+
 class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroceryItemOptimized
         fields = '__all__'
+
 
 class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
     class Meta:
@@ -131,6 +162,7 @@ class FavoritedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritedItem
         fields = '__all__'
+
 
 class DietRestrictionSerializer(serializers.ModelSerializer):
     class Meta:
