@@ -33,6 +33,8 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
+FRONTEND_URL = 'http://172.20.10.3:8000'
+
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
@@ -155,3 +157,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Big boi email stuff
+EMAIL_BACKEND = 'backend.email_backend.EmailBackend'
+EMAIL_HOST = 'smtp.zoho.com'  # Use your email provider's SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'spaara-no-reply@zohomail.com'  # Your email address
+EMAIL_HOST_PASSWORD = '9AkuhQAunkyF'  # Your email password

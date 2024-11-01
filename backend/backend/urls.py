@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/user/delete', DeleteUserView.as_view(), name='delete_user'),
     path('api/user/save_settings', SettingsView.as_view(), name='save_dietary_restrictions'),
     path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
+    path('verify-email/<str:uidb64>/<str:token>/', VerifyEmailView.as_view(), name='verify-email'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
