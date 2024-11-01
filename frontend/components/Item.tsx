@@ -14,6 +14,8 @@ import {useSelector} from "react-redux";
  * item's name and allows users to increment or decrement its quantity.
  * 
  * @param item the Item you want to display 
+ * @param handleFavoriteItem the function to add an item to favorited
+ * @param handleRemoveItem the function to remove an item when the quantity is 0
  * 
  * @example 
  * <CheckItem item={{ id: 1, title: 'Milk', price: 3.99, quantity: 2 }}></CheckItem>
@@ -139,6 +141,7 @@ export function InputItem({onChangeText, handleAddItem}) {
  * 
  * @param item The Item you want to display
  * @param addFavoriteItem The function to add favorite item to list
+ * @param removeFromFavorite the function to remove favorite item from favorited
  */
 
 export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
