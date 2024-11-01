@@ -22,7 +22,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
-import {CheckItem, InputItem} from '@/components/Item';
+import {CheckItem, FavoriteItem, InputItem} from '@/components/Item';
 import Recipe from './recipe';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
@@ -155,13 +155,16 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName("");
+            setNewItemName('');
             fetchShoppingItems();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
     };
 
+    const handleRemoveItem = ({item}) => {
+        console.log('Removing this: ');
+    }
 
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
@@ -177,58 +180,12 @@ export default function ShoppingListScreen() {
         );
     };
 
-/*
-    const renderItem = ({item}) => {
-        const priceText = item.price === 0 ? '' : '$' + item.price;
-        const isInput = (item.id === -1);
-        const dummyString = "-1";
-        return (
-            <View style={styles.itemContainer}>
-                <View style={styles.itemLeftContainer}>
-                    {/* Star Icon *\/
-                    <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
-                        <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/>
-                    </Pressable>
-                    <View style={styles.itemTextContainer}>
-                        <TextInput
-                            style={styles.itemTitle}
-                            placeholder={item.title}
-                            placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
-                            editable={isInput}
-                            onChangeText={(text) => setNewItemName(text)}
-                            onSubmitEditing={() => handleAddItem()}
-                        />
-                        <View style={styles.itemInfoContainer}>
-                            <Text style={styles.itemPrice}>{priceText}</Text>
-                        </View>
-                    </View>
-                </View>
-                <View style={styles.itemIconContainer}>
-                    {/* Star Icon *\/}
-                    <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                        <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-
-                    {/* Trash Icon *\/}
-                    <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                        <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-
-                    {/* Plus Icon *\/}
-                    <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-                </View>
-            </View>
-        )
-    };
-*/
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         return (
             <View>
                 {isInput === false ? (
-                    <CheckItem item={item}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
@@ -239,9 +196,7 @@ export default function ShoppingListScreen() {
     };
 
     const renderFavoriteItem = ({item}) => (
-        <View style={styles.itemContainer}>
-            <Text style={styles.itemTitle}>{item.title}</Text>
-        </View>
+        <FavoriteItem item={item} addFavoriteItem={setFavoriteItems} removeFromFavorite={setFavoriteItems}></FavoriteItem>
     );
 
     const renderRecipe = ({item}) => (
