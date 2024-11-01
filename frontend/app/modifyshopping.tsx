@@ -471,7 +471,7 @@ export default function ShoppingListScreen() {
     useEffect(() => {
         //fetchItemGroups();
         //fetchShoppingItems();
-        // fetchRecipes();
+        fetchRecipes();
         fetchShoppingList();
         fetchFavorites();
         fetchRecipes();
@@ -487,7 +487,7 @@ export default function ShoppingListScreen() {
                 name: newItemName,
                 quantity: 1,
                 units: "units",
-                list: local.id,
+                list: local.id
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -495,10 +495,11 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            //fetchShoppingItems();
             setNewItemName("");
         } catch (error) {
             console.error('Error adding new shopping item:', error);
+        } finally {
+            await fetchShoppingList();
         }
     };
 
@@ -514,7 +515,7 @@ export default function ShoppingListScreen() {
 
             // Refresh the shopping lists after adding a new one
             setNewItemName('');
-            fetchShoppingItems();
+            await fetchShoppingList();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
@@ -536,35 +537,7 @@ export default function ShoppingListScreen() {
 
     const renderItem = ({item}) => {
         //const isDefault = (item.title === "Default");
-
-        if (item.title === "Default") {
-            console.log("DEFAULT FOUND");
-            item.items.forEach((item) => {
-                console.log(item.title);
-                return (
-                    <View style={styles.checkItemContainer}>
-                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                                   handleRemoveItem={() => handleRemove(item)}></CheckItem>
-                    </View>
-                )
-            })
-            /*<View style={styles.checkItemContainer}>
-                <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
-            </View>*/
-        }
-
-        return (
-            <View>
-                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
-                           handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                           handleAddItem={handleAddItem}></ItemGroup>
-            </View>
-        );
-
         const isInput = (item.id === -1);
-        const isGroup = (item.id >= 1000);
-        const isSpacer = (item.id < -1);
-
         if (isInput) {
             return (
                 <View>
@@ -574,30 +547,47 @@ export default function ShoppingListScreen() {
             );
         }
 
-        if (isGroup) {
-            return (
-                <View>
-                    <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
-                               handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                               handleAddItem={handleAddItem}></ItemGroup>
-                </View>
-            );
-        }
-
-        if (isSpacer) {
-            return (
-                <View>
-                    <SpacerItem></SpacerItem>
-                </View>
-            );
-        }
-
         return (
-            <View style={styles.checkItemContainer}>
-                <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                           handleRemoveItem={() => handleRemove(item)}></CheckItem>
+            <View>
+                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
+                           handleRemoveItem={handleRemove} onChangeText={setNewItemName}
+                           handleAddItem={handleAddItem}></ItemGroup>
             </View>
         );
+    };
+
+    const handleAddRecipe = async (recipe) => {
+        try {
+            const recipeId = recipe.id;
+            console.log(recipeId);
+            const groceryListId = local.id;
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(
+                `${API_BASE_URL}/api/grocery/${groceryListId}/add_recipe/`, {
+                    recipe_id: recipeId
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            // Check if the response indicates success and handle accordingly
+            if (response.status === 200) {
+                console.log("Recipe added successfully:", response.data);
+            }
+        } catch (error) {
+            // Handle error responses
+            if (error.response) {
+                console.error("Error adding recipe:", error.response.data);
+            } else {
+                console.error("An unexpected error occurred:", error.message);
+            }
+        } finally {
+            fetchShoppingList();
+        }
     };
 
     const renderFavoriteItem = ({item}) => (

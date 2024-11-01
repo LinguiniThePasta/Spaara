@@ -527,7 +527,6 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                 recipe_items = recipe.items.all()
                 for index, item in enumerate(recipe_items, start=1):
                     GroceryItemUnoptimized.objects.create(
-                        id=item.id,
                         name=item.name,
                         description=item.description,
                         store=item.store,
