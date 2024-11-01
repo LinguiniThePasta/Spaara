@@ -6,28 +6,20 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
 
-
-//<Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/> star
-//<Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/> circle
-
-/*
-    item parameters
-
- *  id: item.id.toString(),
-    title: item.name,
-    price: 0,
-    favorited: item.favorited,
-    checked: false,
-    list: item.list.toString()
-*/
-
-
-
-/* 
- * this is the basis for what an item with a checkbox should look like
- * this is also the equivilant to unoptimized items
+/**
+ * CheckItem Component
+ * 
+ * Renders a single item with interactive controls, such as quantity adjustment, 
+ * checkbox-like selection, and a favorite icon. This component displays the 
+ * item's name and allows users to increment or decrement its quantity.
+ * 
+ * @param item the Item you want to display 
+ * 
+ * @example 
+ * <CheckItem item={{ id: 1, title: 'Milk', price: 3.99, quantity: 2 }}></CheckItem>
+ * 
+ * @returns None
  */
-
 
 export function CheckItem({item}) {
     const priceText = item.price === 0 ? '' : '$' + item.price;
@@ -77,6 +69,21 @@ export function CheckItem({item}) {
         </View>
     );
 };
+
+/**
+ * InputItem Component
+ * 
+ * Renders a single item with an interactable text feild that allows the user to input the name of an item 
+ * to add it to shopping lists
+ * 
+ * @param onChangeText function to handle name of new item
+ * @param handleAddItem functon to handle adding item to list
+ * 
+ * @example 
+ * <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
+ * 
+ * @returns None
+ */
 
 export function InputItem({onChangeText, handleAddItem}) {
     const [number, setNumber] = useState(0);
