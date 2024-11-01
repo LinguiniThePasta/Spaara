@@ -278,27 +278,27 @@ export default function ShoppingListScreen() {
     const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    
+
             const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
-    
+
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
             }));
-    
+
             setAllRecipes(lists);
-    
+
             /*let listName = "Unnamed List";
             lists.forEach(list => {
                 if (list.id === local.id) {
                     listName = list.title;
                 }
             });*/
-    
+
             console.log("Correctly fetched recipes!");
             //setRecipeName(listName);
         } catch (error) {
@@ -660,6 +660,14 @@ export default function ShoppingListScreen() {
         setIsRenameModalVisible(false);
     }
 
+    const handleOptimizeSubheadings = () => {
+        const updatedItemGroups = itemGroups.map(group => ({
+            ...group,
+            title: Math.random() > 0.5 ? "Walmart" : "Kroger"
+        }));
+        setItemGroups(updatedItemGroups);
+    };
+
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
@@ -697,7 +705,7 @@ export default function ShoppingListScreen() {
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optimizeButton}>
+                <TouchableOpacity style={styles.optimizeButton} onPress={() => handleOptimizeSubheadings()}>
                     <Icon
                         name="hammer-outline"
                         size={24}
