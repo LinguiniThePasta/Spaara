@@ -83,42 +83,29 @@ export default function ShoppingListScreen() {
             });
             // Handle successful response
             console.log('Shopping list renamed:', response.data);
-            // Optionally, refetch shopping lists or update state
-            fetchShoppingLists();
         } catch (error) {
             console.error('Error renaming shopping list:', error);
             // Handle error (e.g., show a notification)
         } finally {
             setIsRenameModalVisible(false);
-            setNewListName('');
+            setShoppingListName(newListName);
+            setNewListName("");
         }
     };
 
 
-    const fetchShoppingLists = async () => {
+    const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-            const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/${local.id}/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
 
-            const lists = response.data.map(item => ({
-                id: item.id.toString(),
-                title: item.name,
-            }));
-
-            let listName = "Unnamed List";
-            lists.forEach(list => {
-                if (list.id === local.id) {
-                    listName = list.title;
-                }
-            });
-
-            console.log("Correctly fetched shopping lists!");
-            setShoppingListName(listName);
+            console.log("Correctly fetched shopping list!");
+            setShoppingListName(response.data.name);
         } catch (error) {
             console.error('Error fetching shopping lists:', error);
         }
@@ -163,8 +150,8 @@ export default function ShoppingListScreen() {
     };
     useEffect(() => {
         // Call the function to load shopping lists when the component mounts
-        fetchShoppingLists();
         fetchShoppingItems();
+        fetchShoppingList();
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
@@ -185,8 +172,7 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
-            fetchShoppingItems();
+            setNewItemName("");
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
