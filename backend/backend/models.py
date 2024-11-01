@@ -236,14 +236,26 @@ class FavoriteManager:
                 continue
             if isinstance(instance, receiver) or receiver == FavoritedItem:
                 continue
+            # Update 'favorited' status in other receiver models
             receiver.objects.filter(id=instance.id).update(favorited=instance.favorited)
+
         if instance.favorited:
-            # print(instance.list.user.id)
-            FavoritedItem.objects.get_or_create(id=instance.id,
-                                                name=instance.name,
-                                                description=instance.description,
-                                                store=instance.store,
-                                                user=get_object_or_404(User, id=instance.list.user.id)
-                                                )
+            # Retrieve the user through subheading and grocery
+            try:
+                user = instance.subheading.grocery.user
+            except AttributeError:
+                raise ValueError("The instance is not properly linked to a grocery and user.")
+
+            # Create or get the FavoritedItem
+            FavoritedItem.objects.get_or_create(
+                id=instance.id,
+                defaults={
+                    'name': instance.name,
+                    'description': instance.description,
+                    'store': instance.store,
+                    'user': user
+                }
+            )
         else:
+            # Delete the FavoritedItem if it exists
             FavoritedItem.objects.filter(id=instance.id).delete()
