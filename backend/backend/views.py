@@ -186,6 +186,7 @@ class LoginView(APIView):
         guest_user = User.objects.create(
             username=f"guest_{uuid_guest}",
             email=f"{uuid_guest}@example.com",
+            is_active=True  # Set guest users as active by default
         )
         guest_user.set_unusable_password()
         guest_user.groups.add(guest_group)
