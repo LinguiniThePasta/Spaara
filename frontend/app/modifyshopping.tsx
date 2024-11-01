@@ -45,10 +45,7 @@ export default function ShoppingListScreen() {
         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
         { id: -1, title: '', price: 0, favorited: false, checked: false },*/
     ]);
-    const [favoriteItems, setFavoriteItems] = useState([
-        {id: 1, title: 'Milk', favorited: true},
-        {id: 2, title: 'Rice', favorited: true},
-    ]);
+    const [favoriteItems, setFavoriteItems] = useState([]);
     const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
 
@@ -162,6 +159,37 @@ export default function ShoppingListScreen() {
         }
     };
 
+    const fetchFavoriteItems = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+            const response = await axios.get(`${API_BASE_URL}/api/favorited/items/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            const favoriteItems = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: item.favorited,
+                checked: false,
+                quantity: item.quantity,
+            }));
+
+            setFavoriteItems(favoriteItems);
+
+            favoriteItems.forEach(
+                (item) => {console.log(item.title + ": " + item.id)}
+            );
+
+            console.log('Correctly fetched favorite items!')
+        } catch (error) {
+            console.error('Error fetching favorite items:', error);
+        }
+
+    }
 
 
     const fetchItemGroups = async () => {
@@ -210,6 +238,7 @@ export default function ShoppingListScreen() {
         //fetchItemGroups();
         fetchShoppingItems();
         fetchShoppingList();
+        fetchFavoriteItems();
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
@@ -259,26 +288,33 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/favorite/`, {
+                list: local.id,
+            }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
                 }
             });
+            console.log('item favorited sucessfully')
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
-            fetchShoppingItems();
+            fetchFavoriteItems();
+
         } catch (error) {
             console.error('Error adding new favorite:', error);
         }
         
     }
 
-    const addFavoriteItem = async ({item}) => {
+    const addFavoriteItem = async (item) => {
+        //console.log("Adding this favorite: " + item.title);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/${item.id}/favorite`, {
+            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
                 name: item.title,
-
+                quantity: 1,
+                units: "units",
+                favorited: item.favorited,
+                list: local.id,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -286,10 +322,9 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
             fetchShoppingItems();
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error adding favorite item to list:', error);
         }
     };
 
@@ -342,7 +377,7 @@ export default function ShoppingListScreen() {
     };
 
     const renderFavoriteItem = ({item}) => (
-        <FavoriteItem item={item} addFavoriteItem={setFavoriteItems} removeFromFavorite={setFavoriteItems}></FavoriteItem>
+        <FavoriteItem item={item} addFavoriteItem={() => addFavoriteItem(item)} ></FavoriteItem>
     );
 
     const renderRecipe = ({item}) => (
@@ -492,10 +527,10 @@ export default function ShoppingListScreen() {
                         }
                         {contentVisable === 'Favorite' && (
                             <FlatList
-                            data={favoriteItems}
-                            renderItem={renderFavoriteItem}
-                            keyExtractor={item => item.id.toString()}
-                            style={styles.flatList}
+                                data={favoriteItems}
+                                renderItem={renderFavoriteItem}
+                                keyExtractor={item => item.id.toString()}
+                                style={styles.flatList}
                             />
                         )}
                         {contentVisable === 'Recipe' && (

@@ -6,6 +6,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
 
+
+function placeholderFunction() {
+    console.log('function not used');
+}
+
+
 /**
  * CheckItem Component
  * 
@@ -144,7 +150,8 @@ export function InputItem({onChangeText, handleAddItem}) {
  * @param removeFromFavorite the function to remove favorite item from favorited
  */
 
-export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
+export const FavoriteItem = ({item, addFavoriteItem = placeholderFunction, removeFromFavorite = placeholderFunction}) => {
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>

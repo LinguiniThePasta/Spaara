@@ -3,33 +3,17 @@ import { View, Text, FlatList, Pressable, StyleSheet, SafeAreaView } from 'react
 import { Colors } from '@/styles/Colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Footer from "@/components/Footer"; // Assuming you have a Colors file for styling
+import {FavoriteItem} from '@/components/Item'
 
 export default function FavoritesScreen() {
-    const favorites = [
+    const [favoriteItems, setFavoriteItems] = useState([
         { id: '1', title: 'Cumin Seeds' },
         { id: '2', title: 'Bananas' },
-    ];
+    ]);
 
-    const renderItem = ({ item }) => (
-        <View style={styles.favoriteItem}>
-            <Text style={styles.favoriteItemTitle}>{item.title}</Text>
-            <View style={styles.iconContainer}>
-                {/* Star Icon */}
-                <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                    <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
 
-                {/* Trash Icon */}
-                <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                    <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-
-                {/* Plus Icon */}
-                <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                    <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon} />
-                </Pressable>
-            </View>
-        </View>
+    const renderFavoriteItem = ({item}) => (
+        <FavoriteItem item={item} addFavoriteItem={setFavoriteItems} removeFromFavorite={setFavoriteItems}></FavoriteItem>
     );
 
     return (
@@ -42,10 +26,10 @@ export default function FavoritesScreen() {
             </View>
 
             <FlatList
-                data={favorites}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContainer}
+                data={favoriteItems}
+                renderItem={renderFavoriteItem}
+                keyExtractor={item => item.id.toString()}
+                style={styles.flatList}
             />
 
             {/* Footer */}
@@ -103,6 +87,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     icon: {
+        marginLeft: 10,
+    },
+    flatList: {
         marginLeft: 10,
     },
 });
