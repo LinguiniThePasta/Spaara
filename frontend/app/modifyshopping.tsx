@@ -23,6 +23,7 @@ import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
 import {CheckItem, InputItem} from '@/components/Item';
+import {ItemGroup} from '@/components/ItemGroup';
 import Recipe from './recipe';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
@@ -57,6 +58,11 @@ export default function ShoppingListScreen() {
     const [selectedButton, setSelectedButton] = useState('Favorite');
     const [notSelectedButton, setNotSelectedButton] = useState(false);
     const [contentVisable, setContentVisable] = useState('Favorite');
+
+    const [itemGroups, setItemGroups] = useState([
+        {id: 1, name: "Smallga"},
+        {id: 2, name: "Bigitte"},
+    ]);
 
 
     const handlePress = (button) => {
@@ -257,6 +263,10 @@ export default function ShoppingListScreen() {
         </View>
     );
 
+    const renderItemGroup = ({item}) => (
+        <ItemGroup name={item.name} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+    );
+
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
@@ -265,10 +275,19 @@ export default function ShoppingListScreen() {
                     {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
                 </View>
 
-                <FlatList
+                {/*<FlatList
                     data={shoppingItems}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />*/}
+
+                {/*<ItemGroup name={"Smallga"} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>*/}
+
+                <FlatList
+                    data={itemGroups}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItemGroup}
                     contentContainerStyle={styles.listContainer}
                 />
                 
