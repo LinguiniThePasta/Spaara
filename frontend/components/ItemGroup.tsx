@@ -42,7 +42,7 @@ export function ItemGroup({name, items, handleFavoriteItem, handleRemoveItem, on
                 {isInput === false ? (
                     <CheckItem item={item} handleFavoriteItem={handleFavoriteItem} handleRemoveItem={handleRemoveItem}></CheckItem>
                 ) : (
-                    <InputItem initialText={} onChangeText={onChangeText} handleAddItem={handleAddItem}></InputItem>
+                    <InputItem initialText={""} onChangeText={onChangeText} handleAddItem={handleAddItem}></InputItem>
                 )}
             </View>
         );

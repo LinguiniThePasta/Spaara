@@ -275,36 +275,36 @@ export default function ShoppingListScreen() {
     // };
 
 
-    // const fetchRecipes = async () => {
-    //     try {
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });
-    //
-    //         const lists = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             title: item.name,
-    //         }));
-    //
-    //         setAllRecipes(lists);
-    //
-    //         /*let listName = "Unnamed List";
-    //         lists.forEach(list => {
-    //             if (list.id === local.id) {
-    //                 listName = list.title;
-    //             }
-    //         });*/
-    //
-    //         console.log("Correctly fetched recipes!");
-    //         //setRecipeName(listName);
-    //     } catch (error) {
-    //         console.error('Error fetching recipes:', error);
-    //     }
-    // };
+    const fetchRecipes = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+    
+            const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+    
+            const lists = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+            }));
+    
+            setAllRecipes(lists);
+    
+            /*let listName = "Unnamed List";
+            lists.forEach(list => {
+                if (list.id === local.id) {
+                    listName = list.title;
+                }
+            });*/
+    
+            console.log("Correctly fetched recipes!");
+            //setRecipeName(listName);
+        } catch (error) {
+            console.error('Error fetching recipes:', error);
+        }
+    };
 
 
     // const [recipeItems, setRecipeItems] = useState([]);
@@ -431,12 +431,50 @@ export default function ShoppingListScreen() {
     //     }
     // };
 
+    const fetchFavorites = async () => {
+
+        //console.log("Adding this: " + newItemName);
+        //if (newItemName === "-1") return;
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.get(`${API_BASE_URL}/api/favorited/items/`, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+
+            const items = response.data.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                price: 0,
+                favorited: false,
+                checked: false,
+                //list: item.list.toString(),
+                quantity: 1,
+            }));
+
+            setFavoriteItems(items);
+
+            console.log('Correctly fetched favorites!');
+
+            // Refresh the shopping lists after adding a new one
+            //fetchShoppingItems();
+            //setNewItemName("");
+        } catch (error) {
+            console.error('Error fetching favorites:', error);
+        }
+
+    };
+
 
     useEffect(() => {
         //fetchItemGroups();
         //fetchShoppingItems();
         // fetchRecipes();
         fetchShoppingList();
+        fetchFavorites();
+        fetchRecipes();
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
@@ -457,7 +495,7 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            fetchShoppingItems();
+            //fetchShoppingItems();
             setNewItemName("");
         } catch (error) {
             console.error('Error adding new shopping item:', error);
