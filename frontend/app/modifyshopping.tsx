@@ -162,8 +162,9 @@ export default function ShoppingListScreen() {
         }
     };
 
-    const handleRemoveItem = ({item}) => {
+    const handleRemoveItem = async ({item}) => {
         console.log('Removing this: ');
+        
     }
 
     const handleFavorite = async (id) => {
