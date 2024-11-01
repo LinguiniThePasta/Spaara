@@ -215,9 +215,17 @@ export default function ShoppingListScreen() {
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <View>
-                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"} noProfile={false}></Header>
-                    {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
+                <View style={styles.header}>
+                    <View style={styles.left}>
+                        <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                            <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+                        </Pressable>
+                        <Text style={styles.headerTitle}>{`${shoppingListName}`}</Text>
+                        <TouchableOpacity style={{marginLeft: 10}}>
+                            <Icon name="pencil-outline" size={24} color={Colors.light.primaryText} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.profileIconContainer}></View>
                 </View>
 
                 <FlatList
@@ -494,6 +502,33 @@ const styles = StyleSheet.create({
     plusButton: {
         borderWidth: 2,
         borderColor: Colors.light.secondaryText,
+    },
+    // For the custom header
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        color: Colors.light.primaryText,
+    },
+    left: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: Colors.light.primaryText,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+    },
+    profileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 
 });
