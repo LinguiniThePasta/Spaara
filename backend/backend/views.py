@@ -362,7 +362,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
               and adds all items from the recipe to the grocery list under the new subheading.
 
         usage:
-            - POST {URL}/{grocery_list_id}/add-recipe/
+            - POST {URL}/{grocery_list_id}/add_recipe/
                 - data (dict):
                     {
                         "recipe_id": <UUID>  # The ID of the recipe to be added
@@ -527,6 +527,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                 recipe_items = recipe.items.all()
                 for index, item in enumerate(recipe_items, start=1):
                     GroceryItemUnoptimized.objects.create(
+                        id=item.id,
                         name=item.name,
                         description=item.description,
                         store=item.store,
@@ -605,32 +606,21 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         '''
-        Retrieves the queryset of unoptimized grocery items, optionally filtered by grocery list ID.
-
-        :param:
-            None
+        Retrieves the queryset of unoptimized grocery items across all subheadings in a specified grocery list.
 
         :return:
-            QuerySet: A queryset of GroceryItemUnoptimized instances, filtered by the 'list' parameter
-                      if provided in the request query params, or items with no list if 'list' is not specified.
-
-        query details:
-            - Retrieves all grocery items with no list by default.
-            - If 'list' is provided as a query parameter, filters items by the specified grocery list ID.
+            QuerySet: A queryset of GroceryItemUnoptimized instances filtered by the grocery list's subheadings.
 
         usage:
-            - GET {URL} - retrieves all grocery items with no associated list
-            - GET {URL}?list={list_id} - retrieves all grocery items associated with a specific grocery list
+            - GET {URL}?list={list_id} - retrieves all grocery items across subheadings associated with a specific grocery list
         '''
-
-        queryset = super().get_queryset()
         grocery_id = self.request.query_params.get('list')
         if grocery_id:
-            queryset = queryset.filter(list=grocery_id)
-        else:
-            queryset = queryset.filter(list=None)
+            # Filter items by subheadings belonging to the specified grocery list
+            return GroceryItemUnoptimized.objects.filter(subheading__grocery__id=grocery_id)
 
-        return queryset
+        # If no 'list' parameter is provided, retrieve all items
+        return GroceryItemUnoptimized.objects.all()
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -706,24 +696,31 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
         '''
-        Toggles the 'favorited' status of a recipe item.
+        Toggles the 'favorited' status of a grocery item, ensuring it belongs to the specified grocery list.
 
         :param:
-            request (Request): The incoming request; does not require any data parameters.
-            pk (int): The primary key of the recipe item to toggle favorite status.
+            request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
+            pk (UUID): The primary key of the grocery item to toggle favorite status.
 
         :return:
-            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
-
-        action details:
-            - Retrieves the grocery item instance specified by the primary key.
-            - Toggles its 'favorited' attribute.
-            - Saves the updated instance and returns the updated data.
+            Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
+                      or an error if the item does not belong to the specified grocery list.
 
         usage:
-            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
+            - POST {URL}/{item_id}/favorite?list={grocery_list_id} - toggles the favorite status of items within the specified grocery list
         '''
-        item = self.get_object()
+        grocery_id = request.query_params.get('list')
+        if not grocery_id:
+            return Response({"error": "'list' parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Attempt to retrieve the item within the specified grocery list
+        try:
+            item = GroceryItemUnoptimized.objects.get(pk=pk, subheading__grocery__id=grocery_id)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "Item not found in the specified grocery list."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the 'favorited' status
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
@@ -801,9 +798,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         '''
         Retrieves the queryset of recipe items, optionally filtered by recipe ID.
 
-        :param:
-            None
-
         :return:
             QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
                       if provided in the request query params.
@@ -820,7 +814,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         recipe_id = self.request.query_params.get('recipe_id')
 
         if recipe_id:
-            queryset.filter(recipe_id=recipe_id)
+            queryset = queryset.filter(recipe__id=recipe_id)
 
         return queryset
 
@@ -934,26 +928,27 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
         grocery_id = request.data["list"]
         favorited_item = self.get_object()
         grocery = Grocery.objects.all().filter(id=grocery_id).get()
+        default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name="Default")
+
         data = {
+            'id': favorited_item.id,
             'name': favorited_item.name,
             'quantity': 1,
             'units': 'units',
             'favorited': True,
             'description': favorited_item.description,
             'store': favorited_item.store,
-            'list': grocery.id
+            'list': grocery.id,
+            'subheading': default_subheading.id
         }
 
         serializer = GroceryItemUnoptimizedSerializer(data=data)
         if serializer.is_valid():
-            data['list'] = grocery
-            GroceryItemUnoptimized.objects.update_or_create(
-                id=favorited_item.id,
-                defaults=data
-            )
+            grocery_item = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'])
     def add_to_recipe(self, request, pk=None):
         '''

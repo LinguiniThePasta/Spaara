@@ -137,14 +137,20 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Check if 'subheading' is provided
         subheading = validated_data.get('subheading')
+        grocery = self.context.get('grocery')
+        if not grocery:
+            raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
+
+        existing_item = GroceryItemUnoptimized.objects.filter(
+            id=validated_data['id'],
+            grocery=grocery,
+            favorited=True  # Assuming this is a criterion for "favorited"
+        ).exists()
+
+        if existing_item:
+            raise serializers.ValidationError("This favorited item already exists in the grocery list.")
 
         if not subheading:
-            # Ensure that 'grocery' is provided in the context
-            grocery = self.context.get('grocery')
-            if not grocery:
-                raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
-
-            # Retrieve or create the default subheading for the grocery list
             try:
                 default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Default')
             except Exception as e:
