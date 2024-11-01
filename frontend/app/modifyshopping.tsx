@@ -49,13 +49,6 @@ export default function ShoppingListScreen() {
     const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
 
-    const toggleAccordion = (title) => {
-        setExpandedAccordions((prevState) => ({
-            ...prevState,
-            [title]: !prevState[title],
-        }));
-    };
-
 
     const [recipeTemp, setRecipe] = useState([
         {id: 1, title: 'Beefed Banana'},
@@ -69,17 +62,15 @@ export default function ShoppingListScreen() {
     const [expandedAccordions, setExpandedAccordions] = useState({});
 
     const [itemGroups, setItemGroups] = useState([
-        {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
-                                         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        {id: 1001, title: "Smallga", items: [{ id: 996, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+                                         { id: 997, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
         {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
                                          { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
     ]);
 
     const [optimizedGroups, setOptimizedGroups] = useState([
-        {id: 1003, title: "Walmart", items: [{ id: 998, title: 'Sam I Am', price: 3.99, favorited: false, checked: false, quantity: 1 },
-                                         { id: 999, title: 'Ham', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
-        {id: 1004, title: "Kroger", items: [{ id: 998, title: 'Green Food Dye', price: 3.99, favorited: false, checked: false, quantity: 1 },
-                                         { id: 999, title: 'Eggs', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        {id: 1003, title: "Walmart", items: []},
+        {id: 1004, title: "Kroger", items: []},
     ]);
 
 
@@ -185,8 +176,41 @@ export default function ShoppingListScreen() {
                 }
             });
             */
-            // Process optimized data
-            setShoppingItems([...optimizedGroups, {
+            
+            // Initialize new optimizedGroups with empty items arrays
+            const updatedOptimizedGroups = optimizedGroups.map(group => ({
+                ...group,
+                items: [],
+            }));
+    
+            // Flatten items from shoppingItems
+            const allItems = [];
+            shoppingItems.forEach(item => {
+                if (item.items && item.items.length > 0) {
+                    // Item is a group; extract its items
+                    allItems.push(...item.items);
+                } else {
+                    // Standalone item
+                    allItems.push(item);
+                }
+            });
+
+            // Loop through each item and assign randomly
+            allItems.forEach(item => {
+                if (item.id !== -1) {
+                    const random = Math.floor(Math.random() * 2); // 0 or 1
+                    if (random === 0) {
+                        // Assign to the first optimized group
+                        updatedOptimizedGroups[0].items.push(item);
+                    } else {
+                        // Assign to the second optimized group
+                        updatedOptimizedGroups[1].items.push(item);
+                    }
+                }
+            });
+
+            // Create the 'Add Item' object
+            const addItem = {
                 id: -1,
                 title: 'Add Item',
                 price: 0,
@@ -194,9 +218,10 @@ export default function ShoppingListScreen() {
                 checked: false,
                 list: local.id,
                 quantity: 0,
-            }]);
+            };
 
-
+            // Update the state with the new optimizedGroups
+            setShoppingItems([...updatedOptimizedGroups, addItem]);
         } catch (error) {
             console.error('Error optimizing:', error);
         }
