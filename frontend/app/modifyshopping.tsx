@@ -94,46 +94,66 @@ export default function ShoppingListScreen() {
             });
             // Handle successful response
             console.log('Shopping list renamed:', response.data);
-            // Optionally, refetch shopping lists or update state
-            fetchShoppingLists();
         } catch (error) {
             console.error('Error renaming shopping list:', error);
             // Handle error (e.g., show a notification)
         } finally {
             setIsRenameModalVisible(false);
-            setNewListName('');
+            setShoppingListName(newListName);
+            setNewListName("");
         }
     };
 
 
-    const fetchShoppingLists = async () => {
-        try {
-            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+    const fetchShoppingList = async () => {
+    try {
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+        const listId = local.id;
 
-            const response = await axios.get(`${API_BASE_URL}/api/grocery/`, {
-                headers: {
-                    'Authorization': `Bearer ${jwtToken}`
-                }
-            });
+        const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
+            headers: {
+                'Authorization': `Bearer ${jwtToken}`
+            }
+        });
 
-            const lists = response.data.map(item => ({
-                id: item.id.toString(),
+        // Get the subheadings array
+        const { name, subheadings } = response.data;
+        setShoppingListName(name);
+
+        // Parse subheadings into ItemGroups
+        const parsedItemGroups = subheadings.map((subheading) => ({
+            id: subheading.id,
+            title: subheading.name,
+            items: subheading.items.map((item) => ({
+                id: item.id,
                 title: item.name,
-            }));
+                description: item.description,
+                store: item.store,
+                quantity: item.quantity,
+                units: item.units,
+                favorited: item.favorited,
+                order: item.order
+            }))
+        }));
 
-            let listName = "Unnamed List";
-            lists.forEach(list => {
-                if (list.id === local.id) {
-                    listName = list.title;
-                }
-            });
+        console.log("Parsed item groups:", parsedItemGroups);
 
-            console.log("Correctly fetched shopping lists!");
-            setShoppingListName(listName);
-        } catch (error) {
-            console.error('Error fetching shopping lists:', error);
-        }
-    };
+        // Update state with parsed ItemGroups
+        setItemGroups(parsedItemGroups);
+
+        // Flatten items if you need a flat list for any other purpose
+        const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
+        setShoppingItems([...allItems, {
+            id: -1,
+            title: 'Add Item',
+            favorited: false,
+            quantity: 0,
+        }]);
+
+    } catch (error) {
+        console.error('Error fetching shopping items:', error);
+    }
+};
 
 
     const [nextRecipeID, setNextRecipeID] = useState("");
@@ -402,11 +422,10 @@ export default function ShoppingListScreen() {
 
 
     useEffect(() => {
-        // Call the function to load shopping lists when the component mounts
-        fetchShoppingLists();
         //fetchItemGroups();
-        fetchShoppingItems();
+        //fetchShoppingItems();
         fetchRecipes();
+        fetchShoppingList();
     }, []); // Empty dependency array ensures this runs only on component mount
 
 
@@ -427,8 +446,8 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName('');
             fetchShoppingItems();
+            setNewItemName("");
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
@@ -467,6 +486,29 @@ export default function ShoppingListScreen() {
     };
 
     const renderItem = ({item}) => {
+        //const isDefault = (item.title === "Default");
+
+        if (item.title === "Default") {
+            console.log("DEFAULT FOUND");
+            item.items.forEach((item) => {
+                console.log(item.title);
+                return (
+                <View style={styles.checkItemContainer}>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
+                </View>
+                )
+            })
+            /*<View style={styles.checkItemContainer}>
+                <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
+            </View>*/
+        }
+
+        return (
+                <View>
+                    <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemove} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+                </View>
+        );
+
         const isInput = (item.id === -1);
         const isGroup = (item.id >= 1000);
         const isSpacer = (item.id < -1);
@@ -593,7 +635,7 @@ export default function ShoppingListScreen() {
 
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
                     <FlatList
-                        data={shoppingItems}
+                        data={itemGroups}
                         keyExtractor={(item) => item.id}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
