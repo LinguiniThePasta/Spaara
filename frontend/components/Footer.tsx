@@ -23,13 +23,19 @@ export default function Footer() {
 
     return (
         <View style={styles.footerContainer}>
-            {role !== "Guest" && role !== "Visitor" && (
-                <Pressable style={styles.footerItem} onPress={() => router.push("/favorite")}>
-                    <Icon name="heart-outline" size={24} color="#000"/>
-                    <Text style={styles.footerText}>Favorites</Text>
-                </Pressable>
-            )
-            }
+            <Pressable
+                style={styles.footerItem}
+                onPress={() => {
+                    if (role === "Guest" || role === "Visitor") {
+                        router.push("/unauthorized");
+                    } else {
+                        router.push("/favorite");
+                    }
+                }}
+            >
+                <Icon name="heart-outline" size={24} color="#000"/>
+                <Text style={styles.footerText}>Favorites</Text>
+            </Pressable>
             <Pressable style={styles.footerItem} onPress={() => router.push("/map")}>
                 <Icon name="location-outline" size={24} color="#000"/>
                 <Text style={styles.footerText}>Map</Text>
@@ -39,22 +45,29 @@ export default function Footer() {
                 <Icon name="cart-outline" size={24} color="#000"/>
                 <Text style={styles.footerText}>List</Text>
             </Pressable>
-            {role !== "Guest" && role !== "Visitor" &&
-                (
-                    <Pressable style={styles.footerItem} onPress={() => router.push("/recipe")}>
-                        <Icon name="book-outline" size={24} color="#000"/>
-                        <Text style={styles.footerText}>Recipes</Text>
-                    </Pressable>
-                )
-            }
-            {role !== "Guest" && role !== "Visitor" &&
-                (
-                    <Pressable style={styles.footerItem} onPress={() => router.push("/profile")}>
-                        <Icon name="person-outline" size={24} color="#000"/>
-                        <Text style={styles.footerText}>Profile</Text>
-                    </Pressable>
-                )
-            }
+
+            <Pressable style={styles.footerItem} onPress={() => {
+                if (role === "Guest" || role === "Visitor") {
+                    router.push("/unauthorized");
+                } else {
+                    router.push("/recipe");
+                }
+
+            }}>
+                <Icon name="book-outline" size={24} color="#000"/>
+                <Text style={styles.footerText}>Recipes</Text>
+            </Pressable>
+
+            <Pressable style={styles.footerItem} onPress={() => {
+                if (role === "Guest" || role === "Visitor") {
+                    router.push("/unauthorized");
+                } else {
+                    router.push("/profile");
+                }
+            }}>
+                <Icon name="person-outline" size={24} color="#000"/>
+                <Text style={styles.footerText}>Profile</Text>
+            </Pressable>
         </View>
     );
 }
