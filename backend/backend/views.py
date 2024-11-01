@@ -750,6 +750,17 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
     serializer_class = FavoritedItemSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        id = self.request.query_params.get('id')
+        queryset = FavoritedItem.objects.all().filter(user=user)
+
+        if id:
+            queryset = queryset.filter(id=id)
+
+        return queryset
+
+
     def create(self, request):
         user_id = request.user
 
