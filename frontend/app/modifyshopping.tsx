@@ -162,7 +162,22 @@ export default function ShoppingListScreen() {
         }
     };
 
+    const handleOptimize = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            // Process optimized data
+
+        } catch (error) {
+            console.error('Error optimizing:', error);
+        }
+    };
 
     const fetchItemGroups = async () => {
         try {
@@ -318,7 +333,7 @@ export default function ShoppingListScreen() {
     );
 
     const renderItemGroup = ({item}) => (
-        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={() => handleFavorite(item)} handleRemoveItem={() => handleRemove(item)} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
     );
     const dismissModal = () => {
         setIsRenameModalVisible(false);
@@ -368,7 +383,7 @@ export default function ShoppingListScreen() {
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optimizeButton}>
+                <TouchableOpacity style={styles.optimizeButton} onPress={handleOptimize}>
                     <Icon
                         name="hammer-outline"
                         size={24}
