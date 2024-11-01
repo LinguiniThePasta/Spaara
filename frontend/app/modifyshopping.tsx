@@ -184,19 +184,19 @@ export default function ShoppingListScreen() {
 
 
             //setItemGroups
-            var recipes = [];
+            /*var recipes = [];
             filteredItems.forEach((item) => {
                 if (item.quantity === -1) {
                     recipes = [...recipes, item.title];
                     console.log("-$- " + item.title);
                 }
-            });
+            });*/
 
 
-            recipes.forEach((id) => {
+            /*recipes.forEach((id) => {
                 setNextRecipeID(id);
                 fetchNextRecipeItems();
-            });
+            });*/
 
 
 
