@@ -193,11 +193,11 @@ const styles = StyleSheet.create({
     },
     itemText: {
         color: Colors.light.primaryText,
-        fontSize: 25,
+        fontSize: 21,
     },
     checkboxIcon: {
         marginRight: 5,
-        fontSize:25
+        fontSize: 25,
     },
     checkboxText: {
         color: Colors.light.secondaryText,

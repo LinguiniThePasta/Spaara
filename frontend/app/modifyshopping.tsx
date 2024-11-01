@@ -319,7 +319,7 @@ export default function ShoppingListScreen() {
     );
 
     const renderItemGroup = ({item}) => (
-        <ItemGroup name={item.name} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
+        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
     );
     const dismissModal = () => {
         setIsRenameModalVisible(false);

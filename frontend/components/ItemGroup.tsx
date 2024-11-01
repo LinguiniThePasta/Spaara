@@ -33,14 +33,14 @@ import { List } from 'react-native-paper'
 
 
 
-export function ItemGroup({name, items, onChangeText, handleAddItem}) {
+export function ItemGroup({name, items, handleFavoriteItem, handleRemoveItem, onChangeText, handleAddItem}) {
 
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         return (
             <View>
                 {isInput === false ? (
-                    <CheckItem item={item}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavoriteItem} handleRemoveItem={handleRemoveItem}></CheckItem>
                 ) : (
                     <InputItem onChangeText={onChangeText} handleAddItem={handleAddItem}></InputItem>
                 )}
