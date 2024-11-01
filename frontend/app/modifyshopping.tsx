@@ -10,7 +10,9 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Modal
+    Modal,
+    Button,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -46,6 +48,8 @@ export default function ShoppingListScreen() {
         {id: 1, title: 'Milk', favorited: true},
         {id: 2, title: 'Rice', favorited: true},
     ]);
+    const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
+    const [newListName, setNewListName] = useState('');
 
     const [recipeTemp, setRecipe] = useState([
         {id: 1, title: 'Beefed Banana'},
@@ -62,6 +66,32 @@ export default function ShoppingListScreen() {
     const handlePress = (button) => {
         setSelectedButton(button);
         setContentVisable(button);
+    };
+
+    const handleRename = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const listId = local.id;
+            const payload = {
+                name: newListName,
+            };
+            const response = await axios.put(`${API_BASE_URL}/api/grocery/${listId}/`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            // Handle successful response
+            console.log('Shopping list renamed:', response.data);
+            // Optionally, refetch shopping lists or update state
+            fetchShoppingLists();
+        } catch (error) {
+            console.error('Error renaming shopping list:', error);
+            // Handle error (e.g., show a notification)
+        } finally {
+            setIsRenameModalVisible(false);
+            setNewListName('');
+        }
     };
 
 
@@ -144,10 +174,10 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                list: local.id,
                 name: newItemName,
                 quantity: 1,
                 units: "units",
+                list: local.id,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -211,12 +241,24 @@ export default function ShoppingListScreen() {
         </View>
     );
 
+    const dismissModal = () => {
+        setIsRenameModalVisible(false);
+    }
+
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <View>
-                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"} noProfile={false}></Header>
-                    {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
+                <View style={styles.header}>
+                    <View style={styles.left}>
+                        <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                            <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+                        </Pressable>
+                        <Text style={styles.headerTitle}>{`${shoppingListName}`}</Text>
+                        <TouchableOpacity style={{marginLeft: 10}} onPress={() => setIsRenameModalVisible(true)}>
+                            <Icon name="pencil-outline" size={24} color={Colors.light.primaryText} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.profileIconContainer}></View>
                 </View>
 
                 <FlatList
@@ -231,7 +273,31 @@ export default function ShoppingListScreen() {
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
 
-                
+                <Modal
+                    visible={isRenameModalVisible}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setIsRenameModalVisible(false)}
+                >
+                    <TouchableWithoutFeedback onPress={dismissModal}>
+                        <KeyboardAvoidingView
+                            style={styles.nameModalContainer}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={60}
+                        >
+                            <View style={styles.nameModalContent}>
+                                <Text style={styles.nameModalTitle}>Rename Shopping List</Text>
+                                <TextInput
+                                    style={styles.nameInput}
+                                    placeholder="Enter new name"
+                                    value={newListName}
+                                    onChangeText={setNewListName}
+                                />
+                                <Button title="Rename" onPress={handleRename} />
+                            </View>
+                        </KeyboardAvoidingView>
+                    </TouchableWithoutFeedback>
+                </Modal>
             </SafeAreaView>
 
             <Footer/>
@@ -493,6 +559,60 @@ const styles = StyleSheet.create({
     plusButton: {
         borderWidth: 2,
         borderColor: Colors.light.secondaryText,
+    },
+    // For the custom header
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        color: Colors.light.primaryText,
+    },
+    left: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: Colors.light.primaryText,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+    },
+    profileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // Name change modals
+    nameModalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    nameModalContent: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    nameModalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    nameInput: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: Colors.light.secondaryText,
+        borderRadius: 5,
+        marginBottom: 10,
     },
 
 });

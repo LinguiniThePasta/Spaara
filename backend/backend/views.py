@@ -651,6 +651,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         '''
         recipe_id = request.data.get('recipe_id')
         recipe = get_object_or_404(Recipe, id=recipe_id)
+        print(recipe)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save(recipe=recipe)
