@@ -10,7 +10,9 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Modal
+    Modal,
+    Button,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -22,8 +24,8 @@ import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import {useDispatch, useSelector} from 'react-redux';
 import * as SecureStore from 'expo-secure-store';
-import {CheckItem, InputItem} from '@/components/Item';
 import {ItemGroup} from '@/components/ItemGroup';
+import {CheckItem, FavoriteItem, InputItem} from '@/components/Item';
 import Recipe from './recipe';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
@@ -47,6 +49,8 @@ export default function ShoppingListScreen() {
         {id: 1, title: 'Milk', favorited: true},
         {id: 2, title: 'Rice', favorited: true},
     ]);
+    const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
+    const [newListName, setNewListName] = useState('');
 
     const [recipeTemp, setRecipe] = useState([
         {id: 1, title: 'Beefed Banana'},
@@ -68,6 +72,32 @@ export default function ShoppingListScreen() {
     const handlePress = (button) => {
         setSelectedButton(button);
         setContentVisable(button);
+    };
+
+    const handleRename = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const listId = local.id;
+            const payload = {
+                name: newListName,
+            };
+            const response = await axios.put(`${API_BASE_URL}/api/grocery/${listId}/`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            // Handle successful response
+            console.log('Shopping list renamed:', response.data);
+            // Optionally, refetch shopping lists or update state
+            fetchShoppingLists();
+        } catch (error) {
+            console.error('Error renaming shopping list:', error);
+            // Handle error (e.g., show a notification)
+        } finally {
+            setIsRenameModalVisible(false);
+            setNewListName('');
+        }
     };
 
 
@@ -105,7 +135,7 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+            const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
@@ -150,10 +180,10 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                list: local.id,
                 name: newItemName,
                 quantity: 1,
                 units: "units",
+                list: local.id,
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
@@ -161,13 +191,16 @@ export default function ShoppingListScreen() {
             });
 
             // Refresh the shopping lists after adding a new one
-            setNewItemName("");
+            setNewItemName('');
             fetchShoppingItems();
         } catch (error) {
             console.error('Error adding new shopping item:', error);
         }
     };
 
+    const handleRemoveItem = ({item}) => {
+        console.log('Removing this: ');
+    }
 
     const handleFavorite = async (id) => {
         // Simulate favoriting an item
@@ -183,58 +216,12 @@ export default function ShoppingListScreen() {
         );
     };
 
-/*
-    const renderItem = ({item}) => {
-        const priceText = item.price === 0 ? '' : '$' + item.price;
-        const isInput = (item.id === -1);
-        const dummyString = "-1";
-        return (
-            <View style={styles.itemContainer}>
-                <View style={styles.itemLeftContainer}>
-                    {/* Star Icon *\/
-                    <Pressable onPress={() => console.log(`Check pressed for ${item.title}`)}>
-                        <Icon name="ellipse-outline" size={24} color={Colors.light.secondaryText} style={styles.icon}/>
-                    </Pressable>
-                    <View style={styles.itemTextContainer}>
-                        <TextInput
-                            style={styles.itemTitle}
-                            placeholder={item.title}
-                            placeholderTextColor={(isInput) ? Colors.light.secondaryText : Colors.light.primaryText}
-                            editable={isInput}
-                            onChangeText={(text) => setNewItemName(text)}
-                            onSubmitEditing={() => handleAddItem()}
-                        />
-                        <View style={styles.itemInfoContainer}>
-                            <Text style={styles.itemPrice}>{priceText}</Text>
-                        </View>
-                    </View>
-                </View>
-                <View style={styles.itemIconContainer}>
-                    {/* Star Icon *\/}
-                    <Pressable onPress={() => console.log(`Star pressed for ${item.title}`)}>
-                        <Icon name="star-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-
-                    {/* Trash Icon *\/}
-                    <Pressable onPress={() => console.log(`Delete pressed for ${item.title}`)}>
-                        <Icon name="trash-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-
-                    {/* Plus Icon *\/}
-                    <Pressable onPress={() => console.log(`Add pressed for ${item.title}`)}>
-                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.icon}/>
-                    </Pressable>
-                </View>
-            </View>
-        )
-    };
-*/
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         return (
             <View>
                 {isInput === false ? (
-                    <CheckItem item={item}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
@@ -245,9 +232,7 @@ export default function ShoppingListScreen() {
     };
 
     const renderFavoriteItem = ({item}) => (
-        <View style={styles.itemContainer}>
-            <Text style={styles.itemTitle}>{item.title}</Text>
-        </View>
+        <FavoriteItem item={item} addFavoriteItem={setFavoriteItems} removeFromFavorite={setFavoriteItems}></FavoriteItem>
     );
 
     const renderRecipe = ({item}) => (
@@ -266,13 +251,24 @@ export default function ShoppingListScreen() {
     const renderItemGroup = ({item}) => (
         <ItemGroup name={item.name} items={shoppingItems} onChangeText={setNewItemName} handleAddItem={handleAddItem}></ItemGroup>
     );
+    const dismissModal = () => {
+        setIsRenameModalVisible(false);
+    }
 
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
-                <View>
-                    <Header header={`${shoppingListName}`} backButton={true} backLink={"/shopping"} noProfile={false}></Header>
-                    {/*<Text style={styles.itemTitle}>$10.00 Budget</Text>*/}
+                <View style={styles.header}>
+                    <View style={styles.left}>
+                        <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                            <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+                        </Pressable>
+                        <Text style={styles.headerTitle}>{`${shoppingListName}`}</Text>
+                        <TouchableOpacity style={{marginLeft: 10}} onPress={() => setIsRenameModalVisible(true)}>
+                            <Icon name="pencil-outline" size={24} color={Colors.light.primaryText} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.profileIconContainer}></View>
                 </View>
 
                 {/*<FlatList
@@ -296,7 +292,31 @@ export default function ShoppingListScreen() {
                     <Icon name="heart-outline" size={24} color={Colors.light.background}/>
                 </TouchableOpacity>
 
-                
+                <Modal
+                    visible={isRenameModalVisible}
+                    transparent={true}
+                    animationType="slide"
+                    onRequestClose={() => setIsRenameModalVisible(false)}
+                >
+                    <TouchableWithoutFeedback onPress={dismissModal}>
+                        <KeyboardAvoidingView
+                            style={styles.nameModalContainer}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={60}
+                        >
+                            <View style={styles.nameModalContent}>
+                                <Text style={styles.nameModalTitle}>Rename Shopping List</Text>
+                                <TextInput
+                                    style={styles.nameInput}
+                                    placeholder="Enter new name"
+                                    value={newListName}
+                                    onChangeText={setNewListName}
+                                />
+                                <Button title="Rename" onPress={handleRename} />
+                            </View>
+                        </KeyboardAvoidingView>
+                    </TouchableWithoutFeedback>
+                </Modal>
             </SafeAreaView>
 
             <Footer/>
@@ -558,6 +578,60 @@ const styles = StyleSheet.create({
     plusButton: {
         borderWidth: 2,
         borderColor: Colors.light.secondaryText,
+    },
+    // For the custom header
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        color: Colors.light.primaryText,
+    },
+    left: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: Colors.light.primaryText,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+    },
+    profileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#ccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // Name change modals
+    nameModalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    nameModalContent: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    nameModalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    nameInput: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: Colors.light.secondaryText,
+        borderRadius: 5,
+        marginBottom: 10,
     },
 
 });
