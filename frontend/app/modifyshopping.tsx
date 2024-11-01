@@ -192,9 +192,22 @@ export default function ShoppingListScreen() {
         }
     };
 
-    const handleRemoveItem = async ({item}) => {
-        console.log('Removing this: ');
-        
+    const handleRemove = async (item) => {
+        console.log(`Removing item with ID: ${item.id}`);
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.delete(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName('');
+            fetchShoppingItems();
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
     }
 
     const handleFavorite = async (id) => {
@@ -214,9 +227,9 @@ export default function ShoppingListScreen() {
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         return (
-            <View>
+            <View style={styles.checkItemContainer}>
                 {isInput === false ? (
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}></CheckItem>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
                 ) : (
                     <InputItem onChangeText={setNewItemName} handleAddItem={handleAddItem}></InputItem>
                 )}
@@ -539,6 +552,9 @@ const styles = StyleSheet.create({
     },
     flatList: {
         marginLeft: 10,
+    },
+    checkItemContainer: {
+        marginBottom: 10, // Add margin to create space between items
     },
     recipeContainer: {
         width: '100%',
