@@ -227,7 +227,7 @@ export default function ShoppingListScreen() {
     const renderItem = ({item}) => {
         const isInput = (item.id === -1);
         return (
-            <View>
+            <View style={styles.checkItemContainer}>
                 {isInput === false ? (
                     <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={() => handleRemove(item)}></CheckItem>
                 ) : (
@@ -553,8 +553,8 @@ const styles = StyleSheet.create({
     flatList: {
         marginLeft: 10,
     },
-    checkItem: {
-        paddingBottom: 10,
+    checkItemContainer: {
+        marginBottom: 10, // Add margin to create space between items
     },
     recipeContainer: {
         width: '100%',
