@@ -58,6 +58,15 @@ export default function Footer() {
                 <Text style={styles.footerText}>Recipes</Text>
             </Pressable>
 
+            {role !== "Guest" && role !== "Visitor" && 
+                (
+                    <Pressable style={styles.footerItem} onPress={() => router.push("/social")}>
+                        <Icon name="people-outline" size={24} color="#000"/>
+                        <Text style={styles.footerText}>Social</Text>
+                    </Pressable>
+                )
+            }
+
             <Pressable style={styles.footerItem} onPress={() => {
                 if (role === "Guest" || role === "Visitor") {
                     router.push("/unauthorized");
