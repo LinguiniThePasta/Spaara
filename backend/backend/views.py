@@ -124,6 +124,32 @@ class DeleteUserView(APIView):
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         except:
             return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class FriendsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # TODO: Get all existing users and return them as a list of dictionaries with their email and username 
+    def get(self, request):
+        '''
+        Retrieves a list of all existing users, excluding the authenticated user.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of dictionaries containing user email and username.
+
+        retrieval details:
+            - Retrieves all users except the authenticated user.
+            - Serializes the user data to return a list of dictionaries with user email and username.
+
+        usage:
+            - GET {URL} - retrieves all existing users
+        '''
+        users = User.objects.exclude(id=request.user.id)
+        data = [{'id': user.id, 'username': user.username} for user in users]
+        return Response(data, status=status.HTTP_200_OK)
+        
 
 
 class LoginView(APIView):
