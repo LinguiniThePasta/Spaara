@@ -56,7 +56,7 @@ export default function RootLayout() {
                 <Stack.Screen name="profile"/>
                 <Stack.Screen name="map"/>
                 <Stack.Screen name="settings"/>
-                <Stack.Screen name="home"/>
+                <Stack.Screen name="unauthorized"/>
                 <Stack.Screen name="savedLists"/>
                 <Stack.Screen name="filterScreen"/>
                 <Stack.Screen name="savedRecipes"/>
