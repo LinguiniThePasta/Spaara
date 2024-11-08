@@ -34,7 +34,7 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
-FRONTEND_URL = "http://172.20.10.3:8000"
+FRONTEND_URL = "http://10.231.10.4:8000"
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
