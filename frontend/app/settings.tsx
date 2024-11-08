@@ -66,6 +66,9 @@ export default function SettingScreen() {
                         <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
                             <Text style={styles.optionText}>Themes</Text>
                         </Pressable>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/setAddress')}>
+                            <Text style={styles.optionText}>Set Address</Text>
+                        </Pressable>
                     </View>
 
                     <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={deleteConfirmation}>

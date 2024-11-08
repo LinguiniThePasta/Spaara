@@ -15,7 +15,7 @@ def send_password_reset_confirmation(user):
 
     send_mail(subject, message, from_email, recipient_list)
 
-def send_verification_email(user):
+def send_verification_email(user, update=False):
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     verification_link = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
@@ -24,6 +24,9 @@ def send_verification_email(user):
     message = f'Howdy there Spaartan,\n\nPlease click the link below to verify your email address:\n{verification_link}\n\n--Spaara Team'
     from_email = settings.EMAIL_HOST_USER
     recipient_list = [user.email]
+
+    if (update):
+        recipient_list = [user.email_pending]
 
     send_mail(subject, message, from_email, recipient_list)
 

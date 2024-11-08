@@ -33,24 +33,24 @@ export default function FavoritesScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Favorites</Text>
-                <View style={styles.profileIconContainer}>
-                    <View style={styles.profileIcon} />
+        <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Favorites</Text>
+                    <View style={styles.profileIconContainer}>
+                        <View style={styles.profileIcon} />
+                    </View>
                 </View>
-            </View>
 
-            <FlatList
-                data={favorites}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContainer}
-            />
-
-            {/* Footer */}
+                <FlatList
+                    data={favorites}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContainer}
+                />
+            </SafeAreaView>
             <Footer />
-        </SafeAreaView>
+        </View>
     );
 }
 
