@@ -60,6 +60,7 @@ export default function RootLayout() {
                 <Stack.Screen name="savedLists"/>
                 <Stack.Screen name="filterScreen"/>
                 <Stack.Screen name="savedRecipes"/>
+                <Stack.Screen name="social"/>
             </Stack>
         </Provider>
     );
