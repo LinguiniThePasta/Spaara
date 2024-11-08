@@ -9,37 +9,39 @@ import {useSelector} from "react-redux"; // Use router for navigation if needed
 export default function ProfileScreen() {
     const role = useSelector((state) => state.role.role);
     return (
-        <SafeAreaView style={styles.container}>
-            <Header header="Profile"
-                    backButton={false}
-                    backLink={""}
-                    noProfile={true}
-            />
-            {role === "User" && (
-                <View style={styles.content}>
-                    <View>
-                        <Pressable style={styles.listItem} onPress={() => router.push('/changeEmail')}>
-                            <Text style={styles.optionText}>Change email</Text>
-                        </Pressable>
+        <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
+                <Header header="Profile"
+                        backButton={false}
+                        backLink={""}
+                        noProfile={true}
+                />
+                {role === "User" && (
+                    <View style={styles.content}>
+                        <View>
+                            <Pressable style={styles.listItem} onPress={() => router.push('/changeEmail')}>
+                                <Text style={styles.optionText}>Change email</Text>
+                            </Pressable>
 
-                        <Pressable style={styles.listItem} onPress={() => router.push('/changePassword')}>
-                            <Text style={styles.optionText}>Change password</Text>
-                        </Pressable>
+                            <Pressable style={styles.listItem} onPress={() => router.push('/changePassword')}>
+                                <Text style={styles.optionText}>Change password</Text>
+                            </Pressable>
 
-                        <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
-                            <Text style={styles.optionText}>Settings</Text>
+                            <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
+                                <Text style={styles.optionText}>Settings</Text>
+                            </Pressable>
+                        </View>
+
+
+                        <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.push('/login')}>
+                            <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
                         </Pressable>
                     </View>
+                )}
 
-
-                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.push('/login')}>
-                        <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
-                    </Pressable>
-                </View>
-            )}
-
+            </SafeAreaView>
             <Footer/>
-        </SafeAreaView>
+        </View>
     );
 }
 
