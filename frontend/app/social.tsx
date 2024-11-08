@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from "@/components/Header";
 import {globalStyles} from "@/styles/globalStyles";
@@ -20,79 +20,95 @@ const mockUsers: User[] = [
   // Add more mock users as needed
 ];
 
-export default function SocialPage() {
+const SocialPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [addedUsers, setAddedUsers] = useState<User[]>([]);
   
   const handleSearchChange = (text: string) => {
     setSearchTerm(text);
+    setDropdownVisible(true); // Show dropdown when typing
   };
-
 
   const handleAddUser = (user: User) => {
     if (!addedUsers.find(u => u.id === user.id)) {
       setAddedUsers([...addedUsers, user]);
     }
+    setDropdownVisible(false); // Hide dropdown after adding a user
   };
 
   const filteredUsers = searchTerm
-  ? mockUsers.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  : [];
+    ? mockUsers.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
+
+  // Close dropdown when touching outside
+  const handleOutsidePress = () => {
+    if (dropdownVisible) {
+      setDropdownVisible(false);
+      Keyboard.dismiss(); // Hide the keyboard if visible
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.container}>
-        <Header header="Social" backButton={false} backLink={"profile"} noProfile={true} />
-        <View style={styles.searchContainer}>
-          <View style={globalStyles.searchBar}>
-            <Icon
-              name="search-outline"
-              size={20}
-              color={Colors.light.primaryColor}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              placeholderTextColor={Colors.light.secondaryText}
-              value={searchTerm}
-              onChangeText={handleSearchChange}
-            />
-          </View>
-          {filteredUsers.length > 0 && (
-            <View style={styles.dropdown}>
-              <FlatList
-                data={filteredUsers}
-                keyExtractor={item => item.id.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => handleAddUser(item)}
-                  >
-                    <Text>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
+          <Header header="Social" backButton={false} backLink={"profile"} noProfile={true} />
+          <View style={styles.searchContainer}>
+            <View style={globalStyles.searchBar}>
+              <Icon
+                name="search-outline"
+                size={20}
+                color={Colors.light.primaryColor}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search"
+                placeholderTextColor={Colors.light.secondaryText}
+                value={searchTerm}
+                onChangeText={handleSearchChange}
+                onFocus={() => setDropdownVisible(true)}
               />
             </View>
-          )}
-        </View>
-        <FlatList
-          data={addedUsers}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          renderItem={({ item }) => (
-            <View style={styles.listItem}>
-              <Text style={styles.listItemTitle}>{item.name}</Text>
-            </View>
-          )}
-        />
-      </SafeAreaView>
-      <Footer/>
-    </View>
+            {dropdownVisible && filteredUsers.length > 0 && (
+              <View style={styles.dropdown}>
+                <FlatList
+                  data={filteredUsers}
+                  keyExtractor={item => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => handleAddUser(item)}
+                    >
+                      <Text>{item.name}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+          </View>
+          <FlatList
+            data={addedUsers}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+            renderItem={({ item }) => (
+              <View style={styles.listItem}>
+                <Text style={styles.listItemTitle}>{item.name}</Text>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+        <Footer/>
+      </View>
+    </TouchableWithoutFeedback>
   );
-}
+};
+
+export default SocialPage;
+
 
 const styles = StyleSheet.create({
   container: {
