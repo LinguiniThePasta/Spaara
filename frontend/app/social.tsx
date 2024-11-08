@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from "@/components/Header";
@@ -7,6 +7,9 @@ import {Colors} from '@/styles/Colors';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Footer from "@/components/Footer";
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import {API_BASE_URL} from '@/scripts/config';
 
 interface User {
   id: number;
@@ -24,6 +27,35 @@ const SocialPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [addedUsers, setAddedUsers] = useState<User[]>([]);
+
+  const [users, setUsers] = useState<User[]>(mockUsers);
+
+  const fetchOtherUsers = async () => {
+    try {
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+        const response = await axios.get(`${API_BASE_URL}/api/user/friends`, {
+            headers: {
+                'Authorization': `Bearer ${jwtToken}`
+            }
+        });
+
+        const users = response.data.map(item => ({
+            id: item.id.toString(),
+            name: item.username,
+        }));
+
+        setUsers(users);
+        console.log("Correctly fetched other users!");
+        
+    } catch (error) {
+        console.error('Error fetching users:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchOtherUsers();
+  }, []);
   
   const handleSearchChange = (text: string) => {
     setSearchTerm(text);
@@ -38,7 +70,7 @@ const SocialPage = () => {
   };
 
   const filteredUsers = searchTerm
-    ? mockUsers.filter(user =>
+    ? users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
@@ -66,7 +98,7 @@ const SocialPage = () => {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search"
+                placeholder="Find Friends..."
                 placeholderTextColor={Colors.light.secondaryText}
                 value={searchTerm}
                 onChangeText={handleSearchChange}
