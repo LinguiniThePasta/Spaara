@@ -21,10 +21,10 @@ export default function Signup() {
         if (isDisabled) return;
         setIsDisabled(true);
         try {
-            console.log(`${API_BASE_URL}/api/grocery/`)
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/register`,
                 {
+                    "username": username,
                     "email": email,
                     "password": password
                 },
@@ -48,6 +48,7 @@ export default function Signup() {
             setIsDisabled(false);
         }
     };
+    const [username, onUsernameChange] = React.useState('');
     const [email, onEmailChange] = React.useState('');
     const [password, onPasswordChange] = React.useState('');
     const [confirmPW, onConfirmPWChange] = React.useState('');
@@ -64,6 +65,12 @@ export default function Signup() {
                     <Text style={styles.headerText}>Create your account</Text>
 
                     <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[globalStyles.primaryInput, styles.input]}
+                            placeholder="Username"
+                            onChangeText={onUsernameChange}
+                            placeholderTextColor={Colors.light.secondaryText}
+                        />
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
                             placeholder="Email"
@@ -85,7 +92,7 @@ export default function Signup() {
                         </Pressable>
                     </View>
                     <View style={styles.footerContainer}>
-                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Text style={styles.footerText}>Have an account? </Text>
                         <Pressable onPress={() => {
                             router.push("/login")
                         }} style={styles.loginLink}>
