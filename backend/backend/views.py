@@ -9,18 +9,22 @@ from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction, Subheading
+    DietRestriction, Subheading, FriendRequest
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
 from .utils import send_verification_email, send_delete_confirmation_email
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 import uuid
 import rest_framework.mixins as mixins
+import os
+import requests
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class RegisterView(APIView):
     def post(self, request):
@@ -96,7 +100,30 @@ class VerifyEmailView(APIView):
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
 
+class OtherUsersView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    # TODO: Get all existing users and return them as a list of dictionaries with their email and username 
+    def get(self, request):
+        '''
+        Retrieves a list of all existing users, excluding the authenticated user.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of dictionaries containing user email and username.
+
+        retrieval details:
+            - Retrieves all users except the authenticated user.
+            - Serializes the user data to return a list of dictionaries with user email and username.
+
+        usage:
+            - GET {URL} - retrieves all existing users
+        '''
+        users = User.objects.exclude(id=request.user.id)
+        data = [{'id': user.id, 'username': user.username} for user in users]
+        return Response(data, status=status.HTTP_200_OK)
 
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -126,6 +153,125 @@ class DeleteUserView(APIView):
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         except:
             return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class FriendRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    # GET METHODS 
+    # GET /api/friend_requests/count
+    # Returns the number of pending friend requests for the authenticated user. 
+    @action(detail=False, methods=['get'])
+    def count(self, request):
+        count = FriendRequest.objects.filter(to_user=request.user, status='pending').count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+
+    # GET /api/friend_requests/incoming
+    # Returns a list of incoming friend requests for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def incoming(self, request):
+        incoming_requests = FriendRequest.objects.filter(to_user=request.user, status='pending')
+        serializer = FriendRequestSerializer(incoming_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # GET /api/friend_requests/outgoing
+    # Returns a list of outgoing friend requests for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def outgoing(self, request):
+        outgoing_requests = FriendRequest.objects.filter(from_user=request.user, status='pending')
+        serializer = FriendRequestSerializer(outgoing_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # POST METHODS
+    # POST /api/friend_requests/send
+    # Sends a friend request to another user.
+    @action(detail=False, methods=['post'])
+    def send(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        FriendRequest.objects.create(from_user=user, to_user=friend)
+        return Response({'message': 'Friend request sent'}, status=status.HTTP_201_CREATED)
+    
+    # POST /api/friend_requests/accept
+    # Accepts a friend request from another user.
+    @action(detail=False, methods=['post'])
+    def approve(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.status = 'accepted'
+        friend_request.save()
+        user.friends.add(friend)
+        user.save()
+        return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
+
+    # POST /api/friend_requests/reject
+    # Rejects a friend request from another user.
+    @action(detail=False, methods=['post'])
+    def reject(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.status = 'rejected'
+        friend_request.save()
+        return Response({'message': 'Friend request rejected'}, status=status.HTTP_201_CREATED)
+    
+
+class FriendsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        '''
+        Retrieves the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of usernames for the authenticated user's friends.
+        '''
+        user = request.user
+        friends = user.friends.all()
+        data = [{'id': friend.id, 'username': friend.username} for friend in friends]
+        return Response(data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        '''
+        Adds a user to the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request containing the username to add as a friend.
+
+        :return:
+            Response: A success message indicating the user was added as a friend, or an error message if the user is not found.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        username: username of the user to add as a friend
+                    }
+        '''
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.friends.add(friend)
+        user.save()
+        return Response({'message': f'{username} added as a friend'}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):
@@ -311,6 +457,85 @@ class UpdateInfoView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+class GetCoordinatesView(APIView):
+    def get_address_location(self, address):
+        """
+        Fetch latitude and longitude for a given address using Google Geocoding API.
+
+        Args:
+            address (str): The address to geocode.
+
+        Returns:
+            dict: A dictionary with 'latitude' and 'longitude' if successful, or None if there's an error.
+        """
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("API key not found. Please set the GOOGLE_API_KEY environment variable.")
+        
+        # URL encode the address to make it safe for the API call
+        encoded_address = requests.utils.quote(address)
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={api_key}"
+
+        try:
+            # Make the request to the Google Geocoding API
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for HTTP errors
+
+            data = response.json()
+            
+            # Check if results were found and extract location data
+            if data.get("results"):
+                location = data["results"][0]["geometry"]["location"]
+                return {
+                    "latitude": location["lat"],
+                    "longitude": location["lng"]
+                }
+            else:
+                print("No results found for the provided address.")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"Request error: {e}")
+            return None
+        
+    def get(self, request, *args, **kwargs):
+        address = request.GET.get('address', None)
+
+        print(address)
+        
+        if not address:
+            return Response({"error": "Address parameter is required"}, status=400)
+        
+        # Call your function to get coordinates for the address
+        coordinates = self.get_address_location(address=address)  # Replace with your actual function
+
+        if coordinates:
+            return Response({"latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}, status=200)
+        else:
+            return Response({"error": "Could not find coordinates for the given address"}, status=404)
+
+        
+        
+class AddressView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        address = user.address
+        if address:
+            return Response({'address': address}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def post(self, request):
+        user = request.user
+        
+        serializer = serializers.AddressSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Address Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
