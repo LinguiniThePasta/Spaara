@@ -3,11 +3,15 @@ import re
 
 from rest_framework import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
-    DietRestriction, Subheading
+    DietRestriction, Subheading, FriendRequest
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation
+from dotenv import load_dotenv
+import os
+import requests
 
+load_dotenv()
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,6 +65,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = UserSerializer()
+    to_user = UserSerializer()
+
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'from_user', 'to_user', 'status', 'timestamp']
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -113,7 +129,77 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class AddressSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=255)
 
+    class Meta:
+        model = User
+        fields = ['address']
+
+    def validate(self, data):
+        """
+        Check if the provided address exists using Google Address Validation API.
+        """
+        address = data.get('address')
+        
+        if not self.is_valid_address(address):
+            raise serializers.ValidationError("The provided address does not exist.")
+        
+        return data
+    
+    def update(self, instance, validated_data):
+        instance.address = validated_data.get('address', None)
+        instance.save()
+        return instance
+
+    def is_valid_address(self, address):
+        """
+        Call Google Address Validation API to check if the address exists.
+        """
+
+        api_key = os.getenv("GOOGLE_API_KEY") # Replace with your actual API key
+        url = f"https://addressvalidation.googleapis.com/v1:validateAddress?key={api_key}"
+
+        # Prepare the request payload
+        payload = {
+            "address": {
+                "regionCode": "US",
+                "addressLines": address
+            }
+        }
+
+        # Make the API call
+        response = requests.post(url, json=payload)
+
+        # Check the API response status and parse the result
+        if response.status_code == 200:
+            result = response.json()
+            print(result)
+            # Check the response for verification status
+            address_result = result.get("result", {}).get("verdict", {}).get("hasUnconfirmedComponents", False)
+            return not address_result  # If `hasUnconfirmedComponents` is False, the address is confirmed as valid
+        else:
+            # Handle errors in API response
+            raise serializers.ValidationError("Address validation service is unavailable. Please try again later.")
+
+class GrocerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Grocery
+        fields = '__all__'
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if user.groups.filter(name='Guest').exists():
+            if user.groceryLists.count() >= 1:
+                raise serializers.ValidationError({
+                    "error": "Guest User can only have 1 grocery list at a time"
+                })
+        return attrs
+
+    def create(self, validated_data):
+        grocery = Grocery.objects.create(**validated_data)
+
+        return grocery
 
 
 class RecipeSerializer(serializers.ModelSerializer):
