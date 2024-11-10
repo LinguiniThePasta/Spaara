@@ -32,6 +32,7 @@ const SetAddress: React.FC = () => {
               style={
                 item.icon === 'location-arrow' ? styles.locationIcon : styles.addressIcon
               }
+              color={null}
             />
           )}
           <Text style={styles.addressText}>{item.name}</Text>
@@ -41,6 +42,7 @@ const SetAddress: React.FC = () => {
               name="checkmark"
               size={30}
               style={styles.checkIcon}
+              color={null}
             />
           )}
         </TouchableOpacity>
@@ -104,7 +106,7 @@ const SetAddress: React.FC = () => {
         } else {
             Alert.alert(
                 "Error",
-                "Cannot delete the current location."
+                "Cannot delete the current location option. Please select another address and try again."
             );
         }
       }
@@ -223,7 +225,7 @@ const SetAddress: React.FC = () => {
         <Header
           header="Set Address"
           backButton={true}
-          backLink={"settings"}
+          backLink={"prev"}
           noProfile={true}
         />
         <View style={styles.content}>
@@ -235,6 +237,7 @@ const SetAddress: React.FC = () => {
                 name="search-outline"
                 size={20}
                 style={styles.searchIcon}
+                color={null}
               />
               <TextInput
                 style={styles.searchInput}
