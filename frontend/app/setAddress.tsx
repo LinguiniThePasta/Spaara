@@ -225,7 +225,7 @@ const SetAddress: React.FC = () => {
         <Header
           header="Set Address"
           backButton={true}
-          backLink={"prev"}
+          backLink={"settings"}
           noProfile={true}
         />
         <View style={styles.content}>

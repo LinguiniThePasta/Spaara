@@ -53,7 +53,7 @@ export default function SettingScreen() {
         <SafeAreaView style={styles.container}>
             <Header header="Settings"
                     backButton={true}
-                    backLink={"profile"}
+                    backLink={"prev"}
                     noProfile={true}
             />
 
