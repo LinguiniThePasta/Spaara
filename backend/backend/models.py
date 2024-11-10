@@ -201,7 +201,7 @@ class GroceryItemUnoptimized(ItemBase):
     favorited = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
-
+    note = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
