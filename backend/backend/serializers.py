@@ -69,7 +69,14 @@ class LoginSerializer(serializers.Serializer):
     def validate_email(self, value):
         return value.lower()
 
+class EmailSerializer(serializers.Serializer):
+    class Meta():
+        modle = User
+        fields = ['email']
 
+    def validate(self, email):
+        return email.lower()
+    
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
     old_password = serializers.CharField(write_only=True, required=False)

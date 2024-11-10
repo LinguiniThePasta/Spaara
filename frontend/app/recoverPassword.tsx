@@ -15,13 +15,13 @@ const {width, height} = Dimensions.get('window');
 
 export default function recoverPassword() {
     const [newPassword, onNewPassword] = useState('');
-    const [repeatPassword, onRepetePassword] = useState('');
+    const [repeatPassword, onRepetPassword] = useState('');
 
     const handleSubmit = async () => {
         if (newPassword === repeatPassword) {
 
         } else {
-            
+
         }
 
     }
@@ -30,32 +30,32 @@ export default function recoverPassword() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.push("/splash")
+                    router.push("/")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
                 <View style={styles.contentContainer}>
-                    <Text style={styles.headerText}>Create your account</Text>
+                    <Text style={styles.headerText}>Recover Account</Text>
 
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
-                            placeholder="Email"
+                            placeholder="New Password"
                             onChangeText={onNewPassword}
                             placeholderTextColor={Colors.light.secondaryText}
                         />
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
-                            placeholder="Password"
+                            placeholder="Repeat Password"
                             secureTextEntry
-                            onChangeText={onRepetePassword}
+                            onChangeText={onRepetPassword}
                             placeholderTextColor={Colors.light.secondaryText}
                         />
                         {/* Placeholder to compensate for the removed Forgot Password text */}
                         <View style={styles.placeholder} />
 
-                        <Pressable style={[globalStyles.primaryButton, styles.signupButton]} onPress={handleSubmit}>
-                            <Text style={styles.signupButtonText}>Submit</Text>
+                        <Pressable style={[globalStyles.primaryButton, styles.submitButton]} onPress={handleSubmit}>
+                            <Text style={styles.submitButtonText}>Submit</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -109,11 +109,11 @@ const styles = StyleSheet.create({
     placeholder: {
         height: 28,
     },
-    signupButton: {
+    submitButton: {
         width: '100%',
         marginTop: 0.06 * height,
     },
-    signupButtonText: {
+    submitButtonText: {
         ...globalStyles.buttonText,
     },
     footerContainer: {

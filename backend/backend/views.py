@@ -93,6 +93,23 @@ class VerifyEmailView(APIView):
                 return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        serializers.EmailSerializer(data=request.data)
+        email = request.data.email
+        try :
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
+
+        if user is not None:
+            
+            return Response({'message': 'Email is linked to an account'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'Email is not linked to an account'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 
