@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 import * as Location from 'expo-location';
 import {router} from "expo-router";
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function App() {
     const [addressCoords, setAddressCoords] = useState(null);
@@ -76,9 +77,11 @@ export default function App() {
         }
       };
 
-    useEffect(() => {
-        fetchAddressCoords();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchAddressCoords();
+        }, []) // Empty dependency array to run only when screen is focused
+    );
 
     // Animate to user's location once addressCoords is set
     useEffect(() => {
