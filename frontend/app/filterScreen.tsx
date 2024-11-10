@@ -18,7 +18,7 @@ export default function FilterScreen() {
     // UseRef to store initial state
     const initialSettings = useRef({
         numberOfStores: 3,
-        distance: 5.0,
+        distance: 5,
         dietaryRestriction: [],
     });
 
@@ -52,7 +52,7 @@ export default function FilterScreen() {
 
     const handleClear = () => {
         setNumberOfStores(3);
-        setDistance(5.0);
+        setDistance(5);
         setDietaryRestriction([]);
     };
 
@@ -122,14 +122,14 @@ export default function FilterScreen() {
                     <View style={styles.listItem}>
                         <View style={styles.inlineContainer}>
                             <Text style={styles.subHeader}>Distance away</Text>
-                            <Text style={styles.subHeader}> {distance.toFixed(2)} mi</Text>
+                            <Text style={styles.subHeader}> {distance} mi</Text>
                         </View>
                         <View style={styles.sliderContainer}>
                             <Slider
                                 style={styles.slider}
-                                minimumValue={0.01}
+                                minimumValue={1}
                                 maximumValue={15}
-                                step={0.01}
+                                step={1}
                                 value={distance}
                                 onValueChange={setDistance}
                                 minimumTrackTintColor={Colors.light.primaryText}
