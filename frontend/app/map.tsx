@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import MapView, { Marker } from 'react-native-maps';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import UnifiedIcon from '@/components/UnifiedIcon';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 import * as Location from 'expo-location';
+import {router} from "expo-router";
 
 export default function App() {
     const [addressCoords, setAddressCoords] = useState(null);
@@ -108,7 +109,7 @@ export default function App() {
                 {addressCoords && (
                     <Marker coordinate={addressCoords} title="My Address">
                         <View style={styles.marker}>
-                            <Icon name="home" size={15} color={Colors.light.primaryColor} />
+                            <UnifiedIcon type="materialicon" name="home" size={15} style={null} color={Colors.light.primaryColor} />
                         </View>
                     </Marker>
                 )}
@@ -118,6 +119,13 @@ export default function App() {
                     <ActivityIndicator size="large" color={Colors.light.primaryColor} />
                 </View>
             )}
+            {/* Book icon button to navigate to Set Addresses */}
+            <TouchableOpacity
+                style={styles.bookIcon}
+                onPress={() => router.push('/setAddress')} // Navigate to the SetAddress page
+            >
+                <UnifiedIcon type="ionicon" name="settings" style={null} size={30} color={Colors.light.primaryColor} />
+            </TouchableOpacity>
             <Footer />
         </View>
     );
@@ -143,5 +151,18 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    bookIcon: {
+        position: 'absolute',
+        bottom: 120, // Above the footer
+        right: 20, // Left side of the screen
+        backgroundColor: Colors.light.background,
+        borderRadius: 20,
+        padding: 10,
+        elevation: 3, // Adds a shadow on Android
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
     },
 });
