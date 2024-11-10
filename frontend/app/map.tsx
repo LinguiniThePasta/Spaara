@@ -79,6 +79,7 @@ export default function App() {
 
     useFocusEffect(
         useCallback(() => {
+            setIsLoading(true);
             fetchAddressCoords();
         }, []) // Empty dependency array to run only when screen is focused
     );
