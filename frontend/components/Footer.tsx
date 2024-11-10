@@ -55,14 +55,6 @@ export default function Footer() {
                     </Pressable>
                 )
             }
-            {role !== "Guest" && role !== "Visitor" &&
-                (
-                    <Pressable style={styles.footerItem} onPress={() => router.push("/profile")}>
-                        <Icon name="person-outline" size={24} color="#000"/>
-                        <Text style={styles.footerText}>Profile</Text>
-                    </Pressable>
-                )
-            }
         </View>
     );
 }
