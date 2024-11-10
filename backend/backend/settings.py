@@ -35,6 +35,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 FRONTEND_URL = "http://172.20.10.3:8000"
+KROGER_API_BASE_URL = "https://api.kroger.com"
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`

@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/user/friends', FriendsView.as_view(), name='friends'),
     path('api/maps/coords_of/', GetCoordinatesView.as_view(), name='coords'),
     path('api/maps/address_predictions', AutocompleteView.as_view(), name='address'),
+    path('api/maps/locations/kroger', KrogerView.as_view(), name='kroger'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
