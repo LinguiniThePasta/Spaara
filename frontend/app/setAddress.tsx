@@ -1,191 +1,246 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, SafeAreaView } from 'react-native';
-import {Colors} from '@/styles/Colors';
+import { View, Text, TextInput, FlatList, SafeAreaView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Colors } from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { TouchableOpacity } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
+import { globalStyles } from '@/styles/globalStyles';
+import UnifiedIcon from '@/components/UnifiedIcon';
 
 const SetAddress: React.FC = () => {
-    const [newAddress, setNewAddress] = useState({
-        street_address: '',
-        city: '',
-        state: 'AL',
-        zip_code: ''
-    });
+    const [newAddress, setNewAddress] = useState('');
+    const [autocompletePredictions, setAutocompletePredictions] = useState([]);
+    const [addresses, setAddresses] = useState([]);
+    // Dropdown visibility state
+    const [dropdownVisible, setDropdownVisible] = useState(false);
 
-    const [currentAddress, setCurrentAddress] = useState('');
+    const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
-    const [open, setOpen] = useState(false);
-    const [selectedState, setSelectedState] = useState(newAddress.state);
-
-    const states = [
-        { label: 'Alabama', value: 'AL' },
-        { label: 'Alaska', value: 'AK' },
-        { label: 'Arizona', value: 'AZ' },
-        { label: 'Arkansas', value: 'AR' },
-        { label: 'California', value: 'CA' },
-        { label: 'Colorado', value: 'CO' },
-        { label: 'Connecticut', value: 'CT' },
-        { label: 'Delaware', value: 'DE' },
-        { label: 'Florida', value: 'FL' },
-        { label: 'Georgia', value: 'GA' },
-        { label: 'Hawaii', value: 'HI' },
-        { label: 'Idaho', value: 'ID' },
-        { label: 'Illinois', value: 'IL' },
-        { label: 'Indiana', value: 'IN' },
-        { label: 'Iowa', value: 'IA' },
-        { label: 'Kansas', value: 'KS' },
-        { label: 'Kentucky', value: 'KY' },
-        { label: 'Louisiana', value: 'LA' },
-        { label: 'Maine', value: 'ME' },
-        { label: 'Maryland', value: 'MD' },
-        { label: 'Massachusetts', value: 'MA' },
-        { label: 'Michigan', value: 'MI' },
-        { label: 'Minnesota', value: 'MN' },
-        { label: 'Mississippi', value: 'MS' },
-        { label: 'Missouri', value: 'MO' },
-        { label: 'Montana', value: 'MT' },
-        { label: 'Nebraska', value: 'NE' },
-        { label: 'Nevada', value: 'NV' },
-        { label: 'New Hampshire', value: 'NH' },
-        { label: 'New Jersey', value: 'NJ' },
-        { label: 'New Mexico', value: 'NM' },
-        { label: 'New York', value: 'NY' },
-        { label: 'North Carolina', value: 'NC' },
-        { label: 'North Dakota', value: 'ND' },
-        { label: 'Ohio', value: 'OH' },
-        { label: 'Oklahoma', value: 'OK' },
-        { label: 'Oregon', value: 'OR' },
-        { label: 'Pennsylvania', value: 'PA' },
-        { label: 'Rhode Island', value: 'RI' },
-        { label: 'South Carolina', value: 'SC' },
-        { label: 'South Dakota', value: 'SD' },
-        { label: 'Tennessee', value: 'TN' },
-        { label: 'Texas', value: 'TX' },
-        { label: 'Utah', value: 'UT' },
-        { label: 'Vermont', value: 'VT' },
-        { label: 'Virginia', value: 'VA' },
-        { label: 'Washington', value: 'WA' },
-        { label: 'West Virginia', value: 'WV' },
-        { label: 'Wisconsin', value: 'WI' },
-        { label: 'Wyoming', value: 'WY' },
-    ];
+    const renderItem = ({ item }) => (
+        <TouchableOpacity
+          style={styles.addressItem}
+          onPress={() => handleAddressSelect(item.id)}
+        >
+          {item.icon && (
+            <UnifiedIcon
+              type={item.icontype}
+              name={item.icon}
+              size={30}
+              style={
+                item.icon === 'location-arrow' ? styles.locationIcon : styles.addressIcon
+              }
+            />
+          )}
+          <Text style={styles.addressText}>{item.name}</Text>
+          {selectedAddressId === item.id && (
+            <UnifiedIcon
+              type="ionicon"
+              name="checkmark"
+              size={30}
+              style={styles.checkIcon}
+            />
+          )}
+        </TouchableOpacity>
+      );
     
 
-    const handleChange = (name: string, value: string) => {
-        setNewAddress({
-            ...newAddress,
-            [name]: value
-        });
-    };
-
-    const fetchAddressString = async () => {
+    // Fetches the addresses of the user
+    const fetchAddresses = async () => {
         try {
-            const jwtToken = await SecureStore.getItemAsync('jwtToken');
-
-            const response = await axios.get(`${API_BASE_URL}/api/user/address`, {
-                headers: {
-                    Authorization: `Bearer ${jwtToken}`,
-                },
-            });
-
-            setCurrentAddress(response.data.address);
-            
+          const jwtToken = await SecureStore.getItemAsync('jwtToken');
+          const response = await axios.get(`${API_BASE_URL}/api/user/addresses/`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          });
+          setAddresses(response.data.addresses || []);
+          setSelectedAddressId(response.data.selected_address_id || null);
         } catch (error) {
-            console.error('Error getting address:', error.message);
+          console.error('Error fetching addresses:', error);
         }
     };
 
-    const handleSubmit = async () => {
+    // Updates the selected id
+    const handleAddressSelect = async (addressId) => {
+        try {
+          setSelectedAddressId(addressId);
+          const jwtToken = await SecureStore.getItemAsync('jwtToken');
+          await axios.post(
+            `${API_BASE_URL}/api/user/addresses/update_selected/`,
+            { selected_address_id: addressId },
+            {
+              headers: { Authorization: `Bearer ${jwtToken}` },
+            }
+          );
+        } catch (error) {
+          console.error('Error updating selected address:', error);
+        }
+      };
+
+      // Adds a new address to the user's addresses
+      const setAddress = async (address) => {
+        try {
+          const jwtToken = await SecureStore.getItemAsync('jwtToken');
+          // Add the new address to the backend
+          await axios.post(
+            `${API_BASE_URL}/api/user/addresses/add/`,
+            {
+              address: address,
+              icon: 'location',
+              icontype: 'ionicon',
+            },
+            {
+              headers: { Authorization: `Bearer ${jwtToken}` },
+            }
+          );
+          // Refresh the addresses list
+          const response = await axios.get(`${API_BASE_URL}/api/user/addresses/`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          });
+          setAddresses(response.data.addresses || []);
+          setSelectedAddressId(response.data.selected_address_id || null);
+          setNewAddress('');
+          setAutocompletePredictions([]);
+          setDropdownVisible(false);
+        } catch (error) {
+          console.error('Error adding new address:', error);
+        }
+      };
+
+    // Fetches autocomplete predictions based on the input address
+    const getAutocompletePredictions = async (address) => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            
-            const addressString = `${newAddress.street_address}, ${newAddress.city}, ${newAddress.state} ${newAddress.zip_code}`;
-
             const response = await axios.post(
-                `${API_BASE_URL}/api/user/address`,
+                `${API_BASE_URL}/api/maps/address_predictions`,  // Adjusted endpoint for autocomplete
+                { search_text: address },
                 {
-                address: addressString,
-                },
-                {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${jwtToken}`,
-                },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
-            console.log('Correctly set address!');
-            fetchAddressString();
+            setAutocompletePredictions(response.data.addresses || []);
         } catch (error) {
-            console.error('Error setting address:', error.message);
+            console.error('Error fetching address predictions:', error.message);
+        }
+    };
+
+    // Update address and trigger autocomplete
+    const handleChange = (text) => {
+        setNewAddress(text);
+        if (text) {
+          getAutocompletePredictions(text);
+          setDropdownVisible(true);
+        } else {
+          setAutocompletePredictions([]);
+          setDropdownVisible(false);
+        }
+    };
+
+    // Close dropdown when touching outside
+    const handleOutsidePress = () => {
+        if (dropdownVisible) {
+        setDropdownVisible(false);
+        Keyboard.dismiss(); // Hide the keyboard if visible
         }
     };
 
     useEffect(() => {
-        fetchAddressString();
+        fetchAddresses();
     }, []);
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Header header="Set Address"
-                    backButton={true}
-                    backLink={"settings"}
-                    noProfile={true}
-            />
-            <View style={styles.content}>
-                <Text style={styles.subheader}>My Current Address</Text>
-                <Text style={styles.subtext}>Your address is currently set to {currentAddress}</Text>
-                <Text style={styles.subheader}>Reset Address</Text>
-                <Text style={styles.label}>Street:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={newAddress.street_address}
-                    onChangeText={(text) => handleChange('street_address', text)}
-                />
-                <Text style={styles.label}>City:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={newAddress.city}
-                    onChangeText={(text) => handleChange('city', text)}
-                />
-                <Text style={styles.label}>State:</Text>
-                <DropDownPicker
-                    open={open}
-                    value={selectedState}
-                    items={states}
-                    setOpen={setOpen}
-                    setValue={(callback) => {
-                        const newValue = callback(selectedState);
-                        setSelectedState(newValue);
-                        handleChange('state', newValue);
-                    }}
-                    style={styles.input} // Optional: add custom styling if needed
-                />
-                <Text style={styles.label}>ZIP Code:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={newAddress.zip_code}
-                    onChangeText={(text) => handleChange('zip_code', text)}
-                />
-                <TouchableOpacity style={styles.genButton} onPress={() => handleSubmit()}>
-                    <Text>Set Address</Text>
-                </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <SafeAreaView style={styles.container}>
+        <Header
+          header="Set Address"
+          backButton={true}
+          backLink={"settings"}
+          noProfile={true}
+        />
+        <View style={styles.content}>
+          <Text style={styles.subheader}>Add Address</Text>
+          <View style={styles.searchContainer}>
+            <View style={globalStyles.searchBar}>
+              <UnifiedIcon
+                type="ionicon"
+                name="search-outline"
+                size={20}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search for an Address"
+                placeholderTextColor={Colors.light.secondaryText}
+                value={newAddress}
+                onChangeText={handleChange}
+                onFocus={() => setDropdownVisible(true)}
+              />
             </View>
-            <Footer/>
-        </SafeAreaView>
+            {dropdownVisible && autocompletePredictions.length > 0 && (
+              <View style={styles.dropdown}>
+                <FlatList
+                  data={autocompletePredictions}
+                  keyExtractor={(item) => item}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => setAddress(item)}
+                    >
+                      <Text>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={() => (
+                    <Text style={styles.emptyPredictionText}>No suggestions available</Text>
+                  )}
+                />
+              </View>
+            )}
+          </View>
+          <Text style={styles.subheader}>Existing Addresses</Text>
+          <FlatList
+            data={addresses}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderItem}
+          />
+        </View>
+        <Footer />
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
     );
 };
 
 const styles = StyleSheet.create({
-    genButton: {
-        backgroundColor: Colors.light.primaryColor,
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center'
+    searchContainer: {
+        position: 'relative',
+        zIndex: 2,
+    },
+    dropdown: {
+        position: 'absolute',
+        top: 50,
+        width: 270,
+        left: '50%',
+        transform: [{ translateX: -135 }],
+        backgroundColor: 'white',
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 1,
+        borderRadius: 4,
+        maxHeight: 150,
+        zIndex: 2,
+    },
+    searchIcon: {
+        marginRight: 10,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 16,
+        color: Colors.light.primaryText,
+    },
+    dropdownItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.primaryColor,
     },
     container: {
         flex: 1,
@@ -215,7 +270,49 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginBottom: 16,
         paddingHorizontal: 8
-    }
+    },
+    predictionItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 8,
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+    },
+    predictionName: {
+        fontWeight: 'bold',
+    },
+    emptyPredictionText: {
+        textAlign: 'center',
+        color: '#999',
+        marginVertical: 20,
+    },
+    emptyText: {
+        textAlign: 'center',
+        color: '#999',
+        paddingVertical: 20,
+    },
+    addressItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomColor: Colors.light.secondaryText,
+        borderBottomWidth: 1,
+      },
+      addressIcon: {
+        color: Colors.light.primaryColor,
+      },
+      locationIcon: {
+        color: "#14b7f7",
+      },
+      addressText: {
+        flex: 1,
+        fontSize: 16,
+        marginLeft: 10,
+        color: Colors.light.primaryText,
+      },
+      checkIcon: {
+        color: Colors.light.primaryColor,
+        marginLeft: 10,
+      },
 });
 
 export default SetAddress;

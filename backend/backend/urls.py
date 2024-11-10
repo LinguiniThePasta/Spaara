@@ -30,6 +30,7 @@ router.register(r'api/recipe', RecipeViewSet, basename='recipe')
 router.register(r'api/recipe_items', RecipeItemViewSet, basename='recipe-item')
 router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorited-item')
 router.register(r'api/friend_requests', FriendRequestViewSet, basename='friend-request')
+router.register(r'api/user/addresses', AddressViewSet, basename='addresses')
 '''
 Create: POST /api/grocery
 Read All: GET /api/grocery
@@ -52,7 +53,7 @@ urlpatterns = [
     path('verify-email/<str:uidb64>/<str:token>/', VerifyEmailView.as_view(), name='verify-email'),
     path('api/user/friends', FriendsView.as_view(), name='friends'),
     path('api/maps/coords_of/', GetCoordinatesView.as_view(), name='coords'),
-    path('api/user/address', AddressView.as_view(), name='address'),
+    path('api/maps/address_predictions', AutocompleteView.as_view(), name='address'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),

@@ -9,6 +9,8 @@ from django.dispatch import receiver
 import uuid
 from django.shortcuts import get_object_or_404
 
+def default_addresses():
+    return [{"id": 1, "name": "Current Location", "icon": "location-arrow", "icontype":"fontawesome"}]
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
@@ -16,10 +18,11 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
-    address = models.CharField(max_length=255, null=True, blank=True)
+    addresses = models.JSONField(default=default_addresses)
+    selected_address_id = models.IntegerField(default=1)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
-    is_active = models.BooleanField(default=False)     # This is used to determine if the user has verified their email
+    is_active = models.BooleanField(default=True)     # This is used to determine if the user has verified their email. Set true for testing.
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
@@ -27,7 +30,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
 
 '''    
 # A grocery item

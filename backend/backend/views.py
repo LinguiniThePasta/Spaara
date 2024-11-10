@@ -518,27 +518,145 @@ class GetCoordinatesView(APIView):
 
         
         
-class AddressView(APIView):
+class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    # GET /api/user/addresses/
+    # Retrieves all addresses for the authenticated user.
+    def list(self, request):
         user = request.user
-        address = user.address
-        if address:
-            return Response({'address': address}, status=status.HTTP_200_OK)
+        addresses = user.addresses  # Assuming `addresses` is a list of address dictionaries
+        selected_address_id = user.selected_address_id
+        return Response({
+            'addresses': addresses,
+            'selected_address_id': selected_address_id
+        }, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/add/
+    # Adds a new address to the end of the user's address list.
+    @action(detail=False, methods=['post'])
+    def add(self, request):
+        user = request.user
+        new_address = request.data.get('address')
+        icon = request.data.get('icon')
+        icontype = request.data.get('icontype')
+        if not new_address:
+            return Response({'error': 'Address is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Generate a new ID for the address
+        if user.addresses:
+            new_id = max(address['id'] for address in user.addresses) + 1
+        else:
+            new_id = 1
+        address_entry = {
+            'id': new_id,
+            'icon': icon,
+            'name': new_address,
+            'icontype': icontype
+        }
+        user.addresses.append(address_entry)
+        user.save()
+        return Response({'message': 'Address added successfully'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/user/addresses/remove/
+    # Removes an address from the user's address list.
+    @action(detail=False, methods=['delete'])
+    def remove(self, request):
+        user = request.user
+        address_id = request.data.get('address_id')
+        if address_id is None:
+            return Response({'error': 'address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Filter out the address to remove
+        updated_addresses = [addr for addr in user.addresses if addr['id'] != address_id]
+        if len(updated_addresses) == len(user.addresses):
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.addresses = updated_addresses
+        # Reset selected_address_id if the removed address was selected
+        if user.selected_address_id == address_id:
+            user.selected_address_id = None
+        user.save()
+        return Response({'message': 'Address removed successfully'}, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/update_selected/
+    # Updates the user's selected address ID.
+    @action(detail=False, methods=['post'])
+    def update_selected(self, request):
+        user = request.user
+        selected_address_id = request.data.get('selected_address_id')
+        if selected_address_id is None:
+            return Response({'error': 'selected_address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the address exists in the user's address list
+        if any(addr['id'] == selected_address_id for addr in user.addresses):
+            user.selected_address_id = selected_address_id
+            user.save()
+            return Response({'message': 'Selected address updated successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-    def post(self, request):
-        user = request.user
         
-        serializer = serializers.AddressSerializer(user, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Address Changed successfully'}, status=status.HTTP_201_CREATED)
+    # GET /api/user/addresses/selected/
+    # Gets the selected address
+    @action(detail=False, methods=['get'])
+    def selected(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id is None:
+            return Response({'error': 'No address selected'}, status=status.HTTP_400_BAD_REQUEST)
+        selected_address = next((addr for addr in user.addresses if addr['id'] == selected_address_id), None)
+        if selected_address:
+            return Response({'address': selected_address}, status=status.HTTP_200_OK)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Selected address not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    @action(detail=False, methods=['get'])
+    def id(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id:
+            return Response({'id': selected_address_id}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No address id found'}, status=status.HTTP_404_NOT_FOUND)
 
+class AutocompleteView(APIView):
+    def post(self, request):
+        search_text = request.data.get('search_text', '')
+
+        # Validate input
+        if not search_text:
+            return Response({"error": "Please provide a search text."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Google Places Autocomplete API endpoint
+        url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+        # Retrieve Google API Key from environment variables for security
+        google_api_key = os.getenv("GOOGLE_API_KEY")  # Set your API key in environment variables
+
+        # Set up parameters for the API request
+        params = {
+            "input": search_text,
+            "key": google_api_key,
+            "types": "address",  # Restrict to address types only
+            "language": "en"     # Optional: specify the language for the predictions
+        }
+
+        try:
+            # Make a GET request to the Google Places API
+            response = requests.get(url, params=params)
+            response.raise_for_status()  # Raise an error for HTTP errors
+
+            # Parse the response JSON
+            predictions = response.json().get('predictions', [])
+
+            # Extract only the address descriptions from the predictions
+            addresses = [prediction['description'] for prediction in predictions]
+
+            # Return the list of addresses in the specified format
+            return Response({"addresses": addresses}, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            # Handle errors from the API request
+            return Response(
+                {"error": "An error occurred with the Google API request", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class GroceryListViewSet(viewsets.ModelViewSet):
     queryset = Grocery.objects.all()

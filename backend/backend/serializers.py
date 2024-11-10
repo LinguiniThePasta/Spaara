@@ -16,18 +16,18 @@ load_dotenv()
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['username', 'email', 'password']
 
     def validate(self, data):
         '''
         :param:
-            data (dict): Contains 'email' and 'password' fields.
+            data (dict): Contains 'username', 'email', and 'password' fields.
 
         :return:
             dict: Validated data if all checks pass.
 
         :raises:
-            serializers.ValidationError: If the email format is invalid or if the password
+            serializers.ValidationError: If the username format is invalid, the email format is invalid, or if the password
             does not meet complexity requirements or matches the email.
 
         validation details:
@@ -38,28 +38,46 @@ class RegisterSerializer(serializers.ModelSerializer):
               - 1 special character (@$!%*?&)
             - Password must not match the email.
             - Email must be in a valid format.
+            - Username must only contain letters, numbers, and underscores.
         '''
+        username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         errorDict = collections.defaultdict(str)
-        # Check if password is okay
+
+        # Check if username contains only valid characters
+        # Validate username
+
+        if not re.match(r"^[a-zA-Z0-9_]+$", username):
+            errorDict['username'] = 'Username can only contain letters, numbers, and underscores.'
+        elif User.objects.filter(username=username).exists():
+            errorDict['username'] = 'This username is already taken. Please choose another.'
+
+
+        # Check if password meets complexity requirements
         if not re.match("^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-            errorDict[
-                'password'] = 'Password must have at least 8 characters, 1 uppercase character, 1 lowercase character, 1 number, and 1 special character.'
+            errorDict['password'] = (
+                'Password must have at least 8 characters, 1 uppercase character, '
+                '1 lowercase character, 1 number, and 1 special character.'
+            )
         if password == email:
-            errorDict['password'] += 'Password cannot be the same as email.'
+            errorDict['password'] += ' Password cannot be the same as email.'
+
+        # Check if email format is valid
         try:
             validate_email(email)
         except serializers.ValidationError:
-            errorDict['email'] = "email is invalid."
+            errorDict['email'] = "Email is invalid."
+
         if errorDict:
             raise serializers.ValidationError(errorDict)
+
         return data
 
     def create(self, validated_data):
         # This creates the user using the validated data and automatically hashes the password
         user = User.objects.create_user(
-            username=validated_data['email'],
+            username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
         )
@@ -136,51 +154,84 @@ class AddressSerializer(serializers.Serializer):
         model = User
         fields = ['address']
 
+    from rest_framework import serializers
+import os
+import requests
+
+class AddressSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=255)
+    suggestions = serializers.ListField(
+        child=serializers.CharField(max_length=255),
+        read_only=True,
+        required=False
+    )
+
+    class Meta:
+        fields = ['address', 'suggestions']
+
     def validate(self, data):
         """
-        Check if the provided address exists using Google Address Validation API.
+        Check if the provided address exists or suggest alternatives.
         """
         address = data.get('address')
         
-        if not self.is_valid_address(address):
-            raise serializers.ValidationError("The provided address does not exist.")
+        valid_address, suggestions = self.get_address_suggestions(address)
+        
+        if not valid_address:
+            if suggestions:
+                data['suggestions'] = suggestions
+                raise serializers.ValidationError(
+                    {"address": "The provided address could not be confirmed. See suggestions.", "suggestions": suggestions}
+                )
+            else:
+                raise serializers.ValidationError("The provided address does not exist and no suggestions are available.")
         
         return data
-    
+
     def update(self, instance, validated_data):
-        instance.address = validated_data.get('address', None)
+        instance.address = validated_data.get('address', instance.address)
         instance.save()
         return instance
 
-    def is_valid_address(self, address):
+    def get_address_suggestions(self, address):
         """
-        Call Google Address Validation API to check if the address exists.
+        Call Google Address Validation API to check if the address exists or return suggestions.
         """
 
-        api_key = os.getenv("GOOGLE_API_KEY") # Replace with your actual API key
+        api_key = os.getenv("GOOGLE_API_KEY")  # Use your actual API key
         url = f"https://addressvalidation.googleapis.com/v1:validateAddress?key={api_key}"
 
-        # Prepare the request payload
         payload = {
             "address": {
                 "regionCode": "US",
-                "addressLines": address
+                "addressLines": [address]
             }
         }
 
-        # Make the API call
-        response = requests.post(url, json=payload)
-
-        # Check the API response status and parse the result
-        if response.status_code == 200:
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
             result = response.json()
-            print(result)
-            # Check the response for verification status
+
+            # Check if the address is valid or if there are suggested addresses
             address_result = result.get("result", {}).get("verdict", {}).get("hasUnconfirmedComponents", False)
-            return not address_result  # If `hasUnconfirmedComponents` is False, the address is confirmed as valid
-        else:
-            # Handle errors in API response
+            
+            # If address is valid, return True with no suggestions
+            if not address_result:
+                return True, []
+
+            # If the address has unconfirmed components, fetch suggested addresses
+            suggestions = [
+                candidate.get("addressFormatted", "")
+                for candidate in result.get("result", {}).get("addressMatches", [])
+            ]
+            
+            # Return False (invalid address) and the list of suggestions
+            return False, suggestions
+
+        except requests.RequestException:
             raise serializers.ValidationError("Address validation service is unavailable. Please try again later.")
+
 
 class GrocerySerializer(serializers.ModelSerializer):
     class Meta:
