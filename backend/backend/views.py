@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
-from .utils import send_verification_email, send_delete_confirmation_email
+from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -23,6 +23,7 @@ import rest_framework.mixins as mixins
 import os
 import requests
 from dotenv import load_dotenv
+from django.conf import settings
 
 load_dotenv()
 
@@ -886,6 +887,52 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def calculate_next_subheading_order(self, grocery):
         last_subheading = grocery.subheadings.order_by('-order').first()
         return last_subheading.order + 1 if last_subheading else 1
+
+class KrogerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None):
+        # Extract latitude, longitude, and radius from the query parameters
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+        
+        user = request.user
+        radius = str(int(user.max_distance))
+
+        # Validate parameters
+        if not latitude or not longitude:
+            return Response({'error': 'Latitude and longitude are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get OAuth2 token
+        client_id = os.getenv('KROGER_CLIENT_ID')
+        client_secret = os.getenv('KROGER_CLIENT_SECRET')
+        access_token = get_kroger_oauth2_token(client_id, client_secret)
+        if not access_token:
+            return Response({'error': 'Failed to authenticate with Kroger API'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Set up headers and parameters for Kroger API request
+        print(f"{latitude}, {longitude}, {str(int(radius))}")
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json',
+        }
+        params = {
+            'filter.latLong.near': f"{latitude},{longitude}",
+            'filter.radiusInMiles': str(int(radius)),  # Ensure radius is a string
+        }
+
+        # Make a request to Kroger's Locations API
+        try:
+            response = requests.get(f"{settings.KROGER_API_BASE_URL}/v1/locations", headers=headers, params=params)
+            response.raise_for_status()
+            response_data = response.json()  # Extract JSON data
+            
+            result = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
+            return Response(result, status=status.HTTP_200_OK)
+        except requests.RequestException as e:
+            print("Error fetching Kroger stores:", e)
+            print("Response content:", response.content)  # Log the exact response content for debugging
+            return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):

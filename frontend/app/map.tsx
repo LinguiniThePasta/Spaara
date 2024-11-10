@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import UnifiedIcon from '@/components/UnifiedIcon';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
@@ -14,68 +14,92 @@ import { useFocusEffect } from '@react-navigation/native';
 export default function App() {
     const [addressCoords, setAddressCoords] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [krogerStores, setKrogerStores] = useState([]); // State to store Kroger locations
     const mapRef = useRef(null); // Reference to MapView
 
     const fetchSelectedAddress = async () => {
         try {
-          const jwtToken = await SecureStore.getItemAsync('jwtToken');
-          const response = await axios.get(`${API_BASE_URL}/api/user/addresses/selected/`, {
-            headers: {
-              Authorization: `Bearer ${jwtToken}`,
-            },
-          });
-          return response.data.address;
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.get(`${API_BASE_URL}/api/user/addresses/selected/`, {
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                },
+            });
+            return response.data.address;
         } catch (error) {
-          console.error('Error getting selected address:', error.message);
-          Alert.alert('Error', 'Unable to fetch selected address. Please try again.');
-          return null;
+            console.error('Error getting selected address:', error.message);
+            Alert.alert('Error', 'Unable to fetch selected address. Please try again.');
+            return null;
         }
-      };
+    };
 
     const fetchAddressCoords = async () => {
         const selectedAddress = await fetchSelectedAddress();
         if (selectedAddress) {
-          if (selectedAddress.id === 1) {
-            // Use user's current location
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Permission denied', 'Allow location access to use current location.');
-              return;
-            }
-            let location = await Location.getCurrentPositionAsync({});
-            setAddressCoords({
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            });
-            setIsLoading(false);
-          } else {
-            // Get coordinates of the selected address from backend
-            try {
-              const jwtToken = await SecureStore.getItemAsync('jwtToken');
-              console.log(selectedAddress.name);
-              const response = await axios.get(
-                `${API_BASE_URL}/api/maps/coords_of/`, {
-                    params: {
-                      address: selectedAddress.name,
-                    }
-                  })
-              if (response.data.latitude && response.data.longitude) {
-                setAddressCoords({
-                  latitude: response.data.latitude,
-                  longitude: response.data.longitude,
-                });
-              } else {
-                Alert.alert('Error', 'Unable to get coordinates for the selected address.');
-              }
-            } catch (error) {
-              console.error('Error getting address coordinates:', error.message);
-              Alert.alert('Error', 'Unable to get coordinates for the selected address.');
-            } finally {
+            if (selectedAddress.id === 1) {
+                // Use user's current location
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Permission denied', 'Allow location access to use current location.');
+                    return;
+                }
+                let location = await Location.getCurrentPositionAsync({});
+                const locationCoords = {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                };
+                setAddressCoords(locationCoords);
                 setIsLoading(false);
+                fetchKrogers(locationCoords); // Fetch nearby Krogers using location
+            } else {
+                // Get coordinates of the selected address from backend
+                try {
+                    const jwtToken = await SecureStore.getItemAsync('jwtToken');
+                    console.log(selectedAddress.name);
+                    const response = await axios.get(`${API_BASE_URL}/api/maps/coords_of/`, {
+                        params: {
+                            address: selectedAddress.name,
+                        }
+                    });
+                    if (response.data.latitude && response.data.longitude) {
+                        const addressCoords = {
+                            latitude: response.data.latitude,
+                            longitude: response.data.longitude,
+                        };
+                        setAddressCoords(addressCoords);
+                        fetchKrogers(addressCoords); // Fetch Kroger stores using address coordinates
+                    } else {
+                        Alert.alert('Error', 'Unable to get coordinates for the selected address.');
+                    }
+                } catch (error) {
+                    console.error('Error getting address coordinates:', error.message);
+                    Alert.alert('Error', 'Unable to get coordinates for the selected address.');
+                } finally {
+                    setIsLoading(false);
+                }
             }
-          }
         }
-      };
+    };
+
+    // Use address lat, long, and user preference radius to find Krogers
+    const fetchKrogers = async (locationCoords) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.get(`${API_BASE_URL}/api/maps/locations/kroger`, {
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                },
+                params: {
+                    latitude: locationCoords.latitude,
+                    longitude: locationCoords.longitude,
+                },
+            });
+            setKrogerStores(response.data.stores); // Set Kroger stores data to state
+        } catch (error) {
+            console.error('Error fetching Kroger stores:', error.message);
+            Alert.alert('Error', 'Unable to fetch Kroger stores. Please try again.');
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -117,6 +141,21 @@ export default function App() {
                         </View>
                     </Marker>
                 )}
+                
+                {krogerStores.map((store, index) => (
+                    <Marker
+                        key={index}
+                        coordinate={{
+                            latitude: parseFloat(store.coordinates.latitude),
+                            longitude: parseFloat(store.coordinates.longitude),
+                        }}
+                        title={store.name}
+                    >
+                        <View style={styles.storeMarker}>
+                            <UnifiedIcon type="materialicon" name="store" size={15} style={null} color={Colors.light.primaryColor} />
+                        </View>
+                    </Marker>
+                ))}
             </MapView>
             {isLoading && (
                 <View style={styles.loadingOverlay}>
@@ -150,6 +189,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    storeMarker: {
+        backgroundColor: Colors.light.background,
+        padding: 2,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    callout: {
+        width: 150,
+        alignItems: 'center',
+    },
+    calloutTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    calloutAddress: {
+        fontSize: 14,
+        color: 'gray',
+    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
@@ -159,7 +217,7 @@ const styles = StyleSheet.create({
     bookIcon: {
         position: 'absolute',
         bottom: 120, // Above the footer
-        right: 20, // Left side of the screen
+        right: 20, // Right side of the screen
         backgroundColor: Colors.light.background,
         borderRadius: 20,
         padding: 10,
