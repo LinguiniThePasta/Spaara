@@ -165,7 +165,7 @@ export default function App() {
             {/* Book icon button to navigate to Set Addresses */}
             <TouchableOpacity
                 style={styles.bookIcon}
-                onPress={() => router.push('/setAddress')} // Navigate to the SetAddress page
+                onPress={() => router.push('/settings')} // Navigate to the SetAddress page
             >
                 <UnifiedIcon type="ionicon" name="settings" style={null} size={30} color={Colors.light.primaryColor} />
             </TouchableOpacity>
