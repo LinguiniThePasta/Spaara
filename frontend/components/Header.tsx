@@ -24,8 +24,8 @@ export default function Header({header, backButton, backLink, noProfile}) {
                 </View>
             )}
             {!noProfile && role !== 'Guest' && (
-                <View style={styles.profileIconContainer}>
-                </View>
+                <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                </TouchableOpacity>
             )}
 
         </View>

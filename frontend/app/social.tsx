@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Modal,
+  Pressable
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
@@ -21,6 +22,7 @@ import Footer from '@/components/Footer';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
+import {router} from "expo-router";
 
 interface User {
   id: number;
@@ -253,8 +255,14 @@ const SocialPage = () => {
   };
 
   const filteredUsers = searchTerm
-    ? users.filter((user) => user.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : [];
+  ? users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !friends.some((friend) => friend.id === user.id) &&
+        !outgoingRequests.some((request) => request.id === user.id) &&
+        !incomingRequests.some((request) => request.id === user.id)
+    )
+  : [];
 
   // Close dropdown when touching outside
   const handleOutsidePress = () => {
@@ -268,24 +276,31 @@ const SocialPage = () => {
     <TouchableWithoutFeedback onPress={handleOutsidePress}>
       <View style={styles.container}>
         <SafeAreaView style={styles.container}>
-          <View style={styles.headerContainer}>
-            {/* Header Component */}
-            <Header header="Social" backButton={false} backLink={'profile'} noProfile={true} />
-            {/* Bell Icon Button aligned to the far right */}
+          <View style={styles.header}>
+            <View style={styles.left}>
+                <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                    <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+                </Pressable>
+                <Text style={styles.headerTitle}>{"Social"}</Text>
+            </View>
+            <View style={styles.iconContainer}>
             <TouchableOpacity
-              style={styles.bellIconButton}
-              onPress={() => {
-                setModalVisible(true);
-              }}
-            >
-              <Icon name="notifications-outline" size={36} color={Colors.light.primaryColor} />
-              {friendRequestCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{friendRequestCount > 99 ? '99+' : friendRequestCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+                style={styles.bellIconButton}
+                onPress={() => {
+                  setModalVisible(true);
+                }}
+              >
+                <Icon name="notifications-outline" size={36} color={Colors.light.primaryColor} />
+                {friendRequestCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{friendRequestCount > 99 ? '99+' : friendRequestCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+              </TouchableOpacity>
+            </View>
+        </View>
 
           <View style={styles.searchContainer}>
             <View style={globalStyles.searchBar}>
@@ -409,8 +424,7 @@ const styles = StyleSheet.create({
     paddingRight: 35,
   },
   bellIconButton: {
-    position: 'relative',
-    marginLeft: 15,
+    marginRight: 15,
   },
   badge: {
     position: 'absolute',
@@ -547,5 +561,35 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 16,
     color: Colors.light.primaryColor,
+  },
+  header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      color: Colors.light.primaryText,
+  },
+  left: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      color: Colors.light.primaryText,
+  },
+  headerTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: Colors.light.primaryText,
+  },
+  profileIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#ccc',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

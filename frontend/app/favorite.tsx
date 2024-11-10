@@ -3,6 +3,7 @@ import { View, Text, FlatList, Pressable, StyleSheet, SafeAreaView } from 'react
 import { Colors } from '@/styles/Colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Footer from "@/components/Footer"; // Assuming you have a Colors file for styling
+import Header from "@/components/Header";
 
 export default function FavoritesScreen() {
     const favorites = [
@@ -33,13 +34,9 @@ export default function FavoritesScreen() {
     );
 
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Favorites</Text>
-                <View style={styles.profileIconContainer}>
-                    <View style={styles.profileIcon} />
-                </View>
-            </View>
+            <Header header="Favorites" backButton={false} backLink={"profile"} noProfile={false} />
 
             <FlatList
                 data={favorites}
@@ -48,9 +45,11 @@ export default function FavoritesScreen() {
                 contentContainerStyle={styles.listContainer}
             />
 
-            {/* Footer */}
-            <Footer />
+            
         </SafeAreaView>
+        {/* Footer */}
+        <Footer />
+        </View>
     );
 }
 

@@ -9,6 +9,7 @@ import {useSelector} from "react-redux"; // Use router for navigation if needed
 export default function ProfileScreen() {
     const role = useSelector((state) => state.role.role);
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
             <Header header="Profile"
                     backButton={false}
@@ -38,8 +39,10 @@ export default function ProfileScreen() {
                 </View>
             )}
 
-            <Footer/>
+            
         </SafeAreaView>
+        <Footer/>
+        </View>
     );
 }
 
