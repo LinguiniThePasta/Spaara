@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, SafeAreaView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Alert, View, Text, TextInput, FlatList, SafeAreaView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Colors } from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,6 +22,7 @@ const SetAddress: React.FC = () => {
         <TouchableOpacity
           style={styles.addressItem}
           onPress={() => handleAddressSelect(item.id)}
+          onLongPress={() => handleDeleteAddress(item.id)}
         >
           {item.icon && (
             <UnifiedIcon
@@ -77,6 +78,37 @@ const SetAddress: React.FC = () => {
         }
       };
 
+      // Handles deleting an address
+      const handleDeleteAddress = (addressId) => {
+        if (addressId !== 1) {
+            if (selectedAddressId !== addressId) {
+                Alert.alert(
+                    "Delete Confirmation",
+                    "Are you sure you want to remove this address?",
+                    [
+                        {
+                            text: "Cancel",
+                            onPress: () => console.log("Cancel Pressed"),
+                            style: "cancel"
+                        },
+                        {text: "Delete", onPress: () => deleteAddress(addressId)}
+                    ],
+                    {cancelable: false}
+                );
+            } else {
+                Alert.alert(
+                    "Error",
+                    "Cannot delete the selected address. Please select another address and try again."
+                );
+            }
+        } else {
+            Alert.alert(
+                "Error",
+                "Cannot delete the current location."
+            );
+        }
+      }
+
       // Adds a new address to the user's addresses
       const setAddress = async (address) => {
         try {
@@ -107,6 +139,32 @@ const SetAddress: React.FC = () => {
         }
       };
 
+    // Delete a user's address
+    const deleteAddress = async (addressId) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            // Add the new address to the backend
+            await axios.delete(
+            `${API_BASE_URL}/api/user/addresses/remove/`,
+            {
+                data: { address_id: addressId },
+                headers: { Authorization: `Bearer ${jwtToken}` },
+            }
+            );
+            // Refresh the addresses list
+            const response = await axios.get(`${API_BASE_URL}/api/user/addresses/`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+            });
+            setAddresses(response.data.addresses || []);
+            setSelectedAddressId(response.data.selected_address_id || null);
+            setNewAddress('');
+            setAutocompletePredictions([]);
+            setDropdownVisible(false);
+        } catch (error) {
+            console.error('Error deleting address:', error);
+        }
+    };
+
     // Fetches autocomplete predictions based on the input address
     const getAutocompletePredictions = async (address) => {
         try {
@@ -120,7 +178,15 @@ const SetAddress: React.FC = () => {
                     },
                 }
             );
-            setAutocompletePredictions(response.data.addresses || []);
+            let predictions = response.data.addresses || [];
+
+            // Get names of existing addresses
+            const existingAddressNames = addresses.map(addr => addr.name.toLowerCase());
+    
+            // Filter out existing addresses from predictions
+            predictions = predictions.filter(prediction => !existingAddressNames.includes(prediction.toLowerCase()));
+    
+            setAutocompletePredictions(predictions);
         } catch (error) {
             console.error('Error fetching address predictions:', error.message);
         }
@@ -151,7 +217,8 @@ const SetAddress: React.FC = () => {
     }, []);
 
     return (
-        <TouchableWithoutFeedback onPress={handleOutsidePress}>
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+        <View style={styles.container}>
       <SafeAreaView style={styles.container}>
         <Header
           header="Set Address"
@@ -205,8 +272,9 @@ const SetAddress: React.FC = () => {
             renderItem={renderItem}
           />
         </View>
-        <Footer />
       </SafeAreaView>
+      <Footer />
+      </View>
     </TouchableWithoutFeedback>
     );
 };
