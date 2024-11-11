@@ -103,7 +103,7 @@ export default function Login() {
                         />
                         <View style={styles.forgotPasswordWrapper}>
                             <Pressable style={styles.forgotPasswordContainer} onPress={() => 
-                                router.push('/forgotPassword')
+                                router.push('/recoverPassword')
                             }>
                                 <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
                             </Pressable>

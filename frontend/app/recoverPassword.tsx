@@ -18,11 +18,7 @@ export default function recoverPassword() {
     const [repeatPassword, onRepetPassword] = useState('');
 
     const handleSubmit = async () => {
-        if (newPassword === repeatPassword) {
-
-        } else {
-
-        }
+        
 
     }
 
