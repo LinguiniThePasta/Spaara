@@ -61,11 +61,7 @@ export default function ChangeEmail() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Change Email"
-                    backButton={true}
-                    backLink={"settings"}
-                    noProfile={true}
-            />
+            <Header header="Change Email" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.content}

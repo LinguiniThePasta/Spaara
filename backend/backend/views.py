@@ -14,13 +14,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
-from .utils import send_verification_email, send_delete_confirmation_email
+from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 import uuid
 import rest_framework.mixins as mixins
+import os
+import requests
+from dotenv import load_dotenv
+from django.conf import settings
 
+load_dotenv()
 
 class RegisterView(APIView):
     def post(self, request):
@@ -96,6 +101,60 @@ class VerifyEmailView(APIView):
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
 
+class OtherUsersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # TODO: Get all existing users and return them as a list of dictionaries with their email and username 
+    def get(self, request):
+        '''
+        Retrieves a list of all existing users, excluding the authenticated user.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of dictionaries containing user email and username.
+
+        retrieval details:
+            - Retrieves all users except the authenticated user.
+            - Serializes the user data to return a list of dictionaries with user email and username.
+
+        usage:
+            - GET {URL} - retrieves all existing users
+        '''
+        users = User.objects.exclude(id=request.user.id)
+        data = [{'id': user.id, 'username': user.username} for user in users]
+        return Response(data, status=status.HTTP_200_OK)
+
+class DeleteUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        '''
+        Deletes the authenticated user account.
+
+        :param:
+            request (Request): The incoming request containing the user to be deleted.
+
+        :return:
+            Response: A message confirming the user deletion or an error message if deletion fails.
+
+        deletion details:
+            - Deletes the user based on the authenticated user ID.
+            - Sends a confirmation email upon successful deletion.
+
+        usage:
+            - DELETE {URL}/ - deletes the authenticated user's account
+        '''
+        user = request.user
+        email = user.email
+        try:
+            User.objects.filter(id=user.id).delete()
+            send_delete_confirmation_email(email)
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
+        
 class FriendRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -214,61 +273,6 @@ class FriendsView(APIView):
         user.friends.add(friend)
         user.save()
         return Response({'message': f'{username} added as a friend'}, status=status.HTTP_201_CREATED)
-
-class DeleteUserView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request):
-        '''
-        Deletes the authenticated user account.
-
-        :param:
-            request (Request): The incoming request containing the user to be deleted.
-
-        :return:
-            Response: A message confirming the user deletion or an error message if deletion fails.
-
-        deletion details:
-            - Deletes the user based on the authenticated user ID.
-            - Sends a confirmation email upon successful deletion.
-
-        usage:
-            - DELETE {URL}/ - deletes the authenticated user's account
-        '''
-        user = request.user
-        email = user.email
-        try:
-            User.objects.filter(id=user.id).delete()
-            send_delete_confirmation_email(email)
-            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
-        except:
-            return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
-        
-class OtherUsersView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    # TODO: Get all existing users and return them as a list of dictionaries with their email and username 
-    def get(self, request):
-        '''
-        Retrieves a list of all existing users, excluding the authenticated user.
-
-        :param:
-            request (Request): The incoming request; does not require any data parameters.
-
-        :return:
-            Response: A list of dictionaries containing user email and username.
-
-        retrieval details:
-            - Retrieves all users except the authenticated user.
-            - Serializes the user data to return a list of dictionaries with user email and username.
-
-        usage:
-            - GET {URL} - retrieves all existing users
-        '''
-        users = User.objects.exclude(id=request.user.id)
-        data = [{'id': user.id, 'username': user.username} for user in users]
-        return Response(data, status=status.HTTP_200_OK)
-        
 
 
 class LoginView(APIView):
@@ -456,7 +460,204 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+class GetCoordinatesView(APIView):
+    def get_address_location(self, address):
+        """
+        Fetch latitude and longitude for a given address using Google Geocoding API.
 
+        Args:
+            address (str): The address to geocode.
+
+        Returns:
+            dict: A dictionary with 'latitude' and 'longitude' if successful, or None if there's an error.
+        """
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("API key not found. Please set the GOOGLE_API_KEY environment variable.")
+        
+        # URL encode the address to make it safe for the API call
+        encoded_address = requests.utils.quote(address)
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={api_key}"
+
+        try:
+            # Make the request to the Google Geocoding API
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for HTTP errors
+
+            data = response.json()
+            
+            # Check if results were found and extract location data
+            if data.get("results"):
+                location = data["results"][0]["geometry"]["location"]
+                return {
+                    "latitude": location["lat"],
+                    "longitude": location["lng"]
+                }
+            else:
+                print("No results found for the provided address.")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"Request error: {e}")
+            return None
+        
+    def get(self, request, *args, **kwargs):
+        address = request.GET.get('address', None)
+
+        print(address)
+        
+        if not address:
+            return Response({"error": "Address parameter is required"}, status=400)
+        
+        # Call your function to get coordinates for the address
+        coordinates = self.get_address_location(address=address)  # Replace with your actual function
+
+        if coordinates:
+            return Response({"latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}, status=200)
+        else:
+            return Response({"error": "Could not find coordinates for the given address"}, status=404)
+
+        
+        
+class AddressViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    # GET /api/user/addresses/
+    # Retrieves all addresses for the authenticated user.
+    def list(self, request):
+        user = request.user
+        addresses = user.addresses  # Assuming `addresses` is a list of address dictionaries
+        selected_address_id = user.selected_address_id
+        return Response({
+            'addresses': addresses,
+            'selected_address_id': selected_address_id
+        }, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/add/
+    # Adds a new address to the end of the user's address list.
+    @action(detail=False, methods=['post'])
+    def add(self, request):
+        user = request.user
+        new_address = request.data.get('address')
+        icon = request.data.get('icon')
+        icontype = request.data.get('icontype')
+        if not new_address:
+            return Response({'error': 'Address is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Generate a new ID for the address
+        if user.addresses:
+            new_id = max(address['id'] for address in user.addresses) + 1
+        else:
+            new_id = 1
+        address_entry = {
+            'id': new_id,
+            'icon': icon,
+            'name': new_address,
+            'icontype': icontype
+        }
+        user.addresses.append(address_entry)
+        user.save()
+        return Response({'message': 'Address added successfully'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/user/addresses/remove/
+    # Removes an address from the user's address list.
+    @action(detail=False, methods=['delete'])
+    def remove(self, request):
+        user = request.user
+        address_id = request.data.get('address_id')
+        if address_id is None:
+            return Response({'error': 'address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Filter out the address to remove
+        updated_addresses = [addr for addr in user.addresses if addr['id'] != address_id]
+        if len(updated_addresses) == len(user.addresses):
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.addresses = updated_addresses
+        # Reset selected_address_id if the removed address was selected
+        if user.selected_address_id == address_id:
+            user.selected_address_id = None
+        user.save()
+        return Response({'message': 'Address removed successfully'}, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/update_selected/
+    # Updates the user's selected address ID.
+    @action(detail=False, methods=['post'])
+    def update_selected(self, request):
+        user = request.user
+        selected_address_id = request.data.get('selected_address_id')
+        if selected_address_id is None:
+            return Response({'error': 'selected_address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the address exists in the user's address list
+        if any(addr['id'] == selected_address_id for addr in user.addresses):
+            user.selected_address_id = selected_address_id
+            user.save()
+            return Response({'message': 'Selected address updated successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    # GET /api/user/addresses/selected/
+    # Gets the selected address
+    @action(detail=False, methods=['get'])
+    def selected(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id is None:
+            return Response({'error': 'No address selected'}, status=status.HTTP_400_BAD_REQUEST)
+        selected_address = next((addr for addr in user.addresses if addr['id'] == selected_address_id), None)
+        if selected_address:
+            return Response({'address': selected_address}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Selected address not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    @action(detail=False, methods=['get'])
+    def id(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id:
+            return Response({'id': selected_address_id}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No address id found'}, status=status.HTTP_404_NOT_FOUND)
+
+class AutocompleteView(APIView):
+    def post(self, request):
+        search_text = request.data.get('search_text', '')
+
+        # Validate input
+        if not search_text:
+            return Response({"error": "Please provide a search text."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Google Places Autocomplete API endpoint
+        url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+        # Retrieve Google API Key from environment variables for security
+        google_api_key = os.getenv("GOOGLE_API_KEY")  # Set your API key in environment variables
+
+        # Set up parameters for the API request
+        params = {
+            "input": search_text,
+            "key": google_api_key,
+            "types": "address",  # Restrict to address types only
+            "language": "en"     # Optional: specify the language for the predictions
+        }
+
+        try:
+            # Make a GET request to the Google Places API
+            response = requests.get(url, params=params)
+            response.raise_for_status()  # Raise an error for HTTP errors
+
+            # Parse the response JSON
+            predictions = response.json().get('predictions', [])
+
+            # Extract only the address descriptions from the predictions
+            addresses = [prediction['description'] for prediction in predictions]
+
+            # Return the list of addresses in the specified format
+            return Response({"addresses": addresses}, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            # Handle errors from the API request
+            return Response(
+                {"error": "An error occurred with the Google API request", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class GroceryListViewSet(viewsets.ModelViewSet):
     queryset = Grocery.objects.all()
@@ -686,6 +887,52 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def calculate_next_subheading_order(self, grocery):
         last_subheading = grocery.subheadings.order_by('-order').first()
         return last_subheading.order + 1 if last_subheading else 1
+
+class KrogerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk=None):
+        # Extract latitude, longitude, and radius from the query parameters
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+        
+        user = request.user
+        radius = str(int(user.max_distance))
+
+        # Validate parameters
+        if not latitude or not longitude:
+            return Response({'error': 'Latitude and longitude are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get OAuth2 token
+        client_id = os.getenv('KROGER_CLIENT_ID')
+        client_secret = os.getenv('KROGER_CLIENT_SECRET')
+        access_token = get_kroger_oauth2_token(client_id, client_secret)
+        if not access_token:
+            return Response({'error': 'Failed to authenticate with Kroger API'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Set up headers and parameters for Kroger API request
+        print(f"{latitude}, {longitude}, {str(int(radius))}")
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json',
+        }
+        params = {
+            'filter.latLong.near': f"{latitude},{longitude}",
+            'filter.radiusInMiles': str(int(radius)),  # Ensure radius is a string
+        }
+
+        # Make a request to Kroger's Locations API
+        try:
+            response = requests.get(f"{settings.KROGER_API_BASE_URL}/v1/locations", headers=headers, params=params)
+            response.raise_for_status()
+            response_data = response.json()  # Extract JSON data
+            
+            result = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
+            return Response(result, status=status.HTTP_200_OK)
+        except requests.RequestException as e:
+            print("Error fetching Kroger stores:", e)
+            print("Response content:", response.content)  # Log the exact response content for debugging
+            return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
