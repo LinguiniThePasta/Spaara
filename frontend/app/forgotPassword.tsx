@@ -19,16 +19,20 @@ export default function forgotPassword() {
     const handleSubmit = async () => {
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/forgot-password/`,
+                `${API_BASE_URL}/api/forgot-password`,
                 {
-                    "email": email
+                    'email': email,
                 },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
             );
 
-            console.log(response)
+            
         } catch (error) {
             console.log(error)
-
         }
 
     }
