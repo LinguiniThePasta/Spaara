@@ -6,7 +6,11 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
     DietRestriction
 from django.core.validators import validate_email
 import uuid
+<<<<<<< HEAD
 from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
+=======
+from .utils import send_verification_email, send_password_reset_confirmation
+>>>>>>> 1b548b9e264f5f2b05788dd665e14868f24978be
 
 
 class RegisterSerializer(serializers.ModelSerializer):

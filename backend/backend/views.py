@@ -12,7 +12,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
+<<<<<<< HEAD
 from .utils import send_verification_email, send_delete_confirmation_email, send_account_recovery_email
+=======
+from .utils import send_verification_email, send_delete_confirmation_email
+>>>>>>> 1b548b9e264f5f2b05788dd665e14868f24978be
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
