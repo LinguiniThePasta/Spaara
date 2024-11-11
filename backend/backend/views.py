@@ -102,7 +102,6 @@ class ForgotPasswordView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try :
             user = User.objects.get(email__iexact=serializer.validated_data['email'])
-
         except User.DoesNotExist:
             user = None
 
@@ -110,7 +109,6 @@ class ForgotPasswordView(APIView):
             send_account_recovery_email(user)
             return Response({'message': 'Email is linked to an account'}, status=status.HTTP_200_OK)
         else:
-            send_account_recovery_email(request.data.get('email'))
             return Response({'error': 'Email is not linked to an account'}, status=status.HTTP_400_BAD_REQUEST)
 
 
