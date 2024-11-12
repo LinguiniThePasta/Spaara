@@ -6,7 +6,7 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
     DietRestriction, Subheading, FriendRequest
 from django.core.validators import validate_email
 import uuid
-from .utils import send_verification_email, send_password_reset_confirmation
+from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
 from dotenv import load_dotenv
 import os
 import requests
@@ -103,7 +103,16 @@ class LoginSerializer(serializers.Serializer):
     def validate_email(self, value):
         return value.lower()
 
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
+    def validate_email(self, value):
+        return value.lower()
+    
+    def update(self, validated_data):
+        send_account_recovery_email(validated_data)
+
+    
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
     old_password = serializers.CharField(write_only=True, required=False)

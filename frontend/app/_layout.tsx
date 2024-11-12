@@ -61,6 +61,8 @@ export default function RootLayout() {
                 <Stack.Screen name="filterScreen"/>
                 <Stack.Screen name="savedRecipes"/>
                 <Stack.Screen name="social"/>
+                <Stack.Screen name="forgotPassword"/>
+                <Stack.Screen name="recoverPassword"/>
             </Stack>
         </Provider>
     );
