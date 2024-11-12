@@ -12,6 +12,7 @@ import {useSelector} from "react-redux";
 export default function ThemesScreen() {
 
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
             <Header header="Themes"
                     backButton={true}
@@ -34,8 +35,9 @@ export default function ThemesScreen() {
                         */}
                     </View>
                 </View>
-            <Footer/>
         </SafeAreaView>
+        <Footer/>
+        </View>
     );
 }
 
