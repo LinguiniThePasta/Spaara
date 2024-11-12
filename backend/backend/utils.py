@@ -36,6 +36,18 @@ def send_delete_confirmation_email(email):
 
     send_mail(subject, message, from_email, recipient_list)
 
+def send_account_recovery_email(user):
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    recovery_link = f"{settings.FRONTEND_URL}/account-recovery/{uid}/{token}/"
+
+    subject = '[SPAARA] Password Recovery'
+    message = f'Someone is attempting to recover your account. Click this link if you would like to do so\n\n{recovery_link}\n\n--Spaara Team'
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [user.email]
+
+    send_mail(subject, message, from_email, recipient_list)
+
 def get_kroger_oauth2_token(client_id, client_secret):
     """Retrieve an OAuth2 token from Kroger API."""
     token_url = f"{settings.KROGER_API_BASE_URL}/v1/connect/oauth2/token"

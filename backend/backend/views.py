@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
-from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response
+from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response, send_account_recovery_email
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -100,6 +100,23 @@ class VerifyEmailView(APIView):
                 return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        serializer = serializers.EmailSerializer(data=request.data)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try :
+            user = User.objects.get(email__iexact=serializer.validated_data['email'])
+        except User.DoesNotExist:
+            user = None
+
+        if user is not None:
+            send_account_recovery_email(user)
+            return Response({'message': 'Email is linked to an account'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Email is not linked to an account'}, status=status.HTTP_400_BAD_REQUEST)
 
 class OtherUsersView(APIView):
     permission_classes = [IsAuthenticated]
