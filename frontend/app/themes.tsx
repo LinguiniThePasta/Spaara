@@ -27,9 +27,11 @@ export default function ThemesScreen() {
                         <Pressable style={styles.listItem} onPress={() => router.push('/profileColors')}>
                             <Text style={styles.optionText}>Change Profile Color</Text>
                         </Pressable>
+                        {/*
                         <Pressable style={styles.listItem} onPress={() => router.push('/setAddress')}>
                             <Text style={styles.optionText}>Change App Theme</Text>
                         </Pressable>
+                        */}
                     </View>
                 </View>
             <Footer/>
