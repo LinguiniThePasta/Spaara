@@ -94,7 +94,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FriendRequest
-        fields = ['id', 'from_user', 'to_user', 'status', 'timestamp']
+        fields = ['id', 'from_user', 'to_user', 'timestamp']
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()

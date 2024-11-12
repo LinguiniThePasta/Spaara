@@ -102,12 +102,6 @@ class DietRestriction(models.Model):
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='friend_requests_sent', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='friend_requests_received', on_delete=models.CASCADE)
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
-    )
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

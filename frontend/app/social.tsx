@@ -9,7 +9,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Modal,
-  Pressable
+  Pressable,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
@@ -75,6 +76,59 @@ const SocialPage = () => {
       console.error('Error fetching users:', error.message);
     }
   };
+
+  // Delete a user's address
+  const removeFriend = async (username) => {
+    try {
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+        // Add the new address to the backend
+        await axios.delete(
+        `${API_BASE_URL}/api/user/friends`,
+        {
+            data: { username: username },
+            headers: { Authorization: `Bearer ${jwtToken}` },
+        }
+        );
+        fetchFriends(); // Refresh friends list
+        
+    } catch (error) {
+        console.error('Error deleting address:', error);
+    }
+  };
+
+  // Handles deleting a friend
+  const handleRemoveFriend = (username) => {
+        Alert.alert(
+            "Remove Friend",
+            `Are you sure you want to remove ${username} as a friend?`,
+            [
+                {
+                    text: "Cancel",
+                    onPress: () => console.log("Cancel Pressed"),
+                    style: "cancel"
+                },
+                {text: "Delete", onPress: () => removeFriend(username)}
+            ],
+            {cancelable: false}
+        );
+  }
+
+    // Handles deleting a friend
+    const handleRevokeRequest = (username) => {
+      Alert.alert(
+          "Revoke Friend Request",
+          `Are you sure you want to revoke your friend request to ${username}?`,
+          [
+              {
+                  text: "Cancel",
+                  onPress: () => console.log("Cancel Pressed"),
+                  style: "cancel"
+              },
+              {text: "Delete", onPress: () => revokeFriendRequest(username)}
+          ],
+          {cancelable: false}
+      );
+  } 
 
   // Get a user's friends
   const fetchFriends = async () => {
@@ -227,30 +281,52 @@ const SocialPage = () => {
     }
   };
 
-  /* Reject a friend request */
+  /* Reject an incoming friend request */
   const rejectFriendRequest = async (username) => {
     try {
       const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-      const response = await axios.post(
+      const response = await axios.delete(
         `${API_BASE_URL}/api/friend_requests/reject/`,
         {
-          username: username,
-        },
-        {
+          data: {username: username},
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${jwtToken}`,
           },
-        }
+        },
       );
       console.log('Friend request rejected!');
 
       // Update state
-      setIncomingRequests((prevRequests) => prevRequests.filter((req) => req.name !== username));
-      setFriendRequestCount((prevCount) => prevCount - 1);
+      fetchIncomingRequests(); // Refresh incoming requests
+      fetchRequestCount(); // Refresh friend request count
     } catch (error) {
       console.error('Error rejecting friend request:', error.message);
+    }
+  };
+
+  /* Revokes an outgoing friend request */
+  const revokeFriendRequest = async (username) => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/friend_requests/revoke/`,
+        {
+          data: {username: username},
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
+      console.log('Friend request revoked!');
+
+      // Update state
+      fetchOutgoingRequests(); // Refresh outgoing requests
+    } catch (error) {
+      console.error('Error revoking friend request:', error.message);
     }
   };
 
@@ -343,8 +419,10 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
-                  <Text style={styles.listItemTitle}>{item.name}</Text>
-                  <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
+                    <TouchableOpacity onLongPress={() => handleRevokeRequest(item.name)}>
+                      <Text style={styles.listItemTitle}>{item.name}</Text>
+                    </TouchableOpacity>
+                    <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
                 </View>
               )}
             />
@@ -354,7 +432,9 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
-                  <Text style={styles.listItemTitle}>{item.name}</Text>
+                  <TouchableOpacity onLongPress={() => handleRemoveFriend(item.name)}>
+                    <Text style={styles.listItemTitle}>{item.name}</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             />

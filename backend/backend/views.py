@@ -163,14 +163,14 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
     # Returns the number of pending friend requests for the authenticated user. 
     @action(detail=False, methods=['get'])
     def count(self, request):
-        count = FriendRequest.objects.filter(to_user=request.user, status='pending').count()
+        count = FriendRequest.objects.filter(to_user=request.user).count()
         return Response({'count': count}, status=status.HTTP_200_OK)
 
     # GET /api/friend_requests/incoming
     # Returns a list of incoming friend requests for the authenticated user.
     @action(detail=False, methods=['get'])
     def incoming(self, request):
-        incoming_requests = FriendRequest.objects.filter(to_user=request.user, status='pending')
+        incoming_requests = FriendRequest.objects.filter(to_user=request.user)
         serializer = FriendRequestSerializer(incoming_requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -178,7 +178,7 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
     # Returns a list of outgoing friend requests for the authenticated user.
     @action(detail=False, methods=['get'])
     def outgoing(self, request):
-        outgoing_requests = FriendRequest.objects.filter(from_user=request.user, status='pending')
+        outgoing_requests = FriendRequest.objects.filter(from_user=request.user)
         serializer = FriendRequestSerializer(outgoing_requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -207,15 +207,14 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
         if friend_request is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
-        friend_request.status = 'accepted'
-        friend_request.save()
+        friend_request.delete()
         user.friends.add(friend)
         user.save()
         return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
 
-    # POST /api/friend_requests/reject
-    # Rejects a friend request from another user.
-    @action(detail=False, methods=['post'])
+    # DELETE /api/friend_requests/reject
+    # Rejects an incoming friend request
+    @action(detail=False, methods=['delete'])
     def reject(self, request):
         user = request.user
         username = request.data.get('username', None)
@@ -225,9 +224,24 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
         if friend_request is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
-        friend_request.status = 'rejected'
-        friend_request.save()
-        return Response({'message': 'Friend request rejected'}, status=status.HTTP_201_CREATED)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+    
+    # DELETE /api/friend_requests/revoke
+    # Revokes an outgoing friend request
+    @action(detail=False, methods=['delete'])
+    def revoke(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=user, to_user=friend).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+        
     
 
 class FriendsView(APIView):
@@ -273,6 +287,22 @@ class FriendsView(APIView):
         user.friends.add(friend)
         user.save()
         return Response({'message': f'{username} added as a friend'}, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request):
+        '''
+        Removes a user from the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request containing the username to remove
+        '''
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.friends.remove(friend)
+        user.save()
+        return Response({'message': f'{username} removed from friends'}, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):
