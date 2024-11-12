@@ -22,11 +22,11 @@ instructions there
 
 ## Include secrets
 
-Create an environment file .env in Spaara/backend 
+Create an environment file .env in Spaara/backend/backend
 
 (mac: 
 
-cd backend
+cd backend/backend
 
 touch .env
 
