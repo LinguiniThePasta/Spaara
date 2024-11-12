@@ -14,7 +14,7 @@ def default_addresses():
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
-    username = models.EmailField(unique=True)
+    username = models.CharField(unique=True)
     email = models.EmailField(unique=True)
     email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
