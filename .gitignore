@@ -11,6 +11,8 @@ npm-debug.*
 web-build/
 venv/
 backend/backend/__pycache__
+backend/backend/.env
+*.pyc
 
 # macOS
 .DS_Store
@@ -48,3 +50,4 @@ backend/backend/migrations/__pycache__/0001_initial.cpython-311.pyc
 backend/backend/migrations/__pycache__/__init__.cpython-311.pyc
 backend/backend/__pycache__/views.cpython-311.pyc
 backend/backend/migrations/__pycache__/0001_initial.cpython-311.pyc
+*.pyc
