@@ -23,12 +23,21 @@ instructions there
 ## Include secrets
 
 Create an environment file .env in Spaara/backend 
+
 (mac: 
+
 cd backend
+
 touch .env
+
 )
+
 Inside the .env file specify the following variables with the following values:
+
 "KROGER_CLIENT_ID": Kroger account client id
+
 "KROGER_CLIENT_SECRET": Kroger account client secret key
+
 "GOOGLE_API_KEY": Google mapping API key with Places and Geocoding API services enabled
+
 Mapping WILL NOT FUNCTION without these keys!
