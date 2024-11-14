@@ -32,7 +32,7 @@ export default function NavigationButton({ label, type, destination }: props) {
     if (type === "push") {
         return (
             <View style={pushStyles.buttonContainer}>
-                <Pressable style={pushStyles.button} onPress={() => router.push(destination)}>
+                <Pressable style={pushStyles.button} onPress={() => router.replace(destination)}>
                     <Text style={pushStyles.buttonLabel}>{label}</Text>
                 </Pressable>
             </View>

@@ -78,7 +78,7 @@ export default function Login() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.push("/splash")
+                    router.replace("/splash")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
@@ -103,7 +103,7 @@ export default function Login() {
                         />
                         <View style={styles.forgotPasswordWrapper}>
                             <Pressable style={styles.forgotPasswordContainer} onPress={() => 
-                                router.push('/recoverPassword')
+                                router.replace('/forgotPassword')
                             }>
                                 <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
                             </Pressable>
@@ -117,7 +117,7 @@ export default function Login() {
                     <View style={styles.footerContainer}>
                         <Text style={styles.footerText}>Don't have an account? </Text>
                         <Pressable onPress={() => {
-                            router.push("/signup")
+                            router.replace("/signup")
                         }} style={styles.signupLink}>
                             <Text style={styles.signupLinkText}>Sign Up.</Text>
                         </Pressable>

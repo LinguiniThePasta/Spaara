@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/SpaaraIcon.png",
       "resizeMode": "contain",
@@ -43,7 +44,8 @@
         {
           "locationWhenInUsePermission": "Show current location on map."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

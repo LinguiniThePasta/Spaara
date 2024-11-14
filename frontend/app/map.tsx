@@ -9,7 +9,6 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 import * as Location from 'expo-location';
 import {router} from "expo-router";
-import { useFocusEffect } from '@react-navigation/native';
 
 export default function App() {
     const [addressCoords, setAddressCoords] = useState(null);
@@ -101,12 +100,10 @@ export default function App() {
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            setIsLoading(true);
-            fetchAddressCoords();
-        }, []) // Empty dependency array to run only when screen is focused
-    );
+    useEffect(() => {
+        setIsLoading(true);
+        fetchAddressCoords(); // Run once on mount
+    }, []); // Empty dependency array ensures it only runs once
 
     // Animate to user's location once addressCoords is set
     useEffect(() => {
@@ -165,7 +162,7 @@ export default function App() {
             {/* Book icon button to navigate to Set Addresses */}
             <TouchableOpacity
                 style={styles.bookIcon}
-                onPress={() => router.push('/settings')} // Navigate to the SetAddress page
+                onPress={() => router.replace('/settings')} // Navigate to the SetAddress page
             >
                 <UnifiedIcon type="ionicon" name="settings" style={null} size={30} color={Colors.light.primaryColor} />
             </TouchableOpacity>

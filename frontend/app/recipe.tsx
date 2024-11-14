@@ -7,15 +7,14 @@ import {
     View,
     Text,
     TextInput,
-    SafeAreaView,
     FlatList,
     Pressable,
     StyleSheet,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
     Modal
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {API_BASE_URL} from '@/scripts/config';
 import {Link, router} from 'expo-router';
@@ -251,10 +250,12 @@ export default function Recipe() {
         </Pressable>
     );
 
+    const insets = useSafeAreaInsets();
+
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <View style={styles.container}>
-                <SafeAreaView style={styles.container}>
+                <View style={[styles.container, {paddingTop: insets.top, paddingBottom: insets.bottom}]}>
                     <Header header={"Recipes"}/>
                     <View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
@@ -306,7 +307,7 @@ export default function Recipe() {
                             </KeyboardAvoidingView>
                         </TouchableWithoutFeedback>
                     </Modal>
-                </SafeAreaView>
+                </View>
                 <Footer/>
             </View>
         </TouchableWithoutFeedback>
