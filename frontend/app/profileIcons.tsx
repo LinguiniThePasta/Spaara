@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert, ScrollView} from 'react-native';
+import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert, ScrollView, FlatList} from 'react-native';
 import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -10,67 +10,66 @@ import {API_BASE_URL} from "@/scripts/config"; // Use router for navigation if n
 import * as SecureStore from 'expo-secure-store';
 import {useSelector} from "react-redux";
 import Icon from 'react-native-vector-icons/Ionicons';
+import ProfileIconItem from '@/components/ProfileIconItem';
 
 export default function ProfileIconsScreen() {
     const [iconList, setIconList] = useState([
-        "star",
-        "star-outline",
-        "ellipse",
-        "star",
-        "star-outline",
-        "ellipse",
-        "star",
-        "star-outline",
-        "ellipse",
-        "star",
-        "star-outline",
-        "ellipse",
-        "star",
-        "star-outline",
-        "ellipse",
+        {name: "person", selected: true, id: '0'},
+        {name: "star", selected: false, id: '1'},
+        {name: "heart", selected: false, id: '2'},
+        {name: "cart", selected: false, id: '3'},
+        {name: "game-controller", selected: false, id: '4'},
+        {name: "rocket", selected: false, id: '5'},
+        {name: "restaurant", selected: false, id: '6'},
+        {name: "fish", selected: false, id: '7'},
+        {name: "earth", selected: false, id: '8'},
+        {name: "bulb", selected: false, id: '9'},
+        {name: "leaf", selected: false, id: '10'},
+        {name: "musical-notes", selected: false, id: '11'},
+        {name: "paw", selected: false, id: '12'},
+        {name: "flash", selected: false, id: '13'},
+        {name: "glasses", selected: false, id: '14'},
+        {name: "trophy", selected: false, id: '15'},
+        {name: "snow", selected: false, id: '16'},
+        {name: "thumbs-up", selected: false, id: '17'},
+        {name: "happy", selected: false, id: '18'},
+        {name: "pizza", selected: false, id: '19'},
+        {name: "planet", selected: false, id: '20'},
+        {name: "beer", selected: false, id: '21'},
+        {name: "nutrition", selected: false, id: '22'},
+        {name: "dice", selected: false, id: '23'},
+        {name: "trash", selected: false, id: '24'},
+        {name: "ice-cream", selected: false, id: '25'},
+        {name: "american-football", selected: false, id: '26'},
+        {name: "hand-right", selected: false, id: '27'},
     ]);
 
+    const [selectedIcon, setSelectedIcon] = useState("person")
 
-    const renderIcon = (icon) => {
+    //useEffect(() => {
+        //renderList();
+    //}, []);
+
+    const handleIconSelected = async (icon) => {
+        console.log("SELECTED: " + icon.name);
+        setSelectedIcon(icon.name);
+
+        const newIconList = iconList.map((currentIcon) => ({
+            ...currentIcon,
+            selected: (currentIcon.name === icon.name),
+        }));
+
+        setIconList(newIconList);
+    };
+
+
+    const renderIcon = ({item}) => {
         return (
-            <View style={styles.item}>
-                <Icon name={icon} size={40} color={Colors.light.primaryColor}/>
-            </View>
+            <ProfileIconItem icon={item} handleIconSelected={handleIconSelected}/>
         );
     };
 
-    const renderRow = (icon) => {
-        return  (
-            <View style={styles.row}>
-                {renderIcon(icon)}
-            </View>
-        )
-    }
 
-    const renderList = () => {
-
-        const iconSubLists = [
-            [],
-        ];
-        var currentSublist = 0;
-        var currentIcon = 0;
-        iconList.forEach((icon) => {
-            iconSubLists[currentSublist].push(icon);
-            currentIcon += 1;
-            if (currentIcon === 4) {
-                currentIcon = 0;
-                currentSublist++;
-                iconSubLists.push([]);
-            }
-        });
-
-        return (
-            <ScrollView style={styles.listContainer}>
-                <View></View>
-                {}
-            </ScrollView>
-        )
-    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -79,40 +78,15 @@ export default function ProfileIconsScreen() {
                     backLink={"themes"}
                     noProfile={true}
             />
-
                 <View style={styles.content}>
-                    <ScrollView style={styles.listContainer}>
-                        <View style={styles.row}>
-                            {renderIcon(iconList[0])}
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                        </View>
-                        <View style={styles.row}>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                        </View>
-                        <View style={styles.row}>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                        </View>
-                        <View style={styles.row}>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                        </View>
-                        <View style={styles.row}>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                            <View style={styles.item}/>
-                        </View>
-                    </ScrollView>
+                    <View style={styles.listContainer}>
+                        <FlatList
+                            data={iconList}
+                            keyExtractor={(item) => item.id}
+                            renderItem={renderIcon}
+                            numColumns={4}
+                        />
+                    </View>
                 </View>
             <Footer/>
         </SafeAreaView>
@@ -126,22 +100,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     listContainer: {
-        //flexDirection: "row",
     },
     row: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-evenly",
-    },
-    item: {
-        height: 50,
-        width: 50,
-        color: "#ff0000",
-        borderColor: "#000000",
-        borderWidth: 5,
-        borderRadius: 10,
-        margin: 10,
     },
     content: {
         flex: 1,

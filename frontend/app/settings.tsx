@@ -63,7 +63,7 @@ export default function SettingScreen() {
                         <Pressable style={styles.listItem} onPress={() => router.push('/filterScreen')}>
                             <Text style={styles.optionText}>Configure Filters</Text>
                         </Pressable>
-                        <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
+                        <Pressable style={styles.listItem} onPress={() => router.push('/themes')}>
                             <Text style={styles.optionText}>Themes</Text>
                         </Pressable>
                         <Pressable style={styles.listItem} onPress={() => router.push('/setAddress')}>

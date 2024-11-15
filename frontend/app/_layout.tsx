@@ -54,6 +54,8 @@ export default function RootLayout() {
                 <Stack.Screen name="splash"/>
                 <Stack.Screen name="shopping"/>
                 <Stack.Screen name="profile"/>
+                <Stack.Screen name="profileColors"/>
+                <Stack.Screen name="profileIcons"/>
                 <Stack.Screen name="map"/>
                 <Stack.Screen name="settings"/>
                 <Stack.Screen name="unauthorized"/>
