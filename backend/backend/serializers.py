@@ -7,8 +7,11 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation
+from dotenv import load_dotenv
+import os
+import requests
 
-
+load_dotenv()
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -91,7 +94,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FriendRequest
-        fields = ['id', 'from_user', 'to_user', 'status', 'timestamp']
+        fields = ['id', 'from_user', 'to_user', 'timestamp']
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -144,7 +147,110 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class AddressSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=255)
 
+    class Meta:
+        model = User
+        fields = ['address']
+
+    from rest_framework import serializers
+import os
+import requests
+
+class AddressSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=255)
+    suggestions = serializers.ListField(
+        child=serializers.CharField(max_length=255),
+        read_only=True,
+        required=False
+    )
+
+    class Meta:
+        fields = ['address', 'suggestions']
+
+    def validate(self, data):
+        """
+        Check if the provided address exists or suggest alternatives.
+        """
+        address = data.get('address')
+        
+        valid_address, suggestions = self.get_address_suggestions(address)
+        
+        if not valid_address:
+            if suggestions:
+                data['suggestions'] = suggestions
+                raise serializers.ValidationError(
+                    {"address": "The provided address could not be confirmed. See suggestions.", "suggestions": suggestions}
+                )
+            else:
+                raise serializers.ValidationError("The provided address does not exist and no suggestions are available.")
+        
+        return data
+
+    def update(self, instance, validated_data):
+        instance.address = validated_data.get('address', instance.address)
+        instance.save()
+        return instance
+
+    def get_address_suggestions(self, address):
+        """
+        Call Google Address Validation API to check if the address exists or return suggestions.
+        """
+
+        api_key = os.getenv("GOOGLE_API_KEY")  # Use your actual API key
+        url = f"https://addressvalidation.googleapis.com/v1:validateAddress?key={api_key}"
+
+        payload = {
+            "address": {
+                "regionCode": "US",
+                "addressLines": [address]
+            }
+        }
+
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            result = response.json()
+
+            # Check if the address is valid or if there are suggested addresses
+            address_result = result.get("result", {}).get("verdict", {}).get("hasUnconfirmedComponents", False)
+            
+            # If address is valid, return True with no suggestions
+            if not address_result:
+                return True, []
+
+            # If the address has unconfirmed components, fetch suggested addresses
+            suggestions = [
+                candidate.get("addressFormatted", "")
+                for candidate in result.get("result", {}).get("addressMatches", [])
+            ]
+            
+            # Return False (invalid address) and the list of suggestions
+            return False, suggestions
+
+        except requests.RequestException:
+            raise serializers.ValidationError("Address validation service is unavailable. Please try again later.")
+
+
+class GrocerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Grocery
+        fields = '__all__'
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if user.groups.filter(name='Guest').exists():
+            if user.groceryLists.count() >= 1:
+                raise serializers.ValidationError({
+                    "error": "Guest User can only have 1 grocery list at a time"
+                })
+        return attrs
+
+    def create(self, validated_data):
+        grocery = Grocery.objects.create(**validated_data)
+
+        return grocery
 
 
 class RecipeSerializer(serializers.ModelSerializer):

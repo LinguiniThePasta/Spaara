@@ -9,6 +9,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Modal,
+  Pressable,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
@@ -21,6 +23,7 @@ import Footer from '@/components/Footer';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
+import {router} from "expo-router";
 
 interface User {
   id: number;
@@ -74,12 +77,65 @@ const SocialPage = () => {
     }
   };
 
+  // Delete a user's address
+  const removeFriend = async (username) => {
+    try {
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+        // Add the new address to the backend
+        await axios.delete(
+        `${API_BASE_URL}/api/user/friends`,
+        {
+            data: { username: username },
+            headers: { Authorization: `Bearer ${jwtToken}` },
+        }
+        );
+        fetchFriends(); // Refresh friends list
+        
+    } catch (error) {
+        console.error('Error deleting address:', error);
+    }
+  };
+
+  // Handles deleting a friend
+  const handleRemoveFriend = (username) => {
+        Alert.alert(
+            "Remove Friend",
+            `Are you sure you want to remove ${username} as a friend?`,
+            [
+                {
+                    text: "Cancel",
+                    onPress: () => console.log("Cancel Pressed"),
+                    style: "cancel"
+                },
+                {text: "Delete", onPress: () => removeFriend(username)}
+            ],
+            {cancelable: false}
+        );
+  }
+
+    // Handles deleting a friend
+    const handleRevokeRequest = (username) => {
+      Alert.alert(
+          "Revoke Friend Request",
+          `Are you sure you want to revoke your friend request to ${username}?`,
+          [
+              {
+                  text: "Cancel",
+                  onPress: () => console.log("Cancel Pressed"),
+                  style: "cancel"
+              },
+              {text: "Delete", onPress: () => revokeFriendRequest(username)}
+          ],
+          {cancelable: false}
+      );
+  } 
+
   // Get a user's friends
   const fetchFriends = async () => {
     try {
       const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-      const response = await axios.get(`${API_BASE_URL}/api/users/friends`, {
+      const response = await axios.get(`${API_BASE_URL}/api/user/friends`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
@@ -225,36 +281,64 @@ const SocialPage = () => {
     }
   };
 
-  /* Reject a friend request */
+  /* Reject an incoming friend request */
   const rejectFriendRequest = async (username) => {
     try {
       const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
-      const response = await axios.post(
+      const response = await axios.delete(
         `${API_BASE_URL}/api/friend_requests/reject/`,
         {
-          username: username,
-        },
-        {
+          data: {username: username},
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${jwtToken}`,
           },
-        }
+        },
       );
       console.log('Friend request rejected!');
 
       // Update state
-      setIncomingRequests((prevRequests) => prevRequests.filter((req) => req.name !== username));
-      setFriendRequestCount((prevCount) => prevCount - 1);
+      fetchIncomingRequests(); // Refresh incoming requests
+      fetchRequestCount(); // Refresh friend request count
     } catch (error) {
       console.error('Error rejecting friend request:', error.message);
     }
   };
 
+  /* Revokes an outgoing friend request */
+  const revokeFriendRequest = async (username) => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/friend_requests/revoke/`,
+        {
+          data: {username: username},
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
+      console.log('Friend request revoked!');
+
+      // Update state
+      fetchOutgoingRequests(); // Refresh outgoing requests
+    } catch (error) {
+      console.error('Error revoking friend request:', error.message);
+    }
+  };
+
   const filteredUsers = searchTerm
-    ? users.filter((user) => user.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : [];
+  ? users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !friends.some((friend) => friend.id === user.id) &&
+        !outgoingRequests.some((request) => request.id === user.id) &&
+        !incomingRequests.some((request) => request.id === user.id)
+    )
+  : [];
 
   // Close dropdown when touching outside
   const handleOutsidePress = () => {
@@ -268,24 +352,31 @@ const SocialPage = () => {
     <TouchableWithoutFeedback onPress={handleOutsidePress}>
       <View style={styles.container}>
         <SafeAreaView style={styles.container}>
-          <View style={styles.headerContainer}>
-            {/* Header Component */}
-            <Header header="Social" backButton={false} backLink={'profile'} noProfile={true} />
-            {/* Bell Icon Button aligned to the far right */}
+          <View style={styles.header}>
+            <View style={styles.left}>
+                <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                    <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+                </Pressable>
+                <Text style={styles.headerTitle}>{"Social"}</Text>
+            </View>
+            <View style={styles.iconContainer}>
             <TouchableOpacity
-              style={styles.bellIconButton}
-              onPress={() => {
-                setModalVisible(true);
-              }}
-            >
-              <Icon name="notifications-outline" size={36} color={Colors.light.primaryColor} />
-              {friendRequestCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{friendRequestCount > 99 ? '99+' : friendRequestCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+                style={styles.bellIconButton}
+                onPress={() => {
+                  setModalVisible(true);
+                }}
+              >
+                <Icon name="notifications-outline" size={36} color={Colors.light.primaryColor} />
+                {friendRequestCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{friendRequestCount > 99 ? '99+' : friendRequestCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+              </TouchableOpacity>
+            </View>
+        </View>
 
           <View style={styles.searchContainer}>
             <View style={globalStyles.searchBar}>
@@ -328,8 +419,10 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
-                  <Text style={styles.listItemTitle}>{item.name}</Text>
-                  <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
+                    <TouchableOpacity onLongPress={() => handleRevokeRequest(item.name)}>
+                      <Text style={styles.listItemTitle}>{item.name}</Text>
+                    </TouchableOpacity>
+                    <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
                 </View>
               )}
             />
@@ -339,7 +432,9 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
-                  <Text style={styles.listItemTitle}>{item.name}</Text>
+                  <TouchableOpacity onLongPress={() => handleRemoveFriend(item.name)}>
+                    <Text style={styles.listItemTitle}>{item.name}</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             />
@@ -409,8 +504,7 @@ const styles = StyleSheet.create({
     paddingRight: 35,
   },
   bellIconButton: {
-    position: 'relative',
-    marginLeft: 15,
+    marginRight: 15,
   },
   badge: {
     position: 'absolute',
@@ -547,5 +641,35 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 16,
     color: Colors.light.primaryColor,
+  },
+  header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      color: Colors.light.primaryText,
+  },
+  left: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      color: Colors.light.primaryText,
+  },
+  headerTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: Colors.light.primaryText,
+  },
+  profileIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#ccc',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

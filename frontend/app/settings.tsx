@@ -50,6 +50,7 @@ export default function SettingScreen() {
     };
 
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
             <Header header="Settings"
                     backButton={true}
@@ -76,8 +77,9 @@ export default function SettingScreen() {
                     </Pressable>
                 </View>
             )}
-            <Footer/>
         </SafeAreaView>
+        <Footer/>
+        </View>
     );
 }
 

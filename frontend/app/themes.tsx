@@ -12,6 +12,7 @@ import {useSelector} from "react-redux";
 export default function ThemesScreen() {
 
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
             <Header header="Themes"
                     backButton={true}
@@ -27,13 +28,16 @@ export default function ThemesScreen() {
                         <Pressable style={styles.listItem} onPress={() => router.push('/profileColors')}>
                             <Text style={styles.optionText}>Change Profile Color</Text>
                         </Pressable>
+                        {/*
                         <Pressable style={styles.listItem} onPress={() => router.push('/setAddress')}>
                             <Text style={styles.optionText}>Change App Theme</Text>
                         </Pressable>
+                        */}
                     </View>
                 </View>
-            <Footer/>
         </SafeAreaView>
+        <Footer/>
+        </View>
     );
 }
 

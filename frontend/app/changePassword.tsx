@@ -64,11 +64,7 @@ export default function ChangePassword() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Change Password"
-                    backButton={true}
-                    backLink={"settings"}
-                    noProfile={true}
-            />
+            <Header header="Change Password" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.content}
