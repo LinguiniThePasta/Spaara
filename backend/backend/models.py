@@ -188,3 +188,8 @@ class FavoritedItem(ItemBase):
     #     super().__init__(*args, **kwargs)
     #     # Register the class when an instance is created
     #     FavoriteManager.register(self.__class__)
+
+
+class Item(models.Model):
+    class Meta:
+        db_table = 'item'
