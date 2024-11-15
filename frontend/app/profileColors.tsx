@@ -46,9 +46,31 @@ export default function ProfileColorsScreen() {
 
     const [selectedColor, setSelectedColor] = useState("#FF8FC5")
 
-    //useEffect(() => {
-        //renderList();
-    //}, []);
+    useEffect(() => {
+        fetchProfileInfo();
+    }, []);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedColor(response.data.color);
+            const newColorList = colorList.map((currentColor) => ({
+                ...currentColor,
+                selected: (currentColor.name === response.data.color),
+            }));
+            setColorList(newColorList);
+
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
 
     const handleColorSelected = async (color) => {
         console.log("SELECTED: " + color.name);

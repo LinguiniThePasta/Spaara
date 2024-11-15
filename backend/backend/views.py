@@ -476,6 +476,79 @@ class SettingsView(APIView):
             },
             status=status.HTTP_200_OK
         )
+    
+
+class ProfileView(APIView):
+    '''
+    APIView for managing user settings, including dietary restrictions, max distance, and max stores.
+    Allows updating and retrieving the settings for the authenticated user.
+    permission_classes = [IsAuthenticated]
+    '''
+    def post(self, request):
+        '''
+        Updates the settings for the authenticated user, including dietary restrictions, max distance, and max stores.
+
+        :param:
+            request (Request): The incoming request containing 'user_restrictions', 'max_distance', and 'max_stores'.
+
+        :return:
+            Response: A message indicating successful update with status 200 on success,
+                      or error details with status 400 if validation fails.
+
+        update details:
+            - Retrieves 'user_restrictions' from request data, which should be a list of dietary restriction IDs.
+            - Filters and sets the user's dietary restrictions based on valid IDs.
+            - Updates 'max_distance' and 'max_stores' based on the provided values, applying validation to ensure they are non-negative.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        icon: icon name,
+                        color: color hexcode
+                    }
+        '''
+
+        user = request.user
+        icon = request.data.get('icon', 'person')
+        color = request.data.get('color', '#F6AA1C')
+        user.profile_icon = icon
+        user.profile_color = color
+        user.save()
+
+        return Response(
+            {"message": "Profile updated successfully."},
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, request):
+        '''
+        Retrieves the settings for the authenticated user, including their current dietary restrictions,
+        max distance, and max stores, along with all available dietary restrictions.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A dictionary containing user-specific settings and all available dietary restrictions.
+
+        retrieval details:
+            - Returns the IDs of the user's dietary restrictions.
+            - Returns all available dietary restrictions as serialized data.
+            - Returns the user's max distance and max stores.
+
+        usage:
+            - GET {URL} - retrieves the user's current settings and all dietary restrictions
+        '''
+        user = request.user
+
+        return Response(
+            {
+                "icon": user.profile_icon,
+                "color": user.profile_color,
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class UpdateInfoView(APIView):
