@@ -5,6 +5,11 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 import requests
+import geocoder
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def send_password_reset_confirmation(user):
     token = default_token_generator.make_token(user)
@@ -48,8 +53,10 @@ def send_account_recovery_email(user):
 
     send_mail(subject, message, from_email, recipient_list)
 
-def get_kroger_oauth2_token(client_id, client_secret):
+def get_kroger_oauth2_token():
     """Retrieve an OAuth2 token from Kroger API."""
+    client_id = os.getenv("KROGER_CLIENT_ID")
+    client_secret = os.getenv("KROGER_CLIENT_SECRET")
     token_url = f"{settings.KROGER_API_BASE_URL}/v1/connect/oauth2/token"
     
     try:
@@ -66,7 +73,25 @@ def get_kroger_oauth2_token(client_id, client_secret):
     except requests.RequestException as e:
         print("Error obtaining OAuth2 token:", e)
         return None
-    
+
+# Encodes ALL the response of Google Nearby Places API in the same format as format_kroger_response
+def format_store_response(response_data):
+    stores = []
+    if "results" in response_data:
+        for store in response_data["results"]:
+            # Extract relevant store information for each store in the array
+            store_info = {
+                "name": store.get("name", "Unknown"),
+                "address": store.get("vicinity", "Unknown"),
+                "coordinates": {
+                    "latitude": str(store["geometry"]["location"]["lat"]),
+                    "longitude": str(store["geometry"]["location"]["lng"])
+                }
+            }
+            stores.append(store_info)
+
+    return {"stores": stores}
+
 def format_kroger_response(response_data):
     stores = []
     if "data" in response_data:
@@ -86,3 +111,53 @@ def format_kroger_response(response_data):
             stores.append(store_info)
 
     return {"stores": stores}
+
+def geocode(address):
+    """
+    Fetch latitude and longitude for a given address using Google Geocoding API.
+
+    Args:
+        address (str): The address to geocode.
+
+    Returns:
+        dict: A dictionary with 'latitude' and 'longitude' if successful, or None if there's an error.
+    """
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("API key not found. Please set the GOOGLE_API_KEY environment variable.")
+    
+    # URL encode the address to make it safe for the API call
+    encoded_address = requests.utils.quote(address)
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={api_key}"
+
+    try:
+        # Make the request to the Google Geocoding API
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for HTTP errors
+
+        data = response.json()
+        
+        # Check if results were found and extract location data
+        if data.get("results"):
+            location = data["results"][0]["geometry"]["location"]
+            return {
+                "latitude": location["lat"],
+                "longitude": location["lng"]
+            }
+        else:
+            print("No results found for the provided address.")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request error: {e}")
+        return None
+
+# Returns latitude and longitude of the current location
+def get_current_location():
+    g = geocoder.ip('me')
+    if g.latlng:
+        return [g.latlng[0], g.latlng[1]]
+    else:
+        return None
+    
+def get_selected_address(user):
+    return next((addr for addr in user.addresses if addr['id'] == user.selected_address_id), None)

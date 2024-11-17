@@ -15,22 +15,22 @@ export default function Footer() {
 
     const goToLastAccessedList = () => {
         if (lastAccessedList) {
-            router.push(`/modifyshopping?id=${lastAccessedList}`);
+            router.replace(`/modifyshopping?id=${lastAccessedList}`);
         } else {
-            router.push('/shopping');
+            router.replace('/shopping');
         }
     };
 
     return (
         <View style={styles.footerContainer}>
             {role !== "Guest" && role !== "Visitor" && (
-                <Pressable style={styles.footerItem} onPress={() => router.push("/favorite")}>
+                <Pressable style={styles.footerItem} onPress={() => router.replace("/favorite")}>
                     <Icon name="heart-outline" size={24} color="#000"/>
                     <Text style={styles.footerText}>Favorites</Text>
                 </Pressable>
             )
             }
-            <Pressable style={styles.footerItem} onPress={() => router.push("/map")}>
+            <Pressable style={styles.footerItem} onPress={() => router.replace("/map")}>
                 <Icon name="location-outline" size={24} color="#000"/>
                 <Text style={styles.footerText}>Map</Text>
             </Pressable>
@@ -42,9 +42,9 @@ export default function Footer() {
 
             <Pressable style={styles.footerItem} onPress={() => {
                 if (role === "Guest" || role === "Visitor") {
-                    router.push("/unauthorized");
+                    router.replace("/unauthorized");
                 } else {
-                    router.push("/recipe");
+                    router.replace("/recipe");
                 }
 
             }}>
@@ -54,7 +54,7 @@ export default function Footer() {
 
             {role !== "Guest" && role !== "Visitor" && 
                 (
-                    <Pressable style={styles.footerItem} onPress={() => router.push("/social")}>
+                    <Pressable style={styles.footerItem} onPress={() => router.replace("/social")}>
                         <Icon name="people-outline" size={24} color="#000"/>
                         <Text style={styles.footerText}>Social</Text>
                     </Pressable>

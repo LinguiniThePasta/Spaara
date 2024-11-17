@@ -311,7 +311,7 @@ export default function RecipeScreen() {
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <View style={styles.left}>
-                        <Pressable onPress={() => router.push('/recipe')} style={{paddingRight: 10, marginLeft: -10}}>
+                        <Pressable onPress={() => router.replace('/recipe')} style={{paddingRight: 10, marginLeft: -10}}>
                             <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                         </Pressable>
                         <Text style={styles.headerTitle}>{`${recipeName}`}</Text>

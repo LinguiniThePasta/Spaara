@@ -10,7 +10,7 @@ import uuid
 from django.shortcuts import get_object_or_404
 
 def default_addresses():
-    return [{"id": 1, "name": "Current Location", "icon": "location-arrow", "icontype":"fontawesome"}]
+    return [{"id": 1, "name": "Current Location", "address": "Current Location", "icon": "location-arrow", "icontype":"fontawesome", "latitude": None, "longitude": None}]
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)

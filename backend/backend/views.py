@@ -13,13 +13,8 @@ from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-<<<<<<< Updated upstream
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
-from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response, send_account_recovery_email
-=======
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
-from .utils import send_verification_email, send_delete_confirmation_email, send_account_recovery_email
->>>>>>> Stashed changes
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerialize
+from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
@@ -31,7 +26,7 @@ from dotenv import load_dotenv
 from django.conf import settings
 
 load_dotenv()
-
+    
 class RegisterView(APIView):
     def post(self, request):
         '''
@@ -513,63 +508,6 @@ class UpdateInfoView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-class GetCoordinatesView(APIView):
-    def get_address_location(self, address):
-        """
-        Fetch latitude and longitude for a given address using Google Geocoding API.
-
-        Args:
-            address (str): The address to geocode.
-
-        Returns:
-            dict: A dictionary with 'latitude' and 'longitude' if successful, or None if there's an error.
-        """
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("API key not found. Please set the GOOGLE_API_KEY environment variable.")
-        
-        # URL encode the address to make it safe for the API call
-        encoded_address = requests.utils.quote(address)
-        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={api_key}"
-
-        try:
-            # Make the request to the Google Geocoding API
-            response = requests.get(url)
-            response.raise_for_status()  # Raise an error for HTTP errors
-
-            data = response.json()
-            
-            # Check if results were found and extract location data
-            if data.get("results"):
-                location = data["results"][0]["geometry"]["location"]
-                return {
-                    "latitude": location["lat"],
-                    "longitude": location["lng"]
-                }
-            else:
-                print("No results found for the provided address.")
-                return None
-        except requests.exceptions.RequestException as e:
-            print(f"Request error: {e}")
-            return None
-        
-    def get(self, request, *args, **kwargs):
-        address = request.GET.get('address', None)
-
-        print(address)
-        
-        if not address:
-            return Response({"error": "Address parameter is required"}, status=400)
-        
-        # Call your function to get coordinates for the address
-        coordinates = self.get_address_location(address=address)  # Replace with your actual function
-
-        if coordinates:
-            return Response({"latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}, status=200)
-        else:
-            return Response({"error": "Could not find coordinates for the given address"}, status=404)
-
-        
         
 class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -590,21 +528,32 @@ class AddressViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def add(self, request):
         user = request.user
-        new_address = request.data.get('address')
+        address = request.data.get('address')
         icon = request.data.get('icon')
         icontype = request.data.get('icontype')
-        if not new_address:
+        if not address:
             return Response({'error': 'Address is required'}, status=status.HTTP_400_BAD_REQUEST)
         # Generate a new ID for the address
         if user.addresses:
             new_id = max(address['id'] for address in user.addresses) + 1
         else:
             new_id = 1
+        # Add latitude and longitude to address with geocoding
+        coordinates = geocode(address)
+        if coordinates:
+            latitude = coordinates["latitude"]
+            longitude = coordinates["longitude"]
+        else:
+            return Response({'error': 'Geocode Failure'}, status=status.HTTP_400_BAD_REQUEST)
+
         address_entry = {
             'id': new_id,
             'icon': icon,
-            'name': new_address,
-            'icontype': icontype
+            'name': address,
+            "address": address,
+            'icontype': icontype,
+            'latitude': latitude,
+            'longitude': longitude
         }
         user.addresses.append(address_entry)
         user.save()
@@ -653,7 +602,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         selected_address_id = user.selected_address_id
         if selected_address_id is None:
             return Response({'error': 'No address selected'}, status=status.HTTP_400_BAD_REQUEST)
-        selected_address = next((addr for addr in user.addresses if addr['id'] == selected_address_id), None)
+        selected_address = get_selected_address(user)
         if selected_address:
             return Response({'address': selected_address}, status=status.HTTP_200_OK)
         else:
@@ -940,37 +889,77 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         last_subheading = grocery.subheadings.order_by('-order').first()
         return last_subheading.order + 1 if last_subheading else 1
 
-class KrogerView(APIView):
+class StoreView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk=None):
-        # Extract latitude, longitude, and radius from the query parameters
-        latitude = request.query_params.get('latitude')
-        longitude = request.query_params.get('longitude')
-        
+    def get(self, request):
+        # USE GOOGLE PLACES TO GET WALMART STORES
         user = request.user
-        radius = str(int(user.max_distance))
+        address = get_selected_address(user)
 
-        # Validate parameters
-        if not latitude or not longitude:
-            return Response({'error': 'Latitude and longitude are required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Get user's max distance and convert to meters
+        radius = str(int(user.max_distance) * settings.METERS_PER_MILE)
+        radius_miles = str(int(user.max_distance))
 
-        # Get OAuth2 token
-        client_id = os.getenv('KROGER_CLIENT_ID')
-        client_secret = os.getenv('KROGER_CLIENT_SECRET')
-        access_token = get_kroger_oauth2_token(client_id, client_secret)
+        # Check latitude and longitude and, if none, use current location
+        latitude = None
+        longitude = None
+        if address.get('latitude') and address.get('longitude'):
+            latitude = address['latitude']
+            longitude = address['longitude']
+        else:
+            # Get the current location from the user's device
+            [latitude, longitude] = get_current_location()
+            if not latitude or not longitude:
+                return Response({'error': 'Could not find a latitude and longitude with associated user address'}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = requests.get(
+            f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=walmart&location={latitude},{longitude}&radius={radius}&key={os.getenv('GOOGLE_API_KEY')}"
+        )
+
+        # Filter results to include only main Walmart establishments
+        data = response.json()
+
+        # Specify allowed Walmart names
+        allowed_names = {"walmart", "walmart supercenter", "walmart neighborhood market"}
+
+        # Filter results to include only main Walmart establishments
+        filtered_results = []
+        unique_place_ids = set()
+
+        for place in data.get("results", []):
+            place_id = place.get("place_id")
+            name = place.get("name", "").lower()  # Convert name to lowercase for consistent comparison
+            
+            # Include only places with allowed names
+            if (
+                place_id not in unique_place_ids
+                and name in allowed_names
+            ):
+                filtered_results.append(place)
+                unique_place_ids.add(place_id)
+
+        # Preserve the original JSON structure
+        filtered_data = {
+            "results": filtered_results
+        }
+
+        walmart_stores = format_store_response(filtered_data)
+
+        # USE KROGER API TO GET KROGER STORES
+        access_token = get_kroger_oauth2_token()
         if not access_token:
             return Response({'error': 'Failed to authenticate with Kroger API'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set up headers and parameters for Kroger API request
-        print(f"{latitude}, {longitude}, {str(int(radius))}")
+        print(f"{latitude}, {longitude}, {radius_miles}")
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/json',
         }
         params = {
             'filter.latLong.near': f"{latitude},{longitude}",
-            'filter.radiusInMiles': str(int(radius)),  # Ensure radius is a string
+            'filter.radiusInMiles': radius_miles,  # Ensure radius is a string
         }
 
         # Make a request to Kroger's Locations API
@@ -979,13 +968,15 @@ class KrogerView(APIView):
             response.raise_for_status()
             response_data = response.json()  # Extract JSON data
             
-            result = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
-            return Response(result, status=status.HTTP_200_OK)
+            kroger_stores = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
         except requests.RequestException as e:
             print("Error fetching Kroger stores:", e)
             print("Response content:", response.content)  # Log the exact response content for debugging
             return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
+        # Combine Walmart and Kroger store data
+        all_stores = walmart_stores["stores"] + kroger_stores["stores"]
+        return Response({'stores': all_stores}, status=status.HTTP_200_OK)
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
