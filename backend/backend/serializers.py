@@ -11,6 +11,8 @@ from .utils import send_verification_email, send_password_reset_confirmation, se
 from dotenv import load_dotenv
 import os
 import requests
+=======
+>>>>>>> Stashed changes
 
 load_dotenv()
 
