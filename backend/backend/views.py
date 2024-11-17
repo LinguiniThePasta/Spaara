@@ -13,7 +13,7 @@ from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerialize
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str

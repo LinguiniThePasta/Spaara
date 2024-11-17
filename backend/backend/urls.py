@@ -22,6 +22,7 @@ from rest_framework.routers import DefaultRouter
 from .views import *
 from rest_framework_simplejwt.views import TokenRefreshView
 
+
 router = DefaultRouter()
 router.register(r'api/grocery', GroceryListViewSet, basename='grocery')
 router.register(r'api/grocery_items/optimized', GroceryItemOptimizedViewSet, basename='optimized-item')
