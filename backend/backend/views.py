@@ -13,8 +13,13 @@ from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
+<<<<<<< Updated upstream
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
 from .utils import send_verification_email, send_delete_confirmation_email, get_kroger_oauth2_token, format_kroger_response, send_account_recovery_email
+=======
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
+from .utils import send_verification_email, send_delete_confirmation_email, send_account_recovery_email
+>>>>>>> Stashed changes
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
