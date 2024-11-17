@@ -78,7 +78,7 @@ export default function Login() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.replace("/splash")
+                    router.replace("/")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
