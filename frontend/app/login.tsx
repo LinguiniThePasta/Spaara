@@ -45,7 +45,7 @@ export default function Login() {
 
             dispatch(setRole("User"));
 
-            router.push('/shopping');
+            router.replace('/shopping');
         } catch (error) {
             console.log(error);
             // Check if error.response and error.response.data exist before calling parseErrors

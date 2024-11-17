@@ -35,7 +35,7 @@ export default function Signup() {
                 }
             );
 
-            router.push('/login');
+            router.replace('/login');
         } catch (error) { 
             if (error.response && error.response.data) {
                 console.log(error);
@@ -57,7 +57,7 @@ export default function Signup() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.push("/splash")
+                    router.replace("/splash")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
@@ -94,7 +94,7 @@ export default function Signup() {
                     <View style={styles.footerContainer}>
                         <Text style={styles.footerText}>Have an account? </Text>
                         <Pressable onPress={() => {
-                            router.push("/login")
+                            router.replace("/login")
                         }} style={styles.loginLink}>
                             <Text style={styles.loginLinkText}>Login.</Text>
                         </Pressable>

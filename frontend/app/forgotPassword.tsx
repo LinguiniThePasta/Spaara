@@ -42,7 +42,7 @@ export default function forgotPassword() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.push("/")
+                    router.replace("/")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>

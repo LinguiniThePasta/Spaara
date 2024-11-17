@@ -44,7 +44,6 @@ export default function RootLayout() {
 
     return (
         <Provider store={store}>
-            <SafeAreaProvider>
             <Stack screenOptions={{
                 headerShown: false,
                 animation: 'none',
@@ -68,7 +67,6 @@ export default function RootLayout() {
                 <Stack.Screen name="forgotPassword"/>
                 <Stack.Screen name="recoverPassword"/>
             </Stack>
-            </SafeAreaProvider>
         </Provider>
     );
     /*return (

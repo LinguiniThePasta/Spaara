@@ -216,7 +216,7 @@ export default function Recipe() {
 
     const renderItem = ({item}) => (
         <Pressable
-            onPress={() => router.push(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onPress={() => router.replace(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
             onLongPress={() => handleLongPress(item)}
         >
             <View style={styles.listItem}>
