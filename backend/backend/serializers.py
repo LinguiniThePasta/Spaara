@@ -7,6 +7,7 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
+<<<<<<< Updated upstream
 from dotenv import load_dotenv
 import os
 import requests
