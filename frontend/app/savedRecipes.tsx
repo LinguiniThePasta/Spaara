@@ -153,7 +153,7 @@ export default function SavedRecipesScreen() {
                 <NavigationButton label="tab" type="tab" destination={"/savedLists"}/>*/}
                 <View style={savedListsStyles.itemButtonContainer}>
                 <TouchableOpacity style={savedListsStyles.itemButton} onPress={() => {
-                                    router.push({
+                                    router.replace({
                                         pathname: '/shopping',
                                         params: {
                                             shoppingList: JSON.stringify(element), // Serialize the whole element object

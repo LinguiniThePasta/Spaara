@@ -9,6 +9,7 @@ import '../components/Axios';
 import {Provider} from "react-redux";
 import store from "@/store/store";
 import {TransitionPresets} from "@react-navigation/stack";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
     DefaultTransition,
     ModalPresentationIOS
@@ -45,6 +46,8 @@ export default function RootLayout() {
         <Provider store={store}>
             <Stack screenOptions={{
                 headerShown: false,
+                animation: 'none',
+                freezeOnBlur: true,
                 // gestureEnabled: false, // Disable swipe-back gesture
             }}>
                 <Stack.Screen name="index"/>
@@ -56,10 +59,13 @@ export default function RootLayout() {
                 <Stack.Screen name="profile"/>
                 <Stack.Screen name="map"/>
                 <Stack.Screen name="settings"/>
-                <Stack.Screen name="home"/>
+                <Stack.Screen name="unauthorized"/>
                 <Stack.Screen name="savedLists"/>
                 <Stack.Screen name="filterScreen"/>
                 <Stack.Screen name="savedRecipes"/>
+                <Stack.Screen name="social"/>
+                <Stack.Screen name="forgotPassword"/>
+                <Stack.Screen name="recoverPassword"/>
             </Stack>
         </Provider>
     );

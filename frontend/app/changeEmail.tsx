@@ -48,7 +48,7 @@ export default function ChangeEmail() {
                 }
             );
             Alert.alert('Success', 'Email changed successfully');
-            router.push('/profile');
+            router.replace('/profile');
         } catch (error) {
             const errorData = error.response.data;
             const errorMessage = errorData.old_email || errorData.email || errorData.message || 'An error occurred';

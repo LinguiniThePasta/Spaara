@@ -83,6 +83,7 @@ export default function Shopping() {
         setIsDisabled(true);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            console.log(jwtToken);
             const response = await axios.post(`${API_BASE_URL}/api/grocery/`, {
                 name: newItem,
             }, {
@@ -95,7 +96,7 @@ export default function Shopping() {
             await fetchShoppingLists();
             closeModal();
         } catch (error) {
-            console.error('Error adding new shopping list:', error.error);
+            console.error('Error adding new shopping list:', error.message);
             Alert.alert(`Error adding new shopping list: ${error.message}`)
         } finally {
             setIsDisabled(false);

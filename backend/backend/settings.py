@@ -34,7 +34,9 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
-FRONTEND_URL = "http://192.168.4.101:8000"
+FRONTEND_URL = "http://172.20.10.3:8000"
+KROGER_API_BASE_URL = "https://api.kroger.com"
+METERS_PER_MILE = 1609.34
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`

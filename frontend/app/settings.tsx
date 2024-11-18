@@ -30,7 +30,7 @@ export default function SettingScreen() {
         }
 
         alert("Account Deleted Successfully!");
-        router.push("/login");
+        router.replace("/login");
     }
 
     const deleteConfirmation = () => {
@@ -50,6 +50,7 @@ export default function SettingScreen() {
     };
 
     return (
+        <View style={styles.container}>
         <SafeAreaView style={styles.container}>
             <Header header="Settings"
                     backButton={true}
@@ -60,11 +61,14 @@ export default function SettingScreen() {
             {role === "User" && (
                 <View style={styles.content}>
                     <View>
-                        <Pressable style={styles.listItem} onPress={() => router.push('/filterScreen')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/filterScreen')}>
                             <Text style={styles.optionText}>Configure Filters</Text>
                         </Pressable>
-                        <Pressable style={styles.listItem} onPress={() => router.push('themes')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/themes')}>
                             <Text style={styles.optionText}>Themes</Text>
+                        </Pressable>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/setAddress')}>
+                            <Text style={styles.optionText}>Set Address</Text>
                         </Pressable>
                     </View>
 
@@ -73,8 +77,9 @@ export default function SettingScreen() {
                     </Pressable>
                 </View>
             )}
-            <Footer/>
         </SafeAreaView>
+        <Footer/>
+        </View>
     );
 }
 

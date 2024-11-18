@@ -7,15 +7,14 @@ import {
     View,
     Text,
     TextInput,
-    SafeAreaView,
     FlatList,
     Pressable,
     StyleSheet,
-    TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
     Modal
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {API_BASE_URL} from '@/scripts/config';
 import {Link, router} from 'expo-router';
@@ -39,13 +38,13 @@ export default function Recipe() {
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
-        fetchShoppingLists();
+        fetchRecipes();
     }, []);
     const dismissModal = () => {
         Keyboard.dismiss(); // Dismiss keyboard if open
         setModalVisible(false); // Close the modal
     };
-    const fetchShoppingLists = async () => {
+    const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
 
@@ -66,10 +65,10 @@ export default function Recipe() {
                 animations[list.id] = new Animated.Value(0);
             });
 
-            console.log("Correctly fetched shopping lists!");
+            console.log("Correctly fetched recipes!");
             setRecipes(lists);
         } catch (error) {
-            console.error('Error fetching shopping lists:', error);
+            console.error('Error fetching recipes:', error);
         }
     }
 
@@ -85,7 +84,7 @@ export default function Recipe() {
             });
 
             // Refresh the shopping lists after adding a new one
-            await fetchShoppingLists();
+            await fetchRecipes();
             // Close modal
             setModalVisible(false);
         } catch (error) {
@@ -104,7 +103,7 @@ export default function Recipe() {
                 });
 
             // Refresh the shopping lists after deleting one
-            fetchShoppingLists();
+            fetchRecipes();
         } catch (error) {
             console.error('Error deleting shopping list:', error);
         }
@@ -159,7 +158,7 @@ export default function Recipe() {
                 });
 
             // Refresh the shopping lists after deleting one
-            fetchShoppingLists();
+            fetchRecipes();
         } catch (error) {
             console.error('Error updating name:', error);
         }
@@ -217,7 +216,7 @@ export default function Recipe() {
 
     const renderItem = ({item}) => (
         <Pressable
-            onPress={() => router.push(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+            onPress={() => router.replace(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
             onLongPress={() => handleLongPress(item)}
         >
             <View style={styles.listItem}>
@@ -251,10 +250,12 @@ export default function Recipe() {
         </Pressable>
     );
 
+    const insets = useSafeAreaInsets();
+
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <View style={styles.container}>
-                <SafeAreaView style={styles.container}>
+                <View style={[styles.container, {paddingTop: insets.top, paddingBottom: insets.bottom}]}>
                     <Header header={"Recipes"}/>
                     <View style={globalStyles.searchBar}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
@@ -306,7 +307,7 @@ export default function Recipe() {
                             </KeyboardAvoidingView>
                         </TouchableWithoutFeedback>
                     </Modal>
-                </SafeAreaView>
+                </View>
                 <Footer/>
             </View>
         </TouchableWithoutFeedback>

@@ -12,11 +12,17 @@ export default function Header({header, backButton, backLink, noProfile}) {
     return (
         <View style={styles.header}>
             <View style={styles.left}>
-                {backButton && (
-                    <Pressable onPress={() => router.push(backLink)} style={{paddingRight: 10, marginLeft: -10}}>
-                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
+            {backButton && (
+                backLink !== "prev" ? (
+                    <Pressable onPress={() => router.replace(backLink)} style={{ paddingRight: 10, marginLeft: -10 }}>
+                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText} />
                     </Pressable>
-                )}
+                ) : (
+                    <Pressable onPress={() => router.back()} style={{ paddingRight: 10, marginLeft: -10 }}>
+                        <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText} />
+                    </Pressable>
+                )
+            )}
                 <Text style={styles.headerTitle}>{header}</Text>
             </View>
             {noProfile && (
@@ -24,8 +30,8 @@ export default function Header({header, backButton, backLink, noProfile}) {
                 </View>
             )}
             {!noProfile && role !== 'Guest' && (
-                <View style={styles.profileIconContainer}>
-                </View>
+                <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.replace('/profile')}>
+                </TouchableOpacity>
             )}
 
         </View>

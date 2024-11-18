@@ -1,25 +1,32 @@
 from django.contrib.auth.models import Group
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction
+    DietRestriction, Subheading, FriendRequest
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer
-from .utils import send_verification_email, send_delete_confirmation_email
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerialize
+from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 import uuid
 import rest_framework.mixins as mixins
+import os
+import requests
+from dotenv import load_dotenv
+from django.conf import settings
 
-
+load_dotenv()
+    
 class RegisterView(APIView):
     def post(self, request):
         '''
@@ -94,7 +101,47 @@ class VerifyEmailView(APIView):
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
 
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        serializer = serializers.EmailSerializer(data=request.data)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try :
+            user = User.objects.get(email__iexact=serializer.validated_data['email'])
+        except User.DoesNotExist:
+            user = None
 
+        if user is not None:
+            send_account_recovery_email(user)
+            return Response({'message': 'Email is linked to an account'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Email is not linked to an account'}, status=status.HTTP_400_BAD_REQUEST)
+
+class OtherUsersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # TODO: Get all existing users and return them as a list of dictionaries with their email and username 
+    def get(self, request):
+        '''
+        Retrieves a list of all existing users, excluding the authenticated user.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of dictionaries containing user email and username.
+
+        retrieval details:
+            - Retrieves all users except the authenticated user.
+            - Serializes the user data to return a list of dictionaries with user email and username.
+
+        usage:
+            - GET {URL} - retrieves all existing users
+        '''
+        users = User.objects.exclude(id=request.user.id)
+        data = [{'id': user.id, 'username': user.username} for user in users]
+        return Response(data, status=status.HTTP_200_OK)
 
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -124,6 +171,155 @@ class DeleteUserView(APIView):
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         except:
             return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class FriendRequestViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    # GET METHODS 
+    # GET /api/friend_requests/count
+    # Returns the number of pending friend requests for the authenticated user. 
+    @action(detail=False, methods=['get'])
+    def count(self, request):
+        count = FriendRequest.objects.filter(to_user=request.user).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+
+    # GET /api/friend_requests/incoming
+    # Returns a list of incoming friend requests for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def incoming(self, request):
+        incoming_requests = FriendRequest.objects.filter(to_user=request.user)
+        serializer = FriendRequestSerializer(incoming_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # GET /api/friend_requests/outgoing
+    # Returns a list of outgoing friend requests for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def outgoing(self, request):
+        outgoing_requests = FriendRequest.objects.filter(from_user=request.user)
+        serializer = FriendRequestSerializer(outgoing_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # POST METHODS
+    # POST /api/friend_requests/send
+    # Sends a friend request to another user.
+    @action(detail=False, methods=['post'])
+    def send(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        FriendRequest.objects.create(from_user=user, to_user=friend)
+        return Response({'message': 'Friend request sent'}, status=status.HTTP_201_CREATED)
+    
+    # POST /api/friend_requests/accept
+    # Accepts a friend request from another user.
+    @action(detail=False, methods=['post'])
+    def approve(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        user.friends.add(friend)
+        user.save()
+        return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/friend_requests/reject
+    # Rejects an incoming friend request
+    @action(detail=False, methods=['delete'])
+    def reject(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=friend, to_user=user).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+    
+    # DELETE /api/friend_requests/revoke
+    # Revokes an outgoing friend request
+    @action(detail=False, methods=['delete'])
+    def revoke(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRequest.objects.filter(from_user=user, to_user=friend).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+        
+    
+
+class FriendsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        '''
+        Retrieves the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request; does not require any data parameters.
+
+        :return:
+            Response: A list of usernames for the authenticated user's friends.
+        '''
+        user = request.user
+        friends = user.friends.all()
+        data = [{'id': friend.id, 'username': friend.username} for friend in friends]
+        return Response(data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        '''
+        Adds a user to the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request containing the username to add as a friend.
+
+        :return:
+            Response: A success message indicating the user was added as a friend, or an error message if the user is not found.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        username: username of the user to add as a friend
+                    }
+        '''
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.friends.add(friend)
+        user.save()
+        return Response({'message': f'{username} added as a friend'}, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request):
+        '''
+        Removes a user from the authenticated user's friends list.
+
+        :param:
+            request (Request): The incoming request containing the username to remove
+        '''
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.friends.remove(friend)
+        user.save()
+        return Response({'message': f'{username} removed from friends'}, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):
@@ -184,6 +380,7 @@ class LoginView(APIView):
         guest_user = User.objects.create(
             username=f"guest_{uuid_guest}",
             email=f"{uuid_guest}@example.com",
+            is_active=True  # Set guest users as active by default
         )
         guest_user.set_unusable_password()
         guest_user.groups.add(guest_group)
@@ -310,7 +507,158 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class AddressViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
 
+    # GET /api/user/addresses/
+    # Retrieves all addresses for the authenticated user.
+    def list(self, request):
+        user = request.user
+        addresses = user.addresses  # Assuming `addresses` is a list of address dictionaries
+        selected_address_id = user.selected_address_id
+        return Response({
+            'addresses': addresses,
+            'selected_address_id': selected_address_id
+        }, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/add/
+    # Adds a new address to the end of the user's address list.
+    @action(detail=False, methods=['post'])
+    def add(self, request):
+        user = request.user
+        address = request.data.get('address')
+        icon = request.data.get('icon')
+        icontype = request.data.get('icontype')
+        if not address:
+            return Response({'error': 'Address is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Generate a new ID for the address
+        if user.addresses:
+            new_id = max(address['id'] for address in user.addresses) + 1
+        else:
+            new_id = 1
+        # Add latitude and longitude to address with geocoding
+        coordinates = geocode(address)
+        if coordinates:
+            latitude = coordinates["latitude"]
+            longitude = coordinates["longitude"]
+        else:
+            return Response({'error': 'Geocode Failure'}, status=status.HTTP_400_BAD_REQUEST)
+
+        address_entry = {
+            'id': new_id,
+            'icon': icon,
+            'name': address,
+            "address": address,
+            'icontype': icontype,
+            'latitude': latitude,
+            'longitude': longitude
+        }
+        user.addresses.append(address_entry)
+        user.save()
+        return Response({'message': 'Address added successfully'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/user/addresses/remove/
+    # Removes an address from the user's address list.
+    @action(detail=False, methods=['delete'])
+    def remove(self, request):
+        user = request.user
+        address_id = request.data.get('address_id')
+        if address_id is None:
+            return Response({'error': 'address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Filter out the address to remove
+        updated_addresses = [addr for addr in user.addresses if addr['id'] != address_id]
+        if len(updated_addresses) == len(user.addresses):
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+        user.addresses = updated_addresses
+        # Reset selected_address_id if the removed address was selected
+        if user.selected_address_id == address_id:
+            user.selected_address_id = None
+        user.save()
+        return Response({'message': 'Address removed successfully'}, status=status.HTTP_200_OK)
+
+    # POST /api/user/addresses/update_selected/
+    # Updates the user's selected address ID.
+    @action(detail=False, methods=['post'])
+    def update_selected(self, request):
+        user = request.user
+        selected_address_id = request.data.get('selected_address_id')
+        if selected_address_id is None:
+            return Response({'error': 'selected_address_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the address exists in the user's address list
+        if any(addr['id'] == selected_address_id for addr in user.addresses):
+            user.selected_address_id = selected_address_id
+            user.save()
+            return Response({'message': 'Selected address updated successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    # GET /api/user/addresses/selected/
+    # Gets the selected address
+    @action(detail=False, methods=['get'])
+    def selected(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id is None:
+            return Response({'error': 'No address selected'}, status=status.HTTP_400_BAD_REQUEST)
+        selected_address = get_selected_address(user)
+        if selected_address:
+            return Response({'address': selected_address}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Selected address not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    @action(detail=False, methods=['get'])
+    def id(self, request):
+        user = request.user
+        selected_address_id = user.selected_address_id
+        if selected_address_id:
+            return Response({'id': selected_address_id}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'No address id found'}, status=status.HTTP_404_NOT_FOUND)
+
+class AutocompleteView(APIView):
+    def post(self, request):
+        search_text = request.data.get('search_text', '')
+
+        # Validate input
+        if not search_text:
+            return Response({"error": "Please provide a search text."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Google Places Autocomplete API endpoint
+        url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+
+        # Retrieve Google API Key from environment variables for security
+        google_api_key = os.getenv("GOOGLE_API_KEY")  # Set your API key in environment variables
+
+        # Set up parameters for the API request
+        params = {
+            "input": search_text,
+            "key": google_api_key,
+            "types": "address",  # Restrict to address types only
+            "language": "en"     # Optional: specify the language for the predictions
+        }
+
+        try:
+            # Make a GET request to the Google Places API
+            response = requests.get(url, params=params)
+            response.raise_for_status()  # Raise an error for HTTP errors
+
+            # Parse the response JSON
+            predictions = response.json().get('predictions', [])
+
+            # Extract only the address descriptions from the predictions
+            addresses = [prediction['description'] for prediction in predictions]
+
+            # Return the list of addresses in the specified format
+            return Response({"addresses": addresses}, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            # Handle errors from the API request
+            return Response(
+                {"error": "An error occurred with the Google API request", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class GroceryListViewSet(viewsets.ModelViewSet):
     queryset = Grocery.objects.all()
@@ -320,18 +668,6 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''
         Retrieves the queryset of grocery lists belonging to the authenticated user.
-
-        :param:
-            None
-
-        :return:
-            QuerySet: A queryset of Grocery instances belonging to the current user.
-
-        query details:
-            - Returns only the grocery lists associated with the authenticated user.
-
-        usage:
-            - GET {URL} - retrieves all grocery lists for the authenticated user.
         '''
         user = self.request.user
         return user.groceries.all()
@@ -339,26 +675,6 @@ class GroceryListViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         '''
         Creates a new grocery list associated with the authenticated user.
-
-        :param:
-            request (Request): The incoming request containing grocery list data.
-
-        :return:
-            Response: Contains the serialized data of the newly created grocery list with status 201 on success,
-                      or error details with status 400 if validation fails.
-
-        creation details:
-            - Uses the authenticated user as the owner of the grocery list.
-            - Validates the data using the serializer.
-            - If valid, saves the grocery list associated with the user and returns the created list data.
-            - If invalid, returns error messages.
-
-        usage:
-            - POST {URL}/
-                - data (dict):
-                    {
-                        name: name of the grocery list
-                    }
         '''
         user = request.user
         serializer = self.get_serializer(data=request.data)
@@ -368,6 +684,299 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='add_recipe')
+    def add_recipe(self, request, pk=None):
+        """
+        Adds a recipe to a specified grocery list, creating a new subheading for the recipe
+        if it does not already exist in the grocery list. This allows users to organize grocery
+        items by recipe within a list.
+
+        :param:
+            request (Request): The incoming request containing the 'recipe_id' in the data,
+            which identifies the recipe to be added to the grocery list.
+            pk (UUID): The primary key of the grocery list to which the recipe will be added.
+
+        :return:
+            Response: A success message and HTTP 200 status if the recipe was added successfully,
+            or an error message with the appropriate HTTP status if the request is invalid or
+            the recipe already exists in the grocery list.
+
+        addition details:
+            - Validates that the recipe belongs to the authenticated user.
+            - Checks if the recipe is already added to the grocery list; if so, returns an error.
+            - If valid, creates a new subheading in the grocery list with the recipe's name
+              and adds all items from the recipe to the grocery list under the new subheading.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/add_recipe/
+                - data (dict):
+                    {
+                        "recipe_id": <UUID>  # The ID of the recipe to be added
+                    }
+        """
+        grocery = self.get_object()
+        recipe_id = request.data.get('recipe_id')
+
+        if not recipe_id:
+            return Response({"error": "recipe_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate recipe ownership
+        try:
+            recipe = Recipe.objects.get(id=recipe_id, user=request.user)
+        except Recipe.DoesNotExist:
+            return Response({"error": "Recipe does not exist or does not belong to the user."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Use the service to add the recipe
+        try:
+            self.add_recipe_to_grocery(grocery, recipe)
+            return Response({"success": "Recipe added successfully."}, status=status.HTTP_200_OK)
+        except ValidationError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An unexpected error occurred."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='reorder_subheadings')
+    def reorder_subheadings(self, request, pk=None):
+        """
+        Reorders the subheadings within a specified grocery list according to the order
+        provided in the request. Allows users to customize the organization of their
+        grocery list's sections.
+
+        :param:
+            request (Request): The incoming request containing 'subheadings_order',
+            a list of subheading IDs arranged in the desired order.
+            pk (UUID): The primary key of the grocery list whose subheadings are being reordered.
+
+        :return:
+            Response: A success message and HTTP 200 status if the subheadings were reordered
+            successfully, or an error message with the appropriate HTTP status if the request
+            is invalid or if one or more subheadings do not exist in the grocery list.
+
+        reordering details:
+            - Validates that each subheading ID belongs to the specified grocery list.
+            - Updates the 'order' field of each subheading to match its position in
+              the 'subheadings_order' list.
+            - Ensures atomicity of the operation, so no changes are saved if any errors occur.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/reorder-subheadings/
+                - data (dict):
+                    {
+                        "subheadings_order": [<UUID>, <UUID>, ...]  # List of subheading IDs in desired order
+                    }
+        """
+        grocery = self.get_object()
+        subheadings_order = request.data.get('subheadings_order')
+
+        if not isinstance(subheadings_order, list):
+            return Response({"error": "subheadings_order must be a list of subheading IDs."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for index, subheading_id in enumerate(subheadings_order, start=1):
+                    subheading = Subheading.objects.get(id=subheading_id, grocery=grocery)
+                    subheading.order = index
+                    subheading.save()
+            return Response({"success": "Subheadings reordered successfully."}, status=status.HTTP_200_OK)
+        except Subheading.DoesNotExist:
+            return Response({"error": "One or more subheadings do not exist in this grocery list."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An error occurred while reordering subheadings."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='reorder-items')
+    def reorder_items(self, request, pk=None):
+        '''
+        Reorders the items within a specified subheading in a grocery list based on
+        the provided order. Allows users to organize items within a subheading
+        according to their preferred sequence.
+
+        :param:
+            request (Request): The incoming request containing 'items_order', a list of
+            dictionaries with each dictionary specifying 'item_id' and 'order' to define
+            the desired order for each item.
+            pk (UUID): The primary key of the grocery list containing the subheading
+            whose items are being reordered.
+
+        :return:
+            Response: A success message and HTTP 200 status if the items are reordered
+            successfully, or an error message with the appropriate HTTP status if the
+            request is invalid, if any items do not exist in the specified grocery list,
+            or if 'items_order' is not correctly formatted.
+
+        reordering details:
+            - Validates that each item ID in 'items_order' belongs to the specified grocery list.
+            - Updates the 'order' field of each item to match the specified order in
+              the 'items_order' list.
+            - Executes the reordering operation atomically to prevent partial updates.
+
+        usage:
+            - POST {URL}/{grocery_list_id}/reorder-items/
+                - data (list of dicts):
+                    [
+                        {"item_id": <UUID>, "order": 1},
+                        {"item_id": <UUID>, "order": 2},
+                        ...
+                    ]  # Specifies each item's ID and its new order within the subheading
+        '''
+        grocery = self.get_object()
+        items_order = request.data.get('items_order')
+
+        if not isinstance(items_order, list):
+            return Response({"error": "items_order must be a list of item order mappings."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for item_data in items_order:
+                    item_id = item_data.get('item_id')
+                    order = item_data.get('order')
+                    if not item_id or not isinstance(order, int):
+                        raise ValidationError("Each item must have an 'item_id' and an integer 'order'.")
+                    item = GroceryItemUnoptimized.objects.get(id=item_id, grocery=grocery)
+                    item.order = order
+                    item.save()
+            return Response({"success": "Items reordered successfully."}, status=status.HTTP_200_OK)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "One or more items do not exist in this grocery list."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "An error occurred while reordering items."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def add_recipe_to_grocery(self, grocery, recipe):
+        """
+        Adds a recipe to a grocery list by creating a subheading and associated items.
+        Prevents adding the same recipe multiple times to the same grocery list.
+        """
+        # Check if the recipe is already added via Subheading
+        if Subheading.objects.filter(grocery=grocery, recipe=recipe).exists():
+            raise ValidationError("This recipe has already been added to the grocery list.")
+
+        try:
+            with transaction.atomic():
+                # Create Subheading
+                subheading = Subheading.objects.create(
+                    name=recipe.name,
+                    grocery=grocery,
+                    recipe=recipe,
+                    order=self.calculate_next_subheading_order(grocery)
+                )
+
+                # Add RecipeItems to the Grocery list under the new Subheading
+                recipe_items = recipe.items.all()
+                for index, item in enumerate(recipe_items, start=1):
+                    GroceryItemUnoptimized.objects.create(
+                        name=item.name,
+                        description=item.description,
+                        store=item.store,
+                        quantity=item.quantity,
+                        units=item.units,
+                        favorited=item.favorited,
+                        subheading=subheading,
+                        order=index
+                    )
+        except Exception as e:
+            raise ValidationError(f"An error occurred while adding the recipe: {str(e)}")
+
+    def calculate_next_subheading_order(self, grocery):
+        last_subheading = grocery.subheadings.order_by('-order').first()
+        return last_subheading.order + 1 if last_subheading else 1
+
+class StoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # USE GOOGLE PLACES TO GET WALMART STORES
+        user = request.user
+        address = get_selected_address(user)
+
+        # Get user's max distance and convert to meters
+        radius = str(int(user.max_distance) * settings.METERS_PER_MILE)
+        radius_miles = str(int(user.max_distance))
+
+        # Check latitude and longitude and, if none, use current location
+        latitude = None
+        longitude = None
+        if address.get('latitude') and address.get('longitude'):
+            latitude = address['latitude']
+            longitude = address['longitude']
+        else:
+            # Get the current location from the user's device
+            [latitude, longitude] = get_current_location()
+            if not latitude or not longitude:
+                return Response({'error': 'Could not find a latitude and longitude with associated user address'}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = requests.get(
+            f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=walmart&location={latitude},{longitude}&radius={radius}&key={os.getenv('GOOGLE_API_KEY')}"
+        )
+
+        # Filter results to include only main Walmart establishments
+        data = response.json()
+
+        # Specify allowed Walmart names
+        allowed_names = {"walmart", "walmart supercenter", "walmart neighborhood market"}
+
+        # Filter results to include only main Walmart establishments
+        filtered_results = []
+        unique_place_ids = set()
+
+        for place in data.get("results", []):
+            place_id = place.get("place_id")
+            name = place.get("name", "").lower()  # Convert name to lowercase for consistent comparison
+            
+            # Include only places with allowed names
+            if (
+                place_id not in unique_place_ids
+                and name in allowed_names
+            ):
+                filtered_results.append(place)
+                unique_place_ids.add(place_id)
+
+        # Preserve the original JSON structure
+        filtered_data = {
+            "results": filtered_results
+        }
+
+        walmart_stores = format_store_response(filtered_data)
+
+        # USE KROGER API TO GET KROGER STORES
+        access_token = get_kroger_oauth2_token()
+        if not access_token:
+            return Response({'error': 'Failed to authenticate with Kroger API'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Set up headers and parameters for Kroger API request
+        print(f"{latitude}, {longitude}, {radius_miles}")
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json',
+        }
+        params = {
+            'filter.latLong.near': f"{latitude},{longitude}",
+            'filter.radiusInMiles': radius_miles,  # Ensure radius is a string
+        }
+
+        # Make a request to Kroger's Locations API
+        try:
+            response = requests.get(f"{settings.KROGER_API_BASE_URL}/v1/locations", headers=headers, params=params)
+            response.raise_for_status()
+            response_data = response.json()  # Extract JSON data
+            
+            kroger_stores = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
+        except requests.RequestException as e:
+            print("Error fetching Kroger stores:", e)
+            print("Response content:", response.content)  # Log the exact response content for debugging
+            return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Combine Walmart and Kroger store data
+        all_stores = walmart_stores["stores"] + kroger_stores["stores"]
+        return Response({'stores': all_stores}, status=status.HTTP_200_OK)
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
@@ -430,34 +1039,22 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         '''
-        Retrieves the queryset of unoptimized grocery items, optionally filtered by grocery list ID.
-
-        :param:
-            None
+        Retrieves the queryset of unoptimized grocery items across all subheadings in a specified grocery list.
 
         :return:
-            QuerySet: A queryset of GroceryItemUnoptimized instances, filtered by the 'list' parameter
-                      if provided in the request query params, or items with no list if 'list' is not specified.
-
-        query details:
-            - Retrieves all grocery items with no list by default.
-            - If 'list' is provided as a query parameter, filters items by the specified grocery list ID.
+            QuerySet: A queryset of GroceryItemUnoptimized instances filtered by the grocery list's subheadings.
 
         usage:
-            - GET {URL} - retrieves all grocery items with no associated list
-            - GET {URL}?list={list_id} - retrieves all grocery items associated with a specific grocery list
+            - GET {URL}?list={list_id} - retrieves all grocery items across subheadings associated with a specific grocery list
         '''
-
-        queryset = super().get_queryset()
         grocery_id = self.request.query_params.get('list')
-
         if grocery_id:
-            queryset = queryset.filter(list=grocery_id)
-        else:
-            queryset = queryset.filter(list=None)
+            # Filter items by subheadings belonging to the specified grocery list
+            return GroceryItemUnoptimized.objects.filter(subheading__grocery__id=grocery_id)
 
-        return queryset
-    
+        # If no 'list' parameter is provided, retrieve all items
+        return GroceryItemUnoptimized.objects.all()
+
     def destroy(self, request, *args, **kwargs):
         '''
         Deletes a specific recipe item, validated by both recipe ID and item ID.
@@ -484,7 +1081,7 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         # Check if item exists and belongs to the specified recipe
         item = get_object_or_404(GroceryItemUnoptimized, id=item_id, list=grocery_id)
-        
+
         # Proceed with deletion
         item.delete()
         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
@@ -518,38 +1115,45 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
                         list: the id of the grocery list
                     }
         '''
-        data = request.data
-        grocery_list_id = data.get('list')
-        grocery_list = get_object_or_404(Grocery, id=grocery_list_id)
 
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            serializer.save(list=grocery_list)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Retrieve the grocery list from request data
+        grocery_list_id = request.data.get('list')
+        grocery = get_object_or_404(Grocery, id=grocery_list_id)
+
+        # Pass the grocery instance in the context
+        serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
         '''
-        Toggles the 'favorited' status of a recipe item.
+        Toggles the 'favorited' status of a grocery item, ensuring it belongs to the specified grocery list.
 
         :param:
-            request (Request): The incoming request; does not require any data parameters.
-            pk (int): The primary key of the recipe item to toggle favorite status.
+            request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
+            pk (UUID): The primary key of the grocery item to toggle favorite status.
 
         :return:
-            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
-
-        action details:
-            - Retrieves the grocery item instance specified by the primary key.
-            - Toggles its 'favorited' attribute.
-            - Saves the updated instance and returns the updated data.
+            Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
+                      or an error if the item does not belong to the specified grocery list.
 
         usage:
-            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
+            - POST {URL}/{item_id}/favorite?list={grocery_list_id} - toggles the favorite status of items within the specified grocery list
         '''
-        item = self.get_object()
+        grocery_id = request.query_params.get('list')
+        if not grocery_id:
+            return Response({"error": "'list' parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Attempt to retrieve the item within the specified grocery list
+        try:
+            item = GroceryItemUnoptimized.objects.get(pk=pk, subheading__grocery__id=grocery_id)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "Item not found in the specified grocery list."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the 'favorited' status
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
@@ -582,7 +1186,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user:
-            queryset = queryset.filter(user=user.id)
+            return Recipe.objects.filter(user=user)
 
         return queryset
 
@@ -627,9 +1231,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         '''
         Retrieves the queryset of recipe items, optionally filtered by recipe ID.
 
-        :param:
-            None
-
         :return:
             QuerySet: A queryset of RecipeItem instances, filtered by the 'recipe_id' parameter
                       if provided in the request query params.
@@ -646,7 +1247,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         recipe_id = self.request.query_params.get('recipe_id')
 
         if recipe_id:
-            queryset = queryset.filter(list_id=recipe_id)
+            queryset = queryset.filter(recipe__id=recipe_id)
 
         return queryset
 
@@ -672,7 +1273,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                 - data (dict):
                     {
                         name: name of the recipe item
-                        ingredient (optional): ingredient used in the recipe item
                         description (optional): description of the recipe item
                         quantity: quantity required for the recipe item
                         units: units of the quantity
@@ -680,8 +1280,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                     }
         '''
         recipe_id = request.data.get('recipe_id')
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        print(recipe)
+        recipe = get_object_or_404(Recipe, id=recipe_id, user=request.user)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save(recipe=recipe)
@@ -762,26 +1361,27 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
         grocery_id = request.data["list"]
         favorited_item = self.get_object()
         grocery = Grocery.objects.all().filter(id=grocery_id).get()
+        default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name="Default")
+
         data = {
+            'id': favorited_item.id,
             'name': favorited_item.name,
             'quantity': 1,
             'units': 'units',
             'favorited': True,
             'description': favorited_item.description,
             'store': favorited_item.store,
-            'list': grocery.id
+            'list': grocery.id,
+            'subheading': default_subheading.id
         }
 
         serializer = GroceryItemUnoptimizedSerializer(data=data)
         if serializer.is_valid():
-            data['list'] = grocery
-            GroceryItemUnoptimized.objects.update_or_create(
-                id=favorited_item.id,
-                defaults=data
-            )
+            grocery_item = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'])
     def add_to_recipe(self, request, pk=None):
         '''

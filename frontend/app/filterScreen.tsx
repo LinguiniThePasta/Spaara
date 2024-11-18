@@ -1,13 +1,12 @@
-import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, Text, SafeAreaView, Pressable} from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Text, SafeAreaView, Pressable, Alert } from 'react-native';
 import Slider from '@react-native-community/slider';
-import {RadioButton, Button, Checkbox} from 'react-native-paper';
+import { Checkbox } from 'react-native-paper';
 import Header from "@/components/Header";
-import {Colors} from "@/styles/Colors";
-import {globalStyles} from "@/styles/globalStyles";
+import { Colors } from "@/styles/Colors";
+import { globalStyles } from "@/styles/globalStyles";
 import axios from "axios";
-import {API_BASE_URL} from "@/scripts/config";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@/scripts/config";
 import * as SecureStore from "expo-secure-store";
 
 export default function FilterScreen() {
@@ -15,6 +14,14 @@ export default function FilterScreen() {
     const [distance, setDistance] = useState(5.0);
     const [dietaryRestriction, setDietaryRestriction] = useState([]);
     const [dietRestrictionList, setDietRestrictionList] = useState([]);
+
+    // UseRef to store initial state
+    const initialSettings = useRef({
+        numberOfStores: 3,
+        distance: 5,
+        dietaryRestriction: [],
+    });
+
     useEffect(() => {
         const getDietRestrictions = async () => {
             try {
@@ -24,16 +31,22 @@ export default function FilterScreen() {
                         headers: {
                             'Authorization': `Bearer ${jwtToken}`
                         }
-                    })
-                setDietRestrictionList(response.data.all_restrictions)
-                setDietaryRestriction(response.data.user_restrictions)
-                setDistance(response.data.max_distance)
-                setNumberOfStores(response.data.max_stores)
+                    });
+                setDietRestrictionList(response.data.all_restrictions);
+                setDietaryRestriction(response.data.user_restrictions);
+                setDistance(response.data.max_distance);
+                setNumberOfStores(response.data.max_stores);
+
+                // Update initial settings
+                initialSettings.current = {
+                    numberOfStores: response.data.max_stores,
+                    distance: response.data.max_distance,
+                    dietaryRestriction: response.data.user_restrictions,
+                };
             } catch (error) {
                 console.error('Error fetching user settings:', error);
-
             }
-        }
+        };
         getDietRestrictions();
     }, []);
 
@@ -44,21 +57,35 @@ export default function FilterScreen() {
     };
 
     const handleApplyFilters = async () => {
+        // Check if changes were made
+        const { numberOfStores: initialStores, distance: initialDistance, dietaryRestriction: initialRestrictions } = initialSettings.current;
+        const noChanges = (
+            numberOfStores === initialStores &&
+            distance === initialDistance &&
+            JSON.stringify(dietaryRestriction) === JSON.stringify(initialRestrictions)
+        );
+
+        if (noChanges) {
+            Alert.alert("No Changes", "You haven't made any changes to save.");
+            return;
+        }
+
+        // Save changes if there are any
         try {
             const jwtToken = await SecureStore.getItemAsync("jwtToken");
-            const response = await axios.post(
+            await axios.post(
                 `${API_BASE_URL}/api/user/save_settings`, {
-                    "max_stores": numberOfStores,
-                    "max_distance": distance,
-                    "user_restrictions": dietaryRestriction
+                    max_stores: numberOfStores,
+                    max_distance: distance,
+                    user_restrictions: dietaryRestriction
                 }, {
                     headers: {
                         "Content-Type": "application/json",
-                        'Authorization': 'Bearer ' + jwtToken,
+                        'Authorization': `Bearer ${jwtToken}`,
                     }
                 });
         } catch (error) {
-            console.error('Error fetching user settings:', error);
+            console.error('Error applying filters:', error);
         }
         console.log({
             numberOfStores,
@@ -69,11 +96,7 @@ export default function FilterScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header backButton={true}
-                    backLink={"/settings"}
-                    header={"Filters"}
-                    noProfile={true}
-            />
+            <Header backButton={true} backLink={"/settings"} header={"Filters"} noProfile={true} />
             <View style={styles.content}>
                 <View>
                     <View style={styles.listItem}>
@@ -83,12 +106,12 @@ export default function FilterScreen() {
                         </View>
                         <View style={styles.sliderContainer}>
                             <Slider
-                                style={{width: '100%', height: 40}}
+                                style={{ width: '100%', height: 40 }}
                                 minimumValue={1}
                                 maximumValue={5}
                                 step={1}
                                 value={numberOfStores}
-                                onValueChange={(value) => setNumberOfStores(value)}
+                                onValueChange={setNumberOfStores}
                                 minimumTrackTintColor={Colors.light.primaryText}
                                 maximumTrackTintColor={Colors.light.secondaryText}
                                 thumbTintColor={Colors.light.primaryText}
@@ -99,16 +122,16 @@ export default function FilterScreen() {
                     <View style={styles.listItem}>
                         <View style={styles.inlineContainer}>
                             <Text style={styles.subHeader}>Distance away</Text>
-                            <Text style={styles.subHeader}> {distance.toFixed(2)} mi</Text>
+                            <Text style={styles.subHeader}> {distance} mi</Text>
                         </View>
                         <View style={styles.sliderContainer}>
                             <Slider
                                 style={styles.slider}
-                                minimumValue={0.01}
+                                minimumValue={1}
                                 maximumValue={15}
-                                step={0.01}
+                                step={1}
                                 value={distance}
-                                onValueChange={(value) => setDistance(value)}
+                                onValueChange={setDistance}
                                 minimumTrackTintColor={Colors.light.primaryText}
                                 maximumTrackTintColor={Colors.light.secondaryText}
                                 thumbTintColor={Colors.light.primaryText}
@@ -117,43 +140,34 @@ export default function FilterScreen() {
                     </View>
 
                     <Text style={styles.subHeader}>Dietary Restrictions</Text>
-                    {
-                        dietRestrictionList.map((checkListItem) => (
-                            <View>
-                                <Checkbox.Item
-                                    label={checkListItem.name}
-                                    status={dietaryRestriction.includes(checkListItem.id) ? 'checked' : 'unchecked'}
-                                    onPress={() => {
-                                        if (dietaryRestriction.find(item => item === checkListItem.id)) {
-                                            // Remove 'glutenFree' if found
-                                            setDietaryRestriction(dietaryRestriction.filter(item => item !== checkListItem.id));
-                                        } else {
-                                            setDietaryRestriction([...dietaryRestriction, checkListItem.id]);
-                                        }
-                                    }}
-                                />
-                            </View>
-                        ))
-                    }
+                    {dietRestrictionList.map((checkListItem) => (
+                        <View key={checkListItem.id}>
+                            <Checkbox.Item
+                                label={checkListItem.name}
+                                status={dietaryRestriction.includes(checkListItem.id) ? 'checked' : 'unchecked'}
+                                onPress={() => {
+                                    setDietaryRestriction(prevState =>
+                                        prevState.includes(checkListItem.id)
+                                            ? prevState.filter(id => id !== checkListItem.id)
+                                            : [...prevState, checkListItem.id]
+                                    );
+                                }}
+                            />
+                        </View>
+                    ))}
                 </View>
-
             </View>
             <View style={styles.buttonContainer}>
-                <Pressable
-                    onPress={handleClear}
-                    style={styles.clearButton}>
+                <Pressable onPress={handleClear} style={styles.clearButton}>
                     <Text>Clear</Text>
                 </Pressable>
-                <Pressable
-                    onPress={handleApplyFilters}
-                    style={styles.applyButton}
-                >
+                <Pressable onPress={handleApplyFilters} style={styles.applyButton}>
                     <Text>Apply Filters</Text>
                 </Pressable>
             </View>
         </SafeAreaView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -164,7 +178,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         marginHorizontal: 20,
-        justifyContent: "space-between"
+        justifyContent: "space-between",
     },
     inlineContainer: {
         flexDirection: 'row',
@@ -181,15 +195,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: 30,
-
     },
     clearButton: {
         ...globalStyles.secondaryGreyButton,
-        width: "45%"
+        width: "45%",
     },
     applyButton: {
         ...globalStyles.primaryButton,
-        width: "45%"
+        width: "45%",
     },
     listItem: {
         marginVertical: 15,
@@ -201,11 +214,10 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     sliderContainer: {
-        width: '95%', // Make the slider 95% of the listItem width
-        alignSelf: 'center', // Center the slider within the listItem
+        width: '95%',
+        alignSelf: 'center',
     },
     slider: {
         height: 40,
     },
 });
-

@@ -13,20 +13,15 @@ import parseErrors from "@/scripts/parseErrors";
 
 const {width, height} = Dimensions.get('window');
 
-const spaaraLogoImage = require('@/assets/images/SpaaraLogo.png');
+export default function forgotPassword() {
+    const [email, onEmail] = useState('');
 
-export default function Signup() {
-    const [isDisabled, setIsDisabled] = useState(false);
-    const handleSignUp = async () => {
-        if (isDisabled) return;
-        setIsDisabled(true);
+    const handleSubmit = async () => {
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/api/user/register`,
+                `${API_BASE_URL}/api/forgot-password`,
                 {
-                    "username": username,
-                    "email": email,
-                    "password": password
+                    'email': email,
                 },
                 {
                     headers: {
@@ -35,68 +30,37 @@ export default function Signup() {
                 }
             );
 
-            router.replace('/login');
-        } catch (error) { 
-            if (error.response && error.response.data) {
-                console.log(error);
-                alert(parseErrors(error.response.data));
-            } else {
-                console.error(error);
-                alert("An unexpected error occurred. Please try again.");
-            }
-        } finally {
-            setIsDisabled(false);
+            
+        } catch (error) {
+            console.log(error)
         }
-    };
-    const [username, onUsernameChange] = React.useState('');
-    const [email, onEmailChange] = React.useState('');
-    const [password, onPasswordChange] = React.useState('');
-    const [confirmPW, onConfirmPWChange] = React.useState('');
+
+    }
+
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.replace("/splash")
+                    router.replace("/")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
                 <View style={styles.contentContainer}>
-                    <Text style={styles.headerText}>Create your account</Text>
+                    <Text style={styles.headerText}>Recover Account</Text>
 
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[globalStyles.primaryInput, styles.input]}
-                            placeholder="Username"
-                            onChangeText={onUsernameChange}
-                            placeholderTextColor={Colors.light.secondaryText}
-                        />
-                        <TextInput
-                            style={[globalStyles.primaryInput, styles.input]}
                             placeholder="Email"
-                            onChangeText={onEmailChange}
-                            placeholderTextColor={Colors.light.secondaryText}
-                        />
-                        <TextInput
-                            style={[globalStyles.primaryInput, styles.input]}
-                            placeholder="Password"
-                            secureTextEntry
-                            onChangeText={onPasswordChange}
+                            onChangeText={onEmail}
                             placeholderTextColor={Colors.light.secondaryText}
                         />
                         {/* Placeholder to compensate for the removed Forgot Password text */}
                         <View style={styles.placeholder} />
 
-                        <Pressable style={[globalStyles.primaryButton, styles.signupButton]} onPress={handleSignUp}>
-                            <Text style={styles.signupButtonText}>Sign up</Text>
-                        </Pressable>
-                    </View>
-                    <View style={styles.footerContainer}>
-                        <Text style={styles.footerText}>Have an account? </Text>
-                        <Pressable onPress={() => {
-                            router.replace("/login")
-                        }} style={styles.loginLink}>
-                            <Text style={styles.loginLinkText}>Login.</Text>
+                        <Pressable style={[globalStyles.primaryButton, styles.submitButton]} onPress={handleSubmit}>
+                            <Text style={styles.submitButtonText}>Submit</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -104,6 +68,7 @@ export default function Signup() {
         </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
@@ -149,11 +114,11 @@ const styles = StyleSheet.create({
     placeholder: {
         height: 28,
     },
-    signupButton: {
+    submitButton: {
         width: '100%',
         marginTop: 0.06 * height,
     },
-    signupButtonText: {
+    submitButtonText: {
         ...globalStyles.buttonText,
     },
     footerContainer: {

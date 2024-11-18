@@ -1,45 +1,40 @@
 import React from 'react';
-import {View, Text, SafeAreaView, Pressable, StyleSheet} from 'react-native';
+import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert} from 'react-native';
 import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router';
-import {useSelector} from "react-redux"; // Use router for navigation if needed
+import axios from "axios";
+import {API_BASE_URL} from "@/scripts/config"; // Use router for navigation if needed
+import * as SecureStore from 'expo-secure-store';
+import {useSelector} from "react-redux";
 
-export default function ProfileScreen() {
-    const role = useSelector((state) => state.role.role);
+export default function ThemesScreen() {
+
     return (
         <View style={styles.container}>
         <SafeAreaView style={styles.container}>
-            <Header header="Profile"
-                    backButton={false}
-                    backLink={""}
+            <Header header="Themes"
+                    backButton={true}
+                    backLink={"settings"}
                     noProfile={true}
             />
-            {role === "User" && (
+
                 <View style={styles.content}>
                     <View>
-                        <Pressable style={styles.listItem} onPress={() => router.replace('/changeEmail')}>
-                            <Text style={styles.optionText}>Change email</Text>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/profileIcons')}>
+                            <Text style={styles.optionText}>Change Profile Icon</Text>
                         </Pressable>
-
-                        <Pressable style={styles.listItem} onPress={() => router.replace('/changePassword')}>
-                            <Text style={styles.optionText}>Change password</Text>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/profileColors')}>
+                            <Text style={styles.optionText}>Change Profile Color</Text>
                         </Pressable>
-
-                        <Pressable style={styles.listItem} onPress={() => router.replace('/settings')}>
-                            <Text style={styles.optionText}>Settings</Text>
+                        {/*
+                        <Pressable style={styles.listItem} onPress={() => router.push('/setAddress')}>
+                            <Text style={styles.optionText}>Change App Theme</Text>
                         </Pressable>
+                        */}
                     </View>
-
-
-                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.replace('/login')}>
-                        <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
-                    </Pressable>
                 </View>
-            )}
-
-            
         </SafeAreaView>
         <Footer/>
         </View>
@@ -60,7 +55,6 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 18,
         fontWeight: "bold",
-        fontFamily: 'Lato-Bold',
         color: Colors.light.primaryText,
     },
     listItem: {

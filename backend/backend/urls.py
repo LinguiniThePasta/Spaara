@@ -29,6 +29,8 @@ router.register(r'api/grocery_items/unoptimized', GroceryItemUnoptimizedViewSet,
 router.register(r'api/recipe', RecipeViewSet, basename='recipe')
 router.register(r'api/recipe_items', RecipeItemViewSet, basename='recipe-item')
 router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorited-item')
+router.register(r'api/friend_requests', FriendRequestViewSet, basename='friend-request')
+router.register(r'api/user/addresses', AddressViewSet, basename='addresses')
 '''
 Create: POST /api/grocery
 Read All: GET /api/grocery
@@ -47,7 +49,12 @@ urlpatterns = [
     path('api/user/delete', DeleteUserView.as_view(), name='delete_user'),
     path('api/user/save_settings', SettingsView.as_view(), name='save_dietary_restrictions'),
     path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
+    path('api/other_users', OtherUsersView.as_view(), name='other_users'),
     path('verify-email/<str:uidb64>/<str:token>/', VerifyEmailView.as_view(), name='verify-email'),
+    path('api/user/friends', FriendsView.as_view(), name='friends'),
+    path('api/maps/address_predictions', AutocompleteView.as_view(), name='address'),
+    path('api/maps/locations/stores', StoreView.as_view(), name='stores'),
+    path('api/forgot-password', ForgotPasswordView.as_view(), name='forgot-password'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),
