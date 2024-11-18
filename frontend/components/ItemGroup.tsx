@@ -48,7 +48,7 @@ export function ItemGroup({name, items, handleFavoriteItem, handleRemoveItem, on
         );
     };
 
-    const [expanded, setExpanded] = React.useState(true);
+    const [expanded, setExpanded] = React.useState(false);
     const handleAccordionPress = () => setExpanded(!expanded);
 
     return (

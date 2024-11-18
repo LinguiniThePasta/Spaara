@@ -77,6 +77,27 @@ export default function ShoppingListScreen() {
             items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
+        /*{
+            id: 1111,
+            title: "GROUP",
+            items: [{
+                id: 2222,
+                title: "ITEM",
+                items: "ITEM",
+                description: "ITEM",
+                store: "ITEM",
+                quantity: 1,
+                units: "ITEM",
+                favorited: false,
+                order: "ITEM",
+            }],
+            description: "GROUP",
+            store: "GROUP",
+            quantity: "GROUP",
+            units: "GROUP",
+            favorited: "GROUP",
+            order: "GROUP",
+        },*/
     ]);
 
     const [allRecipes, setAllRecipes] = useState([]);
@@ -150,15 +171,52 @@ export default function ShoppingListScreen() {
                             title: 'Add Item',
                             favorited: false,
                             quantity: 0,
-                        }]
+                        },
+                        {
+                            id: -2,
+                            title: '',
+                            favorited: false,
+                            quantity: 0,
+                        },
+                        {
+                            id: -3,
+                            title: '',
+                            favorited: false,
+                            quantity: 0,
+                        },]
                         : []),
                 ],
             }));
 
+            var defaultItems = [];
+            parsedItemGroups.forEach((group) => {
+                if (group.title === 'Default') {
+                    console.log("default item name: " + group.items[0].title);
+                    defaultItems = group.items.map((item) => ({
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        store: item.store,
+                        quantity: item.quantity,
+                        units: item.units,
+                        favorited: item.favorited,
+                        order: item.order,
+                    }));
+                    //defaultItems.push(...group.items);
+                }
+            });
+
+            const finalItemList = [...parsedItemGroups, ...defaultItems];
+
             console.log("Parsed item groups:", parsedItemGroups);
+            console.log("Final Item List: ");
+            finalItemList.forEach((item) => {
+                console.log(item.title);
+            });
 
             // Update state with parsed ItemGroups
-            setItemGroups(parsedItemGroups);
+            //setItemGroups(parsedItemGroups);
+            setItemGroups(finalItemList);
 
             // Flatten items if you need a flat list for any other purpose
             const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
@@ -493,7 +551,6 @@ export default function ShoppingListScreen() {
 
             setSelectedIcon(response.data.icon);
             setSelectedColor(response.data.color);
-            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
         } catch (error) {
             console.error('Error fetching profile info:', error);
         }
@@ -557,14 +614,44 @@ export default function ShoppingListScreen() {
         );
     };
 
+
+    //const [currentDefaultIndex, setCurrentDefaultIndex] = useState(0);
+
     const renderItem = ({item}) => {
-        //const isDefault = (item.title === "Default");
+        const isDefault = (item.title === "Default");
         const isInput = (item.id === -1);
+        const isSpacer = (item.id < -1);
+        const isItem = (!item.items);
+        //console.log("item rendered! title: " + item.title + "   isItem: "  + isItem + "   isInput: " + isInput);
+
+        if (isDefault) {
+            return (
+                <View/>
+            );
+        }
+
+        if (isSpacer) {
+            return (
+                <View>
+                    <SpacerItem/>
+                </View>
+            )
+        }
+
         if (isInput) {
             return (
                 <View>
                     <InputItem initialText={newItemName} onChangeText={setNewItemName}
                                handleAddItem={handleAddItem}></InputItem>
+                </View>
+            );
+        }
+
+        if (isItem) {
+            return (
+                <View>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                               handleRemoveItem={handleRemove}></CheckItem>
                 </View>
             );
         }
