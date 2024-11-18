@@ -29,7 +29,7 @@ export default function Login() {
         setIsDisabled(true);
         console.log("its false")
         try {
-            console.log("pre")
+            console.log(API_BASE_URL)
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/login`,
                 {
