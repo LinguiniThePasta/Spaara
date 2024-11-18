@@ -564,6 +564,18 @@ class UpdateInfoView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+    def get(self, request):
+        user = request.user
+
+        return Response(
+            {
+                "email": user.email,
+                "password": user.password,
+                "username": user.username,
+            },
+            status=status.HTTP_200_OK
+        )
+        
 class GetCoordinatesView(APIView):
     def get_address_location(self, address):
         """

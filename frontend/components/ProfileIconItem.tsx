@@ -11,13 +11,13 @@ import * as SecureStore from 'expo-secure-store';
 import {useSelector} from "react-redux";
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function ProfileIconItem({icon, handleIconSelected}) {
+export default function ProfileIconItem({icon, iconColor, handleIconSelected}) {
     //console.log("icon name: " + icon.name + "   selected: " + icon.selected);
     if (icon.selected) {
         return(
             <View>
                 <Pressable style={styles.selectedItem} onPress={() => handleIconSelected(icon)}>
-                    <Icon name={icon.name} size={40} color={Colors.light.primaryColor}/>
+                    <Icon name={icon.name} size={40} color={iconColor}/>
                 </Pressable>
             </View>
         );
@@ -26,7 +26,7 @@ export default function ProfileIconItem({icon, handleIconSelected}) {
     return (
         <View>
             <Pressable style={styles.item} onPress={() => handleIconSelected(icon)}>
-                <Icon name={icon.name} size={40} color={Colors.light.primaryColor}/>
+                <Icon name={icon.name} size={40} color={iconColor}/>
             </Pressable>
         </View>
     );

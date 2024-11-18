@@ -217,12 +217,36 @@ const SocialPage = () => {
   };
 
   useEffect(() => {
+    fetchProfileInfo();
     fetchOtherUsers();
     fetchFriends();
     fetchRequestCount();
     fetchOutgoingRequests();
     fetchIncomingRequests();
   }, []);
+
+  const [selectedIcon, setSelectedIcon] = useState("");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
+
+
 
   const handleSearchChange = (text: string) => {
     setSearchTerm(text);
@@ -373,8 +397,13 @@ const SocialPage = () => {
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
-              </TouchableOpacity>
+              {/*<TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+              </TouchableOpacity>*/}
+              <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
+                  <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                      <Icon name={selectedIcon} size={30} color={selectedColor}/>
+                  </TouchableOpacity>
+              </View>
             </View>
         </View>
 
@@ -661,12 +690,10 @@ const styles = StyleSheet.create({
       color: Colors.light.primaryText,
   },
   profileIconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: '#ccc',
-      justifyContent: 'center',
-      alignItems: 'center',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconContainer: {
     flexDirection: 'row',

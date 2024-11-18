@@ -107,12 +107,14 @@ class LoginSerializer(serializers.Serializer):
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
     old_password = serializers.CharField(write_only=True, required=False)
+    old_username = serializers.CharField(write_only= True, required=False)
     email = serializers.EmailField(required=False)
     password = serializers.CharField(write_only=True, required=False)
+    username = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ['old_email', 'old_password', 'email', 'password']
+        fields = ['old_email', 'old_password', 'old_username', 'email', 'password', 'username']
 
     def validate_password(self, value):
         if value:
@@ -125,8 +127,10 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         old_email = validated_data.get('old_email', None)
         old_password = validated_data.get('old_password', None)
+        old_username = validated_data.get('old_username', None)
         email = validated_data.get('email', None)
         password = validated_data.get('password', None)
+        username = validated_data.get('username', None)
 
         # Verify old email if email is being changed
         if email and instance.email != old_email:
@@ -135,6 +139,9 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         # Verify old password if password is being changed
         if password and not instance.check_password(old_password):
             raise serializers.ValidationError({'old_password': 'Old password does not match'})
+        
+        if username and instance.username != old_username:
+            raise serializers.ValidationError({'old_username': "Old username does not match"})
 
         if email:
             instance.email_pending = email
@@ -143,6 +150,10 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
             send_password_reset_confirmation(instance)
+
+        if username:
+            #instance.set_username(username)
+            instance.username = username
 
         instance.save()
         return instance

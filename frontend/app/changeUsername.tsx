@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -19,15 +19,15 @@ import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-export default function ChangeEmail() {
-    const [currentEmail, setCurrentEmail] = useState('');
-    const [newEmail, setNewEmail] = useState('');
-    const [confirmNewEmail, setConfirmNewEmail] = useState('');
+export default function ChangeUsername() {
+    const [currentUsername, setCurrentUsername] = useState('');
+    const [newUsername, setNewUsername] = useState('');
+    const [confirmNewUsername, setConfirmNewUsername] = useState('');
     const [isDisabled, setIsDisabled] = useState(false);
 
-    const handleChangeEmail = async () => {
+    const handleChangeUsername = async () => {
         if (isDisabled) return;
-        if (newEmail !== confirmNewEmail) {
+        if (newUsername !== confirmNewUsername) {
             Alert.alert('Error', 'New emails do not match');
             return;
         }
@@ -37,8 +37,8 @@ export default function ChangeEmail() {
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/update_info`,
                 {
-                    old_email: currentEmail,
-                    email: newEmail,
+                    old_username: currentUsername,
+                    username: newUsername,
                 },
                 {
                     headers: {
@@ -47,11 +47,11 @@ export default function ChangeEmail() {
                     },
                 }
             );
-            Alert.alert('Success', 'Email changed successfully');
+            Alert.alert('Success', 'Username changed successfully');
             router.push('/profile');
         } catch (error) {
             const errorData = error.response.data;
-            const errorMessage = errorData.old_email || errorData.email || errorData.message || 'An error occurred';
+            const errorMessage = errorData.old_username || errorData.username || errorData.message || 'An error occurred';
             Alert.alert('Error', errorMessage);
 
         } finally {
@@ -59,9 +59,35 @@ export default function ChangeEmail() {
         }
     };
 
+
+
+    const fetchUserInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/update_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setCurrentUsername(response.data.username);
+            console.log("Fetched user info! email: " + response.data.email + "   password: " + response.data.password + "   username: " +  response.data.username);
+
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+
+
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Change Email"
+            <Header header="Change Username"
                     backButton={true}
                     backLink={"profile"}
                     noProfile={false}
@@ -73,31 +99,33 @@ export default function ChangeEmail() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="Current Email"
+                        placeholder={"Current Username: " + currentUsername}
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setCurrentEmail}
-                        value={currentEmail}
+                        //onChangeText={setCurrentUsername}
+                        //value={currentUsername}
+                        editable={false}
+                        //spellCheck={false}
                     />
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="New Email"
+                        placeholder="New Username"
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setNewEmail}
-                        value={newEmail}
+                        onChangeText={setNewUsername}
+                        value={newUsername}
                     />
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="Confirm New Email"
+                        placeholder="Confirm New Username"
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setConfirmNewEmail}
-                        value={confirmNewEmail}
+                        onChangeText={setConfirmNewUsername}
+                        value={confirmNewUsername}
                     />
                     <Pressable
-                        style={[globalStyles.primaryButton, styles.changeEmailButton]}
-                        onPress={handleChangeEmail}
+                        style={[globalStyles.primaryButton, styles.changeUsernameButton]}
+                        onPress={handleChangeUsername}
                         disabled={isDisabled}
                     >
-                        <Text style={styles.changeEmailButtonText}>Change Email</Text>
+                        <Text style={styles.changeUsernameButtonText}>Change Username</Text>
                     </Pressable>
                 </View>
             </KeyboardAvoidingView>
@@ -124,12 +152,14 @@ const styles = StyleSheet.create({
     input: {
         marginBottom: 20,
         width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    changeEmailButton: {
+    changeUsernameButton: {
         width: '100%',
         marginTop: 20,
     },
-    changeEmailButtonText: {
+    changeUsernameButtonText: {
         ...globalStyles.buttonText,
     },
 });

@@ -14,7 +14,7 @@ import ProfileColorItem from '@/components/ProfileColorItem';
 
 export default function ProfileColorsScreen() {
     const [colorList, setColorList] = useState([
-        {name: "#FF8FC5", selected: true, id: '0'},
+        {name: "#FF8FC5", selected: false, id: '0'},
         {name: "#E0474C", selected: false, id: '1'},
         {name: "#D02310", selected: false, id: '2'},
         {name: "#A71100", selected: false, id: '3'},
@@ -44,7 +44,8 @@ export default function ProfileColorsScreen() {
         {name: "#232528", selected: false, id: '27'},
     ]);
 
-    const [selectedColor, setSelectedColor] = useState("#FF8FC5")
+    const [selectedColor, setSelectedColor] = useState("#F6AA1C");
+    const [selectedIcon, setSelectedIcon] = useState("");
 
     useEffect(() => {
         fetchProfileInfo();
@@ -60,17 +61,40 @@ export default function ProfileColorsScreen() {
                     }
                 });
 
+            setSelectedIcon(response.data.icon);
             setSelectedColor(response.data.color);
             const newColorList = colorList.map((currentColor) => ({
                 ...currentColor,
                 selected: (currentColor.name === response.data.color),
             }));
             setColorList(newColorList);
+            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
 
         } catch (error) {
             console.error('Error fetching profile info:', error);
         }
     };
+
+    const updateProfileInfo = async (colorName) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            await axios.post(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    icon: selectedIcon,
+                    color: colorName
+                }, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                });
+                console.log("Updated profile info! color: " + colorName + "   icon: " + selectedIcon);
+        } catch (error) {
+            console.error('Error updating profile info:', error);
+        }
+    };
+
+
 
     const handleColorSelected = async (color) => {
         console.log("SELECTED: " + color.name);
@@ -80,14 +104,15 @@ export default function ProfileColorsScreen() {
             ...currentColor,
             selected: (currentColor.name === color.name),
         }));
-
         setColorList(newColorList);
+
+        updateProfileInfo(color.name);
     };
 
 
     const renderColor = ({item}) => {
         return (
-            <ProfileColorItem iconColor={item} handleColorSelected={handleColorSelected}/>
+            <ProfileColorItem iconColor={item} iconName={selectedIcon} handleColorSelected={handleColorSelected}/>
         );
     };
 
@@ -98,7 +123,7 @@ export default function ProfileColorsScreen() {
             <Header header="Set Profile Color"
                     backButton={true}
                     backLink={"themes"}
-                    noProfile={true}
+                    noProfile={false}
             />
                 <View style={styles.content}>
                     <View style={styles.listContainer}>

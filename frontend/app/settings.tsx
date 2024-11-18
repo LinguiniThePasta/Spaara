@@ -55,7 +55,7 @@ export default function SettingScreen() {
             <Header header="Settings"
                     backButton={true}
                     backLink={"profile"}
-                    noProfile={true}
+                    noProfile={false}
             />
 
             {role === "User" && (

@@ -17,7 +17,7 @@ export default function ThemesScreen() {
             <Header header="Themes"
                     backButton={true}
                     backLink={"settings"}
-                    noProfile={true}
+                    noProfile={false}
             />
 
                 <View style={styles.content}>

@@ -14,7 +14,7 @@ import ProfileIconItem from '@/components/ProfileIconItem';
 
 export default function ProfileIconsScreen() {
     const [iconList, setIconList] = useState([
-        {name: "person", selected: true, id: '0'},
+        {name: "person", selected: false, id: '0'},
         {name: "star", selected: false, id: '1'},
         {name: "heart", selected: false, id: '2'},
         {name: "cart", selected: false, id: '3'},
@@ -44,11 +44,57 @@ export default function ProfileIconsScreen() {
         {name: "hand-right", selected: false, id: '27'},
     ]);
 
-    const [selectedIcon, setSelectedIcon] = useState("person")
+    const [selectedIcon, setSelectedIcon] = useState("person");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
 
-    //useEffect(() => {
-        //renderList();
-    //}, []);
+    useEffect(() => {
+        fetchProfileInfo();
+    }, []);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+            const newIconList = iconList.map((currentIcon) => ({
+                ...currentIcon,
+                selected: (currentIcon.name === response.data.icon),
+            }));
+            setIconList(newIconList);
+            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
+
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
+
+    const updateProfileInfo = async (iconName) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            await axios.post(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    icon: iconName,
+                    color: selectedColor
+                }, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                });
+                console.log("Updated profile info! color: " + selectedColor + "   icon: " + iconName);
+        } catch (error) {
+            console.error('Error updating profile info:', error);
+        }
+    };
+
+
 
     const handleIconSelected = async (icon) => {
         console.log("SELECTED: " + icon.name);
@@ -58,14 +104,15 @@ export default function ProfileIconsScreen() {
             ...currentIcon,
             selected: (currentIcon.name === icon.name),
         }));
-
         setIconList(newIconList);
+
+        updateProfileInfo(icon.name);
     };
 
 
     const renderIcon = ({item}) => {
         return (
-            <ProfileIconItem icon={item} handleIconSelected={handleIconSelected}/>
+            <ProfileIconItem icon={item} iconColor={selectedColor} handleIconSelected={handleIconSelected}/>
         );
     };
 
@@ -76,7 +123,7 @@ export default function ProfileIconsScreen() {
             <Header header="Set Profile Icon"
                     backButton={true}
                     backLink={"themes"}
-                    noProfile={true}
+                    noProfile={false}
             />
                 <View style={styles.content}>
                     <View style={styles.listContainer}>
