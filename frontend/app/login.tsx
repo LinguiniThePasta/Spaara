@@ -45,7 +45,7 @@ export default function Login() {
 
             dispatch(setRole("User"));
 
-            router.push('/shopping');
+            router.replace('/shopping');
         } catch (error) {
             console.log(error);
             // Check if error.response and error.response.data exist before calling parseErrors
@@ -78,7 +78,7 @@ export default function Login() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Pressable style={styles.backButton} onPress={() => {
-                    router.push("/splash")
+                    router.replace("/splash")
                 }}>
                     <Text style={styles.backButtonText}>{'<'}</Text>
                 </Pressable>
@@ -102,7 +102,9 @@ export default function Login() {
                             value={password}
                         />
                         <View style={styles.forgotPasswordWrapper}>
-                            <Pressable style={styles.forgotPasswordContainer}>
+                            <Pressable style={styles.forgotPasswordContainer} onPress={() => 
+                                router.replace('/forgotPassword')
+                            }>
                                 <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
                             </Pressable>
                         </View>
@@ -115,7 +117,7 @@ export default function Login() {
                     <View style={styles.footerContainer}>
                         <Text style={styles.footerText}>Don't have an account? </Text>
                         <Pressable onPress={() => {
-                            router.push("/signup")
+                            router.replace("/signup")
                         }} style={styles.signupLink}>
                             <Text style={styles.signupLinkText}>Sign Up.</Text>
                         </Pressable>

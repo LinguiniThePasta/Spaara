@@ -49,25 +49,25 @@ export default function ProfileScreen() {
             {role === "User" && (
                 <View style={styles.content}>
                     <View>
-                        <Pressable style={styles.listItem} onPress={() => router.push('/changeUsername')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/changeUsername')}>
                             <Text style={styles.optionText}>Change username</Text>
                         </Pressable>
 
-                        <Pressable style={styles.listItem} onPress={() => router.push('/changeEmail')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/changeEmail')}>
                             <Text style={styles.optionText}>Change email</Text>
                         </Pressable>
 
-                        <Pressable style={styles.listItem} onPress={() => router.push('/changePassword')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/changePassword')}>
                             <Text style={styles.optionText}>Change password</Text>
                         </Pressable>
 
-                        <Pressable style={styles.listItem} onPress={() => router.push('/settings')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/settings')}>
                             <Text style={styles.optionText}>Settings</Text>
                         </Pressable>
                     </View>
 
 
-                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.push('/login')}>
+                    <Pressable style={[styles.listItem, {marginBottom: 20}]} onPress={() => router.replace('/login')}>
                         <Text style={[styles.optionText, {color: "red"}]}>Logout</Text>
                     </Pressable>
                 </View>

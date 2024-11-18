@@ -378,7 +378,7 @@ const SocialPage = () => {
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
             <View style={styles.left}>
-                <Pressable onPress={() => router.push('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
                     <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                 </Pressable>
                 <Text style={styles.headerTitle}>{"Social"}</Text>
@@ -400,7 +400,7 @@ const SocialPage = () => {
               {/*<TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
               </TouchableOpacity>*/}
               <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
-                  <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                  <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.replace('/profile')}>
                       <Icon name={selectedIcon} size={30} color={selectedColor}/>
                   </TouchableOpacity>
               </View>

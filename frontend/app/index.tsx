@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
                         <Text style={globalStyles.buttonText}>Continue with Google</Text>
                     </Pressable>
                     <Pressable style={globalStyles.primaryGreyButton} onPress={() => {
-                        router.push("/signup")
+                        router.replace("/signup")
                     }}>
                         <Text style={globalStyles.buttonText}>Continue with Email</Text>
                     </Pressable>
@@ -65,7 +65,7 @@ export default function WelcomeScreen() {
                         <Text style={globalStyles.buttonText}>Continue as Guest</Text>
                     </Pressable>
                     <Pressable style={globalStyles.secondaryGreyButton} onPress={() => {
-                        router.push("/login")
+                        router.replace("/login")
                     }}>
                         <Text style={globalStyles.buttonText}>Login</Text>
                     </Pressable>

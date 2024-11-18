@@ -49,7 +49,7 @@ export default function ChangePassword() {
                 }
             );
             Alert.alert('Success', 'Password changed successfully');
-            router.push('/profile');
+            router.replace('/profile');
         } catch (error) {
             console.log(error);
             if (error.response && error.response.data) {

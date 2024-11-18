@@ -22,10 +22,10 @@ export default function ThemesScreen() {
 
                 <View style={styles.content}>
                     <View>
-                        <Pressable style={styles.listItem} onPress={() => router.push('/profileIcons')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/profileIcons')}>
                             <Text style={styles.optionText}>Change Profile Icon</Text>
                         </Pressable>
-                        <Pressable style={styles.listItem} onPress={() => router.push('/profileColors')}>
+                        <Pressable style={styles.listItem} onPress={() => router.replace('/profileColors')}>
                             <Text style={styles.optionText}>Change Profile Color</Text>
                         </Pressable>
                         {/*
