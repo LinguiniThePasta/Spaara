@@ -24,9 +24,12 @@ export default function Login() {
     const dispatch = useDispatch();
 
     const handleLogin = async () => {
+        console.log("button presse")
         if (isDisabled) return;
         setIsDisabled(true);
+        console.log("its false")
         try {
+            console.log("pre")
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/login`,
                 {
@@ -39,11 +42,13 @@ export default function Login() {
                     },
                 }
             );
+            console.log("past response")
 
             await SecureStore.setItemAsync('jwtToken', response.data.access);
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
 
             dispatch(setRole("User"));
+            console.log("almost finished")
 
             router.replace('/shopping');
         } catch (error) {
@@ -55,6 +60,7 @@ export default function Login() {
                 alert('An unexpected error occurred. Please try again later.');
             }
         } finally {
+            console.log("fin");
             setIsDisabled(false);
         }
     };
