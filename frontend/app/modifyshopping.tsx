@@ -28,6 +28,7 @@ import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
+import {setCurrentListJson, setLastAccessedList} from "@/store/shoppingListSlice";
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -58,6 +59,7 @@ export default function ShoppingListScreen() {
         {id: 2, title: 'Porked Lemons'},
     ]);
 
+    const curActiveList = useSelector((state) => state.shoppingList.currentListJson);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedButton, setSelectedButton] = useState('Favorite');
@@ -127,6 +129,7 @@ export default function ShoppingListScreen() {
             // Get the subheadings array
             const {name, subheadings} = response.data;
             setShoppingListName(name);
+            dispatch(setCurrentListJson(response.data));
 
             // Parse subheadings into ItemGroups
             const parsedItemGroups = subheadings.map((subheading) => ({
@@ -660,12 +663,21 @@ export default function ShoppingListScreen() {
         setIsRenameModalVisible(false);
     }
 
-    const handleOptimizeSubheadings = () => {
-        const updatedItemGroups = itemGroups.map(group => ({
-            ...group,
-            title: Math.random() > 0.5 ? "Walmart" : "Kroger"
-        }));
-        setItemGroups(updatedItemGroups);
+    const handleOptimizeSubheadings = async () => {
+         try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/optimize`, {
+                body: curActiveList,
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+            console.log(response.data);
+            const {name, subheadings} = response.data;
+
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        }
     };
 
     return (

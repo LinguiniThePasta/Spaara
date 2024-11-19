@@ -1,4 +1,7 @@
+import collections
+
 from django.contrib.auth.models import Group
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
@@ -9,11 +12,11 @@ from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction, Subheading, FriendRequest
+    DietRestriction, Subheading, FriendRequest, StoreItem
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerialize
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -393,6 +396,30 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+class OptimizeView(APIView):
+    def post(self, request):
+        print(request.data['body'])
+        serializer = GrocerySerializer(data=request.data['body'], context={'request': request})
+        if serializer.is_valid():
+            grocery = serializer.validated_data
+            grocery_response = {"name": grocery.get('name', []), "subheadings": []}
+            subheadings_dict = collections.defaultdict(list)
+            print(grocery)
+            for subheading in grocery.get('subheadings', []):
+                for item in subheading.get('items', []):
+                    # print("Item!")
+                    # print(item)
+                    results = StoreItem.objects.annotate(
+                        search = SearchVector("name", "store"),
+                    ).filter(search=item['name']).order_by("price")
+                    if len(results) >= 1:
+                        subheadings_dict[results.values()[0]['store']].append(results.values()[0])
+                    else:
+                        subheadings_dict["Unoptimized"].append(item)
+
+            grocery_response['subheadings'] = [{key: value} for key, value in subheadings_dict.items()]
+            return Response(grocery_response, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SettingsView(APIView):
     '''

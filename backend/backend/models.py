@@ -204,6 +204,16 @@ class GroceryItemUnoptimized(ItemBase):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
 
+class StoreItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    store = models.CharField(max_length=255)
+    store_location = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.IntegerField()
+    units = models.CharField(max_length=20)
+    allergens = models.CharField(max_length=255)
 
 class RecipeItem(ItemBase):
     quantity = models.IntegerField()

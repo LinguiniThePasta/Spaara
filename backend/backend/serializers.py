@@ -7,12 +7,9 @@ from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryIte
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
-<<<<<<< Updated upstream
 from dotenv import load_dotenv
 import os
 import requests
-=======
->>>>>>> Stashed changes
 
 load_dotenv()
 
@@ -166,9 +163,7 @@ class AddressSerializer(serializers.Serializer):
         model = User
         fields = ['address']
 
-    from rest_framework import serializers
-import os
-import requests
+
 
 class AddressSerializer(serializers.Serializer):
     address = serializers.CharField(max_length=255)
@@ -325,7 +320,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class SubheadingSerializer(serializers.ModelSerializer):
-    items = GroceryItemUnoptimizedSerializer(many=True, read_only=True)
+    items = GroceryItemUnoptimizedSerializer(many=True)
     recipe = RecipeSerializer(read_only=True)  # Optional: If you want to include recipe details
 
     class Meta:
@@ -333,7 +328,7 @@ class SubheadingSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'order', 'recipe', 'items']
 
 class GrocerySerializer(serializers.ModelSerializer):
-    subheadings = SubheadingSerializer(many=True, read_only=True)
+    subheadings = SubheadingSerializer(many=True, required=False)
 
     class Meta:
         model = Grocery

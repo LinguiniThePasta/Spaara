@@ -4,10 +4,14 @@ const shoppingListSlice = createSlice({
     name: "shoppingList",
     initialState: {
         lastAccessedList: null,
+        currentListJson: null,
         lists: [],
         searchQuery: ""
     },
     reducers: {
+        setCurrentListJson: (state, action) => {
+            state.currentListJson = action.payload;
+        },
         setLastAccessedList: (state, action) => {
             state.lastAccessedList = action.payload;
         },
@@ -20,5 +24,5 @@ const shoppingListSlice = createSlice({
     },
 })
 
-export const { setLastAccessedList, setShoppingLists, setSearchQuery } = shoppingListSlice.actions;
+export const { setCurrentListJson, setLastAccessedList, setShoppingLists, setSearchQuery } = shoppingListSlice.actions;
 export default shoppingListSlice.reducer;
