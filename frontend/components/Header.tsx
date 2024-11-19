@@ -1,13 +1,45 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
+import * as SecureStore from 'expo-secure-store';
+import axios from "axios";
+import {API_BASE_URL} from "@/scripts/config"; // Use router for navigation if needed
+
+
 
 export default function Header({header, backButton, backLink, noProfile}) {
     const role = useSelector((state) => state.role.role);
+
+    const [selectedIcon, setSelectedIcon] = useState("");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+
+    useEffect(() => {
+        fetchProfileInfo();
+    }, []);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
+
+
 
     return (
         <View style={styles.header}>
@@ -30,8 +62,11 @@ export default function Header({header, backButton, backLink, noProfile}) {
                 </View>
             )}
             {!noProfile && role !== 'Guest' && (
-                <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.replace('/profile')}>
-                </TouchableOpacity>
+                <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
+                    <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.replace('/profile')}>
+                        <Icon name={selectedIcon} size={30} color={selectedColor}/>
+                    </TouchableOpacity>
+                </View>
             )}
 
         </View>
@@ -58,17 +93,15 @@ const styles = StyleSheet.create({
         color: Colors.light.primaryText,
     },
     profileIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#ccc',
+        width: 50,
+        height: 50,
         justifyContent: 'center',
         alignItems: 'center',
     },
     noProfileIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 50,
+        height: 50,
+        borderRadius: 100,
         backgroundColor: "rgba(0, 0, 0, 0)",
         justifyContent: 'center',
         alignItems: 'center',

@@ -57,6 +57,8 @@ export default function RootLayout() {
                 <Stack.Screen name="splash"/>
                 <Stack.Screen name="shopping"/>
                 <Stack.Screen name="profile"/>
+                <Stack.Screen name="profileColors"/>
+                <Stack.Screen name="profileIcons"/>
                 <Stack.Screen name="map"/>
                 <Stack.Screen name="settings"/>
                 <Stack.Screen name="unauthorized"/>
@@ -64,6 +66,7 @@ export default function RootLayout() {
                 <Stack.Screen name="filterScreen"/>
                 <Stack.Screen name="savedRecipes"/>
                 <Stack.Screen name="social"/>
+                <Stack.Screen name="changeUsername"/>
                 <Stack.Screen name="forgotPassword"/>
                 <Stack.Screen name="recoverPassword"/>
             </Stack>

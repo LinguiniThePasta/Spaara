@@ -27,12 +27,14 @@ class User(AbstractUser):
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
     friends = models.ManyToManyField('self', symmetrical=True, blank=True)
+    profile_icon = models.CharField(max_length=100, default="person")
+    profile_color = models.CharField(max_length=100, default="#F6AA1C")
 
     def __str__(self):
         return self.email
 
 '''    
-# A grocery item
+# A grocery item 
 class GroceryItem(models.Model):
     name = models.CharField()
     price = models.DecimalField(max_digits=10, decimal_places=2)

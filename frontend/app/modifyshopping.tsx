@@ -129,7 +129,6 @@ export default function ShoppingListScreen() {
             // Get the subheadings array
             const {name, subheadings} = response.data;
             setShoppingListName(name);
-            dispatch(setCurrentListJson(response.data));
 
             // Parse subheadings into ItemGroups
             const parsedItemGroups = subheadings.map((subheading) => ({
@@ -474,11 +473,33 @@ export default function ShoppingListScreen() {
     useEffect(() => {
         //fetchItemGroups();
         //fetchShoppingItems();
+        fetchProfileInfo();
         fetchRecipes();
         fetchShoppingList();
         fetchFavorites();
         fetchRecipes();
     }, []); // Empty dependency array ensures this runs only on component mount
+
+    const [selectedIcon, setSelectedIcon] = useState("");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
 
 
     const handleAddItem = async () => {
@@ -595,8 +616,35 @@ export default function ShoppingListScreen() {
 
     const renderFavoriteItem = ({item}) => (
         <FavoriteItem item={item} addFavoriteItem={setFavoriteItems}
-                      removeFromFavorite={setFavoriteItems}></FavoriteItem>
+                      removeFromFavorite={handleAddFavorite}></FavoriteItem>
     );
+
+
+
+    const handleAddFavorite = async (item) => {
+        //console.log("Adding this: " + newItemName);
+        //if (newItemName === "-1") return;
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+                name: item.title,
+                quantity: 1,
+                units: "units",
+                list: local.id
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName("");
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        } finally {
+            await fetchShoppingList();
+        }
+    };
 
     const renderRecipe = ({item}) => (
         <View style={styles.recipeContainer}>
@@ -693,7 +741,12 @@ export default function ShoppingListScreen() {
                             <Icon name="pencil-outline" size={24} color={Colors.light.primaryText}/>
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.profileIconContainer}></View>
+                    {/*<View style={styles.profileIconContainer}></View>*/}
+                    <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
+                        <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                            <Icon name={selectedIcon} size={30} color={selectedColor}/>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15}
@@ -717,7 +770,7 @@ export default function ShoppingListScreen() {
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optimizeButton} onPress={() => handleOptimizeSubheadings()}>
+                <TouchableOpacity style={styles.optimizeButton}>
                     <Icon
                         name="hammer-outline"
                         size={24}
@@ -1049,10 +1102,8 @@ const styles = StyleSheet.create({
         color: Colors.light.primaryText,
     },
     profileIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#ccc',
+        width: 50,
+        height: 50,
         justifyContent: 'center',
         alignItems: 'center',
     },
