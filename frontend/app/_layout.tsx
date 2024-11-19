@@ -14,6 +14,7 @@ import {
     DefaultTransition,
     ModalPresentationIOS
 } from "@react-navigation/stack/lib/typescript/src/TransitionConfigs/TransitionPresets";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
     const [loaded] = useFonts({
@@ -43,6 +44,7 @@ export default function RootLayout() {
     };
 
     return (
+        <GestureHandlerRootView style={{flex: 1}}>
         <Provider store={store}>
             <Stack screenOptions={{
                 headerShown: false,
@@ -71,6 +73,7 @@ export default function RootLayout() {
                 <Stack.Screen name="recoverPassword"/>
             </Stack>
         </Provider>
+        </GestureHandlerRootView>
     );
     /*return (
       <NavigationContainer>

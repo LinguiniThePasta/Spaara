@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import {
     Modal,
     Button,
     TouchableWithoutFeedback,
+    PanResponder,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -28,6 +29,8 @@ import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import GestureDetector from 'react-native-gesture-handler';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -65,18 +68,18 @@ export default function ShoppingListScreen() {
     const [contentVisable, setContentVisable] = useState('Favorite');
 
     const [itemGroups, setItemGroups] = useState([
-        {
-            id: 1000,
+        /*{
+            id: "1000",
             title: "Smallga",
             items: [{id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
         {
-            id: 1001,
+            id: "1001",
             title: "Bigitte",
             items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
-        },
+        },*/
         /*{
             id: 1111,
             title: "GROUP",
@@ -134,6 +137,7 @@ export default function ShoppingListScreen() {
     };
 
 
+    const [baseItems, setBaseItems] = useState([]);
     const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -191,7 +195,7 @@ export default function ShoppingListScreen() {
             var defaultItems = [];
             parsedItemGroups.forEach((group) => {
                 if (group.title === 'Default') {
-                    console.log("default item name: " + group.items[0].title);
+                    //console.log("default item name: " + group.items[0].title);
                     defaultItems = group.items.map((item) => ({
                         id: item.id,
                         title: item.title,
@@ -209,14 +213,18 @@ export default function ShoppingListScreen() {
             const finalItemList = [...parsedItemGroups, ...defaultItems];
 
             console.log("Parsed item groups:", parsedItemGroups);
+            /*
             console.log("Final Item List: ");
             finalItemList.forEach((item) => {
                 console.log(item.title);
             });
+            */
 
             // Update state with parsed ItemGroups
             //setItemGroups(parsedItemGroups);
             setItemGroups(finalItemList);
+            //setBaseItems(defaultItems);
+            
 
             // Flatten items if you need a flat list for any other purpose
             const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
@@ -616,8 +624,74 @@ export default function ShoppingListScreen() {
 
 
     //const [currentDefaultIndex, setCurrentDefaultIndex] = useState(0);
+    const renderItem = ({item, drag, isActive}) => {
+        const isDefault = (item.title === "Default");
+        const isInput = (item.id === -1);
+        const isSpacer = (item.id < -1);
+        const isItem = (!item.items);
+        console.log("item rendered! title: " + item.title + "   isItem: "  + isItem + "   isInput: " + isInput);
 
-    const renderItem = ({item}) => {
+        if (isDefault) {
+            return (
+                /*<DraggableFlatList
+                    data={baseItems}
+                    keyExtractor={(item, index) => String(index)}
+                    renderItem={renderBaseItem}
+                    //contentContainerStyle={styles.listContainer}
+                    onDragEnd={({data}) => setBaseItems(data)}
+                    onDragBegin={() => console.log("DRAGGING")}
+                    dragItemOverflow={false}
+                    //scrollEnabled={false}
+                />*/
+                <View/>
+            );
+        }
+
+        if (isSpacer) {
+            return (
+                <View>
+                    <SpacerItem/>
+                </View>
+            )
+        }
+
+        if (isInput) {
+            return (
+                <View>
+                    <InputItem initialText={newItemName} onChangeText={setNewItemName}
+                               handleAddItem={handleAddItem}></InputItem>
+                </View>
+            );
+        }
+
+        if (isItem) {
+            return (
+                /*<View>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                               handleRemoveItem={handleRemove}></CheckItem>
+                </View>*/
+                <ScaleDecorator>
+                <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                                  onLongPress={drag}>
+                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                               handleRemoveItem={handleRemove}></CheckItem>
+                </TouchableOpacity>
+                </ScaleDecorator>
+            );
+        }
+
+        return (
+            <View>
+                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
+                           handleRemoveItem={handleRemove} onChangeText={setNewItemName}
+                           handleAddItem={handleAddItem}></ItemGroup>
+            </View>
+        );
+    };
+
+
+
+    const renderBaseItem = ({ item, drag, isActive }) => {
         const isDefault = (item.title === "Default");
         const isInput = (item.id === -1);
         const isSpacer = (item.id < -1);
@@ -649,10 +723,13 @@ export default function ShoppingListScreen() {
 
         if (isItem) {
             return (
-                <View>
+                <ScaleDecorator>
+                <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                                  onLongPress={drag}>
                     <CheckItem item={item} handleFavoriteItem={handleFavorite}
                                handleRemoveItem={handleRemove}></CheckItem>
-                </View>
+                </TouchableOpacity>
+                </ScaleDecorator>
             );
         }
 
@@ -796,9 +873,20 @@ export default function ShoppingListScreen() {
         setIsRenameModalVisible(false);
     }
 
+
+    const panResponder = PanResponder.create({
+        onStartShouldSetPanResponder: (evt, gestureState) => {
+          return false;
+        },
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+          return false;
+        },
+      });
+
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
+                {/*HEADER*/}
                 <View style={styles.header}>
                     <View style={styles.left}>
                         <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
@@ -809,7 +897,6 @@ export default function ShoppingListScreen() {
                             <Icon name="pencil-outline" size={24} color={Colors.light.primaryText}/>
                         </TouchableOpacity>
                     </View>
-                    {/*<View style={styles.profileIconContainer}></View>*/}
                     <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
                         <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
                             <Icon name={selectedIcon} size={30} color={selectedColor}/>
@@ -817,27 +904,44 @@ export default function ShoppingListScreen() {
                     </View>
                 </View>
 
+                {/*ITEM LIST*/}
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15}
                                       style={styles.shoppingListContainer}>
-                    <FlatList
+                    {/*<FlatList
+                        //{...panResponder.panHandlers}
                         data={itemGroups}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => String(item.id)}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
+                    />*/}
+                    {/*<SafeAreaView>
+                        <DraggableFlatList
+                            data={baseItems}
+                            keyExtractor={(item, index) => String(index)}
+                            renderItem={renderBaseItem}
+                            contentContainerStyle={styles.listContainer}
+                            onDragEnd={({data}) => setBaseItems(data)}
+                            onDragBegin={() => console.log("DRAGGING")}
+                            dragItemOverflow={false}
+                        />
+                    </SafeAreaView>*/}
+                    <DraggableFlatList
+                        data={itemGroups}
+                        keyExtractor={(item, index) => String(index)}
+                        renderItem={renderItem}
+                        contentContainerStyle={styles.listContainer}
+                        onDragEnd={({data}) => setItemGroups(data)}
                     />
+                    <SpacerItem/>
+                    <SpacerItem/>
                 </KeyboardAvoidingView>
 
-                {/*<FlatList
-                    data={shoppingItems}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.listContainer}
-                />*/}
-
+                {/*ADD FAVORITES*/}
                 <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
+                {/*OPTIMIZE*/}
                 <TouchableOpacity style={styles.optimizeButton}>
                     <Icon
                         name="hammer-outline"
@@ -846,6 +950,7 @@ export default function ShoppingListScreen() {
                     />
                 </TouchableOpacity>
 
+                {/*FAVORITES MENU*/}
                 <Modal
                     visible={isRenameModalVisible}
                     transparent={true}
