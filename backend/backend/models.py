@@ -33,7 +33,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
-'''    
+'''   
 # A grocery item 
 class GroceryItem(models.Model):
     name = models.CharField()
