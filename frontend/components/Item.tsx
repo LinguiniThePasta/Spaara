@@ -35,12 +35,17 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
     function decreaseItem() {
         setNumber(number - 1);
         if (number === 0) {
-            handleRemoveItem();
+            handleRemoveItem(item);
         }
     }
 
     function toggleCheck() {
         setChecked(!checked);
+    }
+
+    function toggleFavorite() {
+        setFavorite(!favorite);
+        handleFavoriteItem(item);
     }
 
 
@@ -54,7 +59,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
             </View>
 
             <View style={styles.rightContainer}>
-                <Pressable onPress={() => {handleFavoriteItem(); setFavorite(!favorite);}}>
+                <Pressable onPress={toggleFavorite/*() => {handleFavoriteItem(item, 10); setFavorite(!favorite);}*/}>
                     <Icon 
                         name={favorite ? "star" : "star-outline" }
                         size={20} 

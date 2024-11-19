@@ -137,7 +137,7 @@ export default function ShoppingListScreen() {
     };
 
 
-    const [baseItems, setBaseItems] = useState([]);
+    //const [baseItems, setBaseItems] = useState([]);
     const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -192,10 +192,10 @@ export default function ShoppingListScreen() {
                 ],
             }));
 
+            //Format list of default items
             var defaultItems = [];
             parsedItemGroups.forEach((group) => {
                 if (group.title === 'Default') {
-                    //console.log("default item name: " + group.items[0].title);
                     defaultItems = group.items.map((item) => ({
                         id: item.id,
                         title: item.title,
@@ -206,26 +206,15 @@ export default function ShoppingListScreen() {
                         favorited: item.favorited,
                         order: item.order,
                     }));
-                    //defaultItems.push(...group.items);
                 }
             });
-
+            defaultItems.sort((a, b) => a.order - b.order);
             const finalItemList = [...parsedItemGroups, ...defaultItems];
-
             console.log("Parsed item groups:", parsedItemGroups);
-            /*
-            console.log("Final Item List: ");
-            finalItemList.forEach((item) => {
-                console.log(item.title);
-            });
-            */
 
             // Update state with parsed ItemGroups
-            //setItemGroups(parsedItemGroups);
             setItemGroups(finalItemList);
-            //setBaseItems(defaultItems);
             
-
             // Flatten items if you need a flat list for any other purpose
             const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
             setShoppingItems(allItems);
@@ -590,6 +579,47 @@ export default function ShoppingListScreen() {
         }
     };
 
+
+
+    const handleReorderItems = async (items) => {
+        const groceryListId = local.id;
+        var itemsOrderList = [];
+        items.forEach((item) => {
+            if (item.order) {
+                //console.log("item.id: " + item.id + "   item.title: " + item.title + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
+                itemsOrderList.push(
+                    {
+                        item_id: item.id,
+                        order: item.order
+                    }
+                );
+            }
+        });
+        /*
+        itemsOrderList.forEach((item) => {
+            console.log("item_id: " + item.item_id + "   order: " + item.order)
+        });
+        */
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery/${groceryListId}/reorder-items/`, {
+                items_order: itemsOrderList
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            console.log("Reordered Items successfully!");
+        } catch (error) {
+            console.error('Error reordering items:', error);
+        } finally {
+            await fetchShoppingList();
+        }
+    };
+
+
+
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
@@ -604,7 +634,7 @@ export default function ShoppingListScreen() {
             setNewItemName('');
             await fetchShoppingList();
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error removing a shopping item:', error);
         }
     }
 
@@ -625,73 +655,6 @@ export default function ShoppingListScreen() {
 
     //const [currentDefaultIndex, setCurrentDefaultIndex] = useState(0);
     const renderItem = ({item, drag, isActive}) => {
-        const isDefault = (item.title === "Default");
-        const isInput = (item.id === -1);
-        const isSpacer = (item.id < -1);
-        const isItem = (!item.items);
-        console.log("item rendered! title: " + item.title + "   isItem: "  + isItem + "   isInput: " + isInput);
-
-        if (isDefault) {
-            return (
-                /*<DraggableFlatList
-                    data={baseItems}
-                    keyExtractor={(item, index) => String(index)}
-                    renderItem={renderBaseItem}
-                    //contentContainerStyle={styles.listContainer}
-                    onDragEnd={({data}) => setBaseItems(data)}
-                    onDragBegin={() => console.log("DRAGGING")}
-                    dragItemOverflow={false}
-                    //scrollEnabled={false}
-                />*/
-                <View/>
-            );
-        }
-
-        if (isSpacer) {
-            return (
-                <View>
-                    <SpacerItem/>
-                </View>
-            )
-        }
-
-        if (isInput) {
-            return (
-                <View>
-                    <InputItem initialText={newItemName} onChangeText={setNewItemName}
-                               handleAddItem={handleAddItem}></InputItem>
-                </View>
-            );
-        }
-
-        if (isItem) {
-            return (
-                /*<View>
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                               handleRemoveItem={handleRemove}></CheckItem>
-                </View>*/
-                <ScaleDecorator>
-                <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
-                                  onLongPress={drag}>
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                               handleRemoveItem={handleRemove}></CheckItem>
-                </TouchableOpacity>
-                </ScaleDecorator>
-            );
-        }
-
-        return (
-            <View>
-                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
-                           handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                           handleAddItem={handleAddItem}></ItemGroup>
-            </View>
-        );
-    };
-
-
-
-    const renderBaseItem = ({ item, drag, isActive }) => {
         const isDefault = (item.title === "Default");
         const isInput = (item.id === -1);
         const isSpacer = (item.id < -1);
@@ -724,11 +687,11 @@ export default function ShoppingListScreen() {
         if (isItem) {
             return (
                 <ScaleDecorator>
-                <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
-                                  onLongPress={drag}>
-                    <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                               handleRemoveItem={handleRemove}></CheckItem>
-                </TouchableOpacity>
+                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                                      onLongPress={drag}>
+                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                                   handleRemoveItem={handleRemove}></CheckItem>
+                    </TouchableOpacity>
                 </ScaleDecorator>
             );
         }
@@ -741,6 +704,34 @@ export default function ShoppingListScreen() {
             </View>
         );
     };
+
+    const [dummy, setDummy] = useState([]);
+    const handleDragEnd = ({data}) => {
+        //setItemGroups(data)
+        //setDummy(data);
+
+        data.forEach((item) => {
+            if (item.order) {
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+            }
+        });
+        var iterator = 1;
+        data.forEach((item) => {
+            if (item.order) {
+                item.order = iterator++;
+            }
+        });
+        data.forEach((item) => {
+            if (item.order) {
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+            }
+        });
+
+        setItemGroups(data)
+        handleReorderItems(data);
+    };
+
+
 
     const handleAddRecipe = async (recipe) => {
         try {
@@ -864,24 +855,18 @@ export default function ShoppingListScreen() {
     // };
 
 
+    /*
     const renderItemGroup = ({item}) => (
         <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite}
                    handleRemoveItem={handleRemove} onChangeText={setNewItemName}
                    handleAddItem={handleAddItem}></ItemGroup>
     );
+    */
     const dismissModal = () => {
         setIsRenameModalVisible(false);
     }
 
 
-    const panResponder = PanResponder.create({
-        onStartShouldSetPanResponder: (evt, gestureState) => {
-          return false;
-        },
-        onMoveShouldSetPanResponder: (evt, gestureState) => {
-          return false;
-        },
-      });
 
     return (
         <View style={styles.container}>
@@ -907,33 +892,13 @@ export default function ShoppingListScreen() {
                 {/*ITEM LIST*/}
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15}
                                       style={styles.shoppingListContainer}>
-                    {/*<FlatList
-                        //{...panResponder.panHandlers}
-                        data={itemGroups}
-                        keyExtractor={(item) => String(item.id)}
-                        renderItem={renderItem}
-                        contentContainerStyle={styles.listContainer}
-                    />*/}
-                    {/*<SafeAreaView>
-                        <DraggableFlatList
-                            data={baseItems}
-                            keyExtractor={(item, index) => String(index)}
-                            renderItem={renderBaseItem}
-                            contentContainerStyle={styles.listContainer}
-                            onDragEnd={({data}) => setBaseItems(data)}
-                            onDragBegin={() => console.log("DRAGGING")}
-                            dragItemOverflow={false}
-                        />
-                    </SafeAreaView>*/}
                     <DraggableFlatList
                         data={itemGroups}
                         keyExtractor={(item, index) => String(index)}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
-                        onDragEnd={({data}) => setItemGroups(data)}
+                        onDragEnd={handleDragEnd}
                     />
-                    <SpacerItem/>
-                    <SpacerItem/>
                 </KeyboardAvoidingView>
 
                 {/*ADD FAVORITES*/}

@@ -971,7 +971,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         if not isinstance(items_order, list):
             return Response({"error": "items_order must be a list of item order mappings."},
                             status=status.HTTP_400_BAD_REQUEST)
-
+        
         try:
             with transaction.atomic():
                 for item_data in items_order:
@@ -979,7 +979,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                     order = item_data.get('order')
                     if not item_id or not isinstance(order, int):
                         raise ValidationError("Each item must have an 'item_id' and an integer 'order'.")
-                    item = GroceryItemUnoptimized.objects.get(id=item_id, grocery=grocery)
+                    item = GroceryItemUnoptimized.objects.get(id=item_id)
                     item.order = order
                     item.save()
             return Response({"success": "Items reordered successfully."}, status=status.HTTP_200_OK)
