@@ -57,13 +57,72 @@ export default function App() {
                 longitude: selectedAddress['longitude'],
             };
             setAddressCoords(selectedCoords);
+            // Check as the crow flies distance between selected address and current location, give alert if too far
+            const distance = getDistance(locationCoords.latitude, locationCoords.longitude, selectedCoords.latitude, selectedCoords.longitude);
+            if (distance > 50) {
+                Alert.alert(
+                    "Selected Address is Far",
+                    "Your selected address is far away from your current location. Are you sure you want to proceed?",
+                    [
+                        {
+                            text: "Continue",
+                            style: "default",
+                        },
+                        {
+                            text: "Change Address",
+                            style: "cancel",
+                            onPress: () => router.replace("/setAddress"),
+                        },
+                    ],
+                    { cancelable: true }
+                );
+            } else {
+                setIsCurrent(false);
+                fetchStores(selectedCoords.latitude, selectedCoords.longitude)
+            }
             fetchStores()
         } else {
             // Use user's current location
+            Alert.alert(
+                "No Address Set", // Title of the alert
+                "You do not currently have an address set for the map to use. Stores will be generated around your current location, and the navigate home feature will be disabled.", // Message
+                [
+                    {
+                        text: "Set Address", // Text for the first button
+                        style: "default", // Optional: can be "default", "cancel", or "destructive"
+                        onPress: () => router.replace("/setAddress"), // Action for the second button
+                        
+                    },
+                    {
+                        text: "Dismiss", // Text for the second button
+                        style: "cancel",
+                        
+                    },
+                ],
+                { cancelable: true } // Allow alert dismissal by tapping outside
+            );
             setIsCurrent(true);
             setAddressCoords(locationCoords);
             fetchStores(locationCoords.latitude, locationCoords.longitude)
         }
+    };
+
+    // Uses spherical geometry to calculate distance between two coordinates on Earth
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+        const toRadians = (degree) => (degree * Math.PI) / 180;
+    
+        const R = 3963.1; // Radius of the Earth in miles
+        const dLat = toRadians(lat2 - lat1);
+        const dLon = toRadians(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRadians(lat1)) *
+            Math.cos(toRadians(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    
+        return R * c; // Distance in miles
     };
 
     // Use address lat, long, and user preference radius to find Krogers
