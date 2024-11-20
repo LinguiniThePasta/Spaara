@@ -9,20 +9,25 @@ from django.dispatch import receiver
 import uuid
 from django.shortcuts import get_object_or_404
 
+
 def default_addresses():
-    return [{"id": 1, "name": "Current Location", "address": "Current Location", "icon": "location-arrow", "icontype":"fontawesome", "latitude": None, "longitude": None}]
+    return [{"id": 1, "name": "Current Location", "address": "Current Location", "icon": "location-arrow",
+             "icontype": "fontawesome", "latitude": None, "longitude": None}]
+
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(unique=True)
     email = models.EmailField(unique=True)
-    email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
+    email_pending = models.EmailField(unique=True, null=True,
+                                      default=None)  # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     addresses = models.JSONField(default=default_addresses)
     selected_address_id = models.IntegerField(default=1)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
-    is_active = models.BooleanField(default=True)     # This is used to determine if the user has verified their email. Set true for testing.
+    is_active = models.BooleanField(
+        default=True)  # This is used to determine if the user has verified their email. Set true for testing.
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
@@ -32,6 +37,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
 
 '''   
 # A grocery item 
@@ -101,6 +107,7 @@ class DietRestriction(models.Model):
     def __str__(self):
         return self.name
 
+
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='friend_requests_sent', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='friend_requests_received', on_delete=models.CASCADE)
@@ -111,6 +118,7 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.from_user} to {self.to_user} ({self.status})"
+
 
 class ListBase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -129,16 +137,17 @@ class Grocery(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="groceries", default=None)
 
 
-
 class Recipe(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
+
 
 class Subheading(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     grocery = models.ForeignKey(Grocery, on_delete=models.CASCADE, related_name='subheadings')
     order = models.PositiveIntegerField(default=0)
-    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, related_name='subheadings', null=True, blank=True, default=None)
+    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, related_name='subheadings', null=True, blank=True,
+                               default=None)
 
     class Meta:
         ordering = ['order']
@@ -157,6 +166,7 @@ def create_default_subheading(sender, instance, created, **kwargs):
             order=1  # Initial order
             # recipe is null by default, supporting user-defined subheadings
         )
+
 
 class ItemBase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -198,13 +208,13 @@ class GroceryItemUnoptimized(ItemBase):
     order = models.PositiveIntegerField(default=0)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
 
-
     def __str__(self):
         return self.name
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
+
 
 class StoreItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -216,6 +226,7 @@ class StoreItem(models.Model):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     allergens = models.CharField(max_length=255)
+
 
 class RecipeItem(ItemBase):
     quantity = models.IntegerField()
@@ -230,9 +241,11 @@ class RecipeItem(ItemBase):
 
 class FavoritedItem(ItemBase):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
+
 
 @receiver(pre_save, sender=GroceryItemUnoptimized)
 @receiver(pre_save, sender=RecipeItem)
