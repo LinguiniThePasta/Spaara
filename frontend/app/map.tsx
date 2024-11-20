@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Pressable } from 'react-native';
 import { Colors } from '@/styles/Colors';
+import {router} from 'expo-router';
 import Footer from "@/components/Footer";
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView, { Marker, Callout, CalloutSubview } from 'react-native-maps';
 import UnifiedIcon from '@/components/UnifiedIcon';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 import * as Location from 'expo-location';
-import {router} from "expo-router";
+import { Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function App() {
@@ -42,7 +43,6 @@ export default function App() {
                 longitude: selectedAddress['longitude'],
             };
             setAddressCoords(locationCoords);
-            setIsLoading(false);
             fetchStores(); // Fetch nearby stores using selected
         } else {
             // Use user's current location
@@ -57,7 +57,6 @@ export default function App() {
                 longitude: location.coords.longitude,
             };
             setAddressCoords(locationCoords);
-            setIsLoading(false);
             fetchStores(); // Fetch nearby stores using location
         }
     };
@@ -71,12 +70,24 @@ export default function App() {
                     Authorization: `Bearer ${jwtToken}`,
                 },
             });
-            setStores(response.data.stores); // Set Kroger stores data to state
+            setStores(response.data.stores); // Set stores data to state
+            setIsLoading(false);
         } catch (error) {
             console.error('Error fetching stores:', error.message);
             Alert.alert('Error', 'Unable to fetch stores. Please try again.');
+            setIsLoading(false);
         }
     };
+
+    const handleNavigate = (store) => {
+        const url = `https://maps.apple.com/?daddr=${store.coordinates.latitude},${store.coordinates.longitude}&dirflg=d`;
+        Linking.openURL(url);
+    }
+
+    const handleNavigateHome = () => {
+        const url = `https://maps.apple.com/?daddr=${addressCoords.latitude},${addressCoords.longitude}&dirflg=d`;
+        Linking.openURL(url);
+    }
 
     useFocusEffect(
         useCallback(() => {
@@ -117,6 +128,27 @@ export default function App() {
                         <View style={styles.marker}>
                             <UnifiedIcon type="materialicon" name="home" size={15} color={Colors.light.primaryColor} />
                         </View>
+                        <Callout tooltip>
+                            <View style={styles.calloutContainer}>
+                            <View style={styles.calloutRow}>
+                                {/* Left: Name and Address */}
+                                <View style={styles.calloutLeft}>
+                                <Text style={styles.calloutTitle}>Home Address</Text>
+                                </View>
+                                {/* Divider */}
+                                <View style={styles.calloutDivider} />
+                                {/* Right: Clickable Map Icon */}
+                                <TouchableOpacity onPress={() => handleNavigateHome()}>
+                                <UnifiedIcon
+                                    type="materialicon"
+                                    name="map"
+                                    size={24}
+                                    color={Colors.light.primaryColor}
+                                />
+                                </TouchableOpacity>
+                            </View>
+                            </View>
+                        </Callout>
                     </Marker>
                 )}
                 {stores.map((store, index) => (
@@ -131,6 +163,29 @@ export default function App() {
                         <View style={styles.storeMarker}>
                             <UnifiedIcon type="materialicon" name="store" size={15} color={Colors.light.primaryColor} />
                         </View>
+                        <Callout tooltip>
+                            <View style={styles.calloutContainer}>
+                            <View style={styles.calloutRow}>
+                                {/* Left: Name and Address */}
+                                <View style={styles.calloutLeft}>
+                                <Text style={styles.calloutTitle}>{store.name}</Text>
+                                <Text style={styles.calloutText}>{store.address}</Text>
+                                </View>
+                                {/* Divider */}
+                                <View style={styles.calloutDivider} />
+                                {/* Right: Clickable Map Icon */}
+                                <TouchableOpacity onPress={() => handleNavigate(store)}>
+                                <UnifiedIcon
+                                    type="materialicon"
+                                    name="map"
+                                    size={24}
+                                    color={Colors.light.primaryColor}
+                                />
+                                </TouchableOpacity>
+                            </View>
+                            </View>
+                        </Callout>
+
                     </Marker>
                 ))}
             </MapView>
@@ -141,8 +196,8 @@ export default function App() {
             )}
             {/* Book icon button to navigate to Set Addresses */}
             <TouchableOpacity
-                style={styles.bookIcon}
-                onPress={() => router.push('/settings')} // Navigate to the SetAddress page
+                style={styles.settingsIcon}
+                onPress={() => router.replace('/settings')} // Navigate to the SetAddress page
             >
                 <UnifiedIcon type="ionicon" name="settings" style={null} size={30} color={Colors.light.primaryColor} />
             </TouchableOpacity>
@@ -173,25 +228,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    callout: {
-        width: 150,
-        alignItems: 'center',
-    },
-    calloutTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    calloutAddress: {
-        fontSize: 14,
-        color: 'gray',
-    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    bookIcon: {
+    settingsIcon: {
         position: 'absolute',
         bottom: 120, // Above the footer
         right: 20, // Right side of the screen
@@ -204,4 +247,35 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
     },
+    calloutContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: 250,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+      },
+      calloutRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      calloutLeft: {
+        flex: 1,
+        paddingLeft: 10,
+      },
+      calloutDivider: {
+        width: 1,
+        height: '100%',
+        backgroundColor: '#ccc',
+        marginHorizontal: 10,
+      },
+      calloutTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#000',
+      },
+      calloutText: {
+        fontSize: 14,
+        color: '#666',
+      },
 });
