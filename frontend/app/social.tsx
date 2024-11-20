@@ -107,7 +107,7 @@ const SocialPage = () => {
                     onPress: () => console.log("Cancel Pressed"),
                     style: "cancel"
                 },
-                {text: "Delete", onPress: () => removeFriend(username)}
+                {text: "Delete", style: "destructive", onPress: () => removeFriend(username)}
             ],
             {cancelable: false}
         );
@@ -124,7 +124,7 @@ const SocialPage = () => {
                   onPress: () => console.log("Cancel Pressed"),
                   style: "cancel"
               },
-              {text: "Delete", onPress: () => revokeFriendRequest(username)}
+              {text: "Delete", style: "destructive", onPress: () => revokeFriendRequest(username)}
           ],
           {cancelable: false}
       );
@@ -378,9 +378,6 @@ const SocialPage = () => {
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
             <View style={styles.left}>
-                <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
-                    <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
-                </Pressable>
                 <Text style={styles.headerTitle}>{"Social"}</Text>
             </View>
             <View style={styles.iconContainer}>
