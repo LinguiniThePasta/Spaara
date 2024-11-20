@@ -36,30 +36,64 @@ export default function App() {
         }
     };
 
+    
     const fetchAddressCoords = async () => {
         const selectedAddress = await fetchSelectedAddress();
-        // Assign current location
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission denied', 'Allow location access to use current location.');
-            return;
+    
+        // Get current location (if permissions are granted)
+        const currentLocation = await requestLocationPermission();
+        if (currentLocation) {
+            setCurrentLocation(currentLocation);
         }
-        let location = await Location.getCurrentPositionAsync({});
-        const locationCoords = {
+    
+        if (selectedAddress?.latitude && selectedAddress?.longitude) {
+            const selectedCoords = {
+                latitude: selectedAddress.latitude,
+                longitude: selectedAddress.longitude,
+            };
+    
+            setAddressCoords(selectedCoords);
+    
+            // Check distance and show alert if necessary
+            if (currentLocation) {
+                await checkDistanceAlert(currentLocation, selectedCoords);
+            }
+    
+            // Fetch stores for selected address
+            fetchStores();
+        } else {
+            if (!currentLocation) {
+                // Handle case when no address is set and location is unavailable
+                await handleNoAddressSet();
+            } else {
+                setIsCurrent(true);
+                setAddressCoords(currentLocation);
+                fetchStores(currentLocation.latitude, currentLocation.longitude);
+            }
+        }
+    };
+    
+    const requestLocationPermission = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            return null; // Return null if permissions are denied
+        }
+        const location = await Location.getCurrentPositionAsync({});
+        return {
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
         };
-        setCurrentLocation(locationCoords);
-        if (selectedAddress['latitude'] && selectedAddress['longitude']) {
-            // Use selected address
-            const selectedCoords = {
-                latitude: selectedAddress['latitude'],
-                longitude: selectedAddress['longitude'],
-            };
-            setAddressCoords(selectedCoords);
-            // Check as the crow flies distance between selected address and current location, give alert if too far
-            const distance = getDistance(locationCoords.latitude, locationCoords.longitude, selectedCoords.latitude, selectedCoords.longitude);
-            if (distance > 50) {
+    };
+    
+    const checkDistanceAlert = async (currentLocation, selectedCoords) => {
+        const distance = getDistance(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            selectedCoords.latitude,
+            selectedCoords.longitude
+        );
+        if (distance > 50) {
+            await new Promise<void>((resolve) => {
                 Alert.alert(
                     "Selected Address is Far",
                     "Your selected address is far away from your current location. Are you sure you want to proceed?",
@@ -67,44 +101,49 @@ export default function App() {
                         {
                             text: "Continue",
                             style: "default",
+                            onPress: () => {resolve()}, // Continue the flow
                         },
                         {
                             text: "Change Address",
                             style: "cancel",
-                            onPress: () => router.replace("/setAddress"),
+                            onPress: () => {
+                                router.replace("/setAddress");
+                                resolve(); // Ensure the promise is resolved
+                            },
                         },
                     ],
                     { cancelable: true }
                 );
-            } else {
-                setIsCurrent(false);
-                fetchStores(selectedCoords.latitude, selectedCoords.longitude)
-            }
-            fetchStores()
-        } else {
-            // Use user's current location
+            });
+        }
+    };
+    
+    const handleNoAddressSet = async () => {
+        await new Promise<void>((resolve) => {
             Alert.alert(
-                "No Address Set", // Title of the alert
-                "You do not currently have an address set for the map to use. Stores will be generated around your current location, and the navigate home feature will be disabled.", // Message
+                "No Address Set",
+                "You do not currently have an address set for the map to use. Either enable an address in settings, or turn on location services.",
                 [
                     {
-                        text: "Set Address", // Text for the first button
-                        style: "default", // Optional: can be "default", "cancel", or "destructive"
-                        onPress: () => router.replace("/setAddress"), // Action for the second button
-                        
+                        text: "Set Address",
+                        style: "default",
+                        onPress: () => {
+                            router.replace("/setAddress");
+                            resolve();
+                        },
                     },
                     {
-                        text: "Dismiss", // Text for the second button
+                        text: "Back",
                         style: "cancel",
-                        
+                        onPress: () => {
+                            router.back();
+                            resolve();
+                        },
                     },
                 ],
-                { cancelable: true } // Allow alert dismissal by tapping outside
+                { cancelable: false }
             );
-            setIsCurrent(true);
-            setAddressCoords(locationCoords);
-            fetchStores(locationCoords.latitude, locationCoords.longitude)
-        }
+        });
     };
 
     // Uses spherical geometry to calculate distance between two coordinates on Earth
@@ -204,7 +243,6 @@ export default function App() {
                         </View>
                         <Callout tooltip={true} />
                     </View>
-                    
                 </Marker>
                 {addressCoords && !isCurrent && (
                     <Marker coordinate={addressCoords} title="My Address">
