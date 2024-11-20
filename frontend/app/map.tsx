@@ -17,6 +17,8 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [stores, setStores] = useState([]); // State to store Kroger locations
     const mapRef = useRef(null); // Reference to MapView
+    const [isCurrent, setIsCurrent] = useState(false); // State to store if current location is being used
+    const [currentLocation, setCurrentLocation] = useState(null);
 
     const fetchSelectedAddress = async () => {
         try {
@@ -36,41 +38,54 @@ export default function App() {
 
     const fetchAddressCoords = async () => {
         const selectedAddress = await fetchSelectedAddress();
+        // Assign current location
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission denied', 'Allow location access to use current location.');
+            return;
+        }
+        let location = await Location.getCurrentPositionAsync({});
+        const locationCoords = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+        };
+        setCurrentLocation(locationCoords);
         if (selectedAddress['latitude'] && selectedAddress['longitude']) {
             // Use selected address
-            const locationCoords = {
+            const selectedCoords = {
                 latitude: selectedAddress['latitude'],
                 longitude: selectedAddress['longitude'],
             };
-            setAddressCoords(locationCoords);
-            fetchStores(); // Fetch nearby stores using selected
+            setAddressCoords(selectedCoords);
+            fetchStores()
         } else {
             // Use user's current location
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permission denied', 'Allow location access to use current location.');
-                return;
-            }
-            let location = await Location.getCurrentPositionAsync({});
-            const locationCoords = {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-            };
+            setIsCurrent(true);
             setAddressCoords(locationCoords);
-            fetchStores(); // Fetch nearby stores using location
+            fetchStores(locationCoords.latitude, locationCoords.longitude)
         }
     };
 
     // Use address lat, long, and user preference radius to find Krogers
-    const fetchStores = async () => {
+    const fetchStores = async (latitude = NaN, longitude = NaN) => {
         try {
+            // Retrieve the JWT token
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.get(`${API_BASE_URL}/api/maps/locations/stores`, {
+            
+            // Build the request URL based on whether latitude and longitude are provided
+            const url = latitude && longitude
+                ? `${API_BASE_URL}/api/maps/locations/stores?latitude=${latitude}&longitude=${longitude}`
+                : `${API_BASE_URL}/api/maps/locations/stores`;
+
+            // Make the API call
+            const response = await axios.get(url, {
                 headers: {
                     Authorization: `Bearer ${jwtToken}`,
                 },
             });
-            setStores(response.data.stores); // Set stores data to state
+
+            // Update the state with the fetched stores
+            setStores(response.data.stores);
             setIsLoading(false);
         } catch (error) {
             console.error('Error fetching stores:', error.message);
@@ -102,8 +117,8 @@ export default function App() {
             mapRef.current.animateToRegion(
                 {
                     ...addressCoords,
-                    latitudeDelta: 0.05,
-                    longitudeDelta: 0.05,
+                    latitudeDelta: 0.2,
+                    longitudeDelta: 0.2,
                 },
                 1000 // Duration of the animation in milliseconds
             );
@@ -123,30 +138,40 @@ export default function App() {
                     longitudeDelta: 0.1,
                 }}
             >
-                {addressCoords && (
+                 <Marker coordinate={currentLocation}>
+                    <View style={styles.markerContainer}>
+                        <View style={styles.outerCircle}>
+                            <View style={styles.innerCircle} />
+                        </View>
+                        <Callout tooltip={true} />
+                    </View>
+                    
+                </Marker>
+                {addressCoords && !isCurrent && (
                     <Marker coordinate={addressCoords} title="My Address">
                         <View style={styles.marker}>
                             <UnifiedIcon type="materialicon" name="home" size={15} color={Colors.light.primaryColor} />
                         </View>
-                        <Callout tooltip>
+
+                        <Callout tooltip onPress={() => handleNavigateHome()}>
                             <View style={styles.calloutContainer}>
-                            <View style={styles.calloutRow}>
-                                {/* Left: Name and Address */}
-                                <View style={styles.calloutLeft}>
-                                <Text style={styles.calloutTitle}>Home Address</Text>
+                                <View style={styles.calloutRow}>
+                                    {/* Left: Name and Address */}
+                                    <View style={styles.calloutLeft}>
+                                        <Text style={styles.calloutTitle}>Home Address</Text>
+                                    </View>
+                                    {/* Divider */}
+                                    <View style={styles.calloutDivider} />
+                                    {/* Right: Clickable Map Icon */}
+                                        <TouchableOpacity style={styles.calloutIconContainer}>
+                                            <UnifiedIcon
+                                                type="materialicon"
+                                                name="directions"
+                                                size={24}
+                                                color={Colors.light.primaryColor}
+                                            />
+                                        </TouchableOpacity>
                                 </View>
-                                {/* Divider */}
-                                <View style={styles.calloutDivider} />
-                                {/* Right: Clickable Map Icon */}
-                                <TouchableOpacity onPress={() => handleNavigateHome()}>
-                                <UnifiedIcon
-                                    type="materialicon"
-                                    name="map"
-                                    size={24}
-                                    color={Colors.light.primaryColor}
-                                />
-                                </TouchableOpacity>
-                            </View>
                             </View>
                         </Callout>
                     </Marker>
@@ -163,28 +188,28 @@ export default function App() {
                         <View style={styles.storeMarker}>
                             <UnifiedIcon type="materialicon" name="store" size={15} color={Colors.light.primaryColor} />
                         </View>
-                        <Callout tooltip>
+                        <Callout tooltip onPress={() => handleNavigate(store)}>
                             <View style={styles.calloutContainer}>
-                            <View style={styles.calloutRow}>
-                                {/* Left: Name and Address */}
-                                <View style={styles.calloutLeft}>
-                                <Text style={styles.calloutTitle}>{store.name}</Text>
-                                <Text style={styles.calloutText}>{store.address}</Text>
+                                <View style={styles.calloutRow}>
+                                    {/* Left: Name and Address */}
+                                    <View style={styles.calloutLeft}>
+                                        <Text style={styles.calloutTitle}>{store.name}</Text>
+                                        <Text style={styles.calloutText}>{store.address}</Text>
+                                    </View>
+                                    {/* Divider */}
+                                    <View style={styles.calloutDivider} />
+                                    {/* Right: Clickable Map Icon */}
+                                    <TouchableOpacity style={styles.calloutIconContainer}>
+                                        <UnifiedIcon
+                                            type="materialicon"
+                                            name="directions"
+                                            size={32}
+                                            color={Colors.light.primaryColor}
+                                        />
+                                    </TouchableOpacity>
                                 </View>
-                                {/* Divider */}
-                                <View style={styles.calloutDivider} />
-                                {/* Right: Clickable Map Icon */}
-                                <TouchableOpacity onPress={() => handleNavigate(store)}>
-                                <UnifiedIcon
-                                    type="materialicon"
-                                    name="map"
-                                    size={24}
-                                    color={Colors.light.primaryColor}
-                                />
-                                </TouchableOpacity>
                             </View>
-                            </View>
-                        </Callout>
+                            </Callout>
 
                     </Marker>
                 ))}
@@ -221,6 +246,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    markerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    outerCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    innerCircle: {
+        width: 15,
+        height: 15,
+        borderRadius: 7.5,
+        backgroundColor: '#007AFF', // Blue color for the inner dot
+    },
     storeMarker: {
         backgroundColor: Colors.light.background,
         padding: 2,
@@ -250,25 +293,35 @@ const styles = StyleSheet.create({
     calloutContainer: {
         flexDirection: 'column',
         alignItems: 'center',
-        width: 250,
+        width: 300,
         padding: 10,
         backgroundColor: '#fff',
         borderRadius: 8,
       },
       calloutRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-      },
-      calloutLeft: {
-        flex: 1,
-        paddingLeft: 10,
-      },
-      calloutDivider: {
+        flexDirection: 'row', // Ensures children are placed in a row
+        alignItems: 'center', // Vertically centers the items
+        justifyContent: 'space-between', // Distributes space between children
+        width: '100%', // Ensures the row takes up the full width
+    },
+    
+    calloutLeft: {
+        flex: 1, // Allows the left section to take remaining space
+        paddingRight: 10, // Adds spacing between text and divider
+    },
+    
+    calloutDivider: {
         width: 1,
-        height: '100%',
+        height: '60%', // Adjusts divider height to fit better visually
         backgroundColor: '#ccc',
-        marginHorizontal: 10,
-      },
+        marginHorizontal: 10, // Adds spacing around the divider
+    },
+    
+    calloutIconContainer: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        padding: 5, // Adds padding to the icon
+    },
       calloutTitle: {
         fontSize: 16,
         fontWeight: 'bold',

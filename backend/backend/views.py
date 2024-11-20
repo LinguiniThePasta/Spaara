@@ -759,6 +759,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'No address id found'}, status=status.HTTP_404_NOT_FOUND)
 
+
 class AutocompleteView(APIView):
     def post(self, request):
         search_text = request.data.get('search_text', '')
@@ -1034,7 +1035,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
 class StoreView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # Get method for stores. Latitude and longitude can be passed in if desired but, 
+    # if omitted, will use the latitude and longitude corresponding to the user's geocoded address.
     def get(self, request):
+        # GET LATITUDE AND LONGITUDE QUERY PARAMS
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+
         # USE GOOGLE PLACES TO GET WALMART STORES
         user = request.user
         address = get_selected_address(user)
@@ -1043,17 +1050,13 @@ class StoreView(APIView):
         radius = str(int(user.max_distance) * settings.METERS_PER_MILE)
         radius_miles = str(int(user.max_distance))
 
-        # Check latitude and longitude and, if none, use current location
-        latitude = None
-        longitude = None
-        if address.get('latitude') and address.get('longitude'):
-            latitude = address['latitude']
-            longitude = address['longitude']
-        else:
-            # Get the current location from the user's device
-            [latitude, longitude] = get_current_location()
-            if not latitude or not longitude:
-                return Response({'error': 'Could not find a latitude and longitude with associated user address'}, status=status.HTTP_400_BAD_REQUEST)
+        # If latitude and longitude are passed, use those. If not, use selected address. Failing that, throw an error.
+        if not latitude or not longitude:
+            if address.get('latitude') and address.get('longitude'):
+                latitude = address['latitude']
+                longitude = address['longitude']
+            else:
+                return Response({'error' : 'Valid coordinates not found'}, status=status.HTTP_404_NOT_FOUND)
 
         response = requests.get(
             f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=walmart&location={latitude},{longitude}&radius={radius}&key={os.getenv('GOOGLE_API_KEY')}"

@@ -151,13 +151,5 @@ def geocode(address):
         print(f"Request error: {e}")
         return None
 
-# Returns latitude and longitude of the current location
-def get_current_location():
-    g = geocoder.ip('me')
-    if g.latlng:
-        return [g.latlng[0], g.latlng[1]]
-    else:
-        return None
-    
 def get_selected_address(user):
     return next((addr for addr in user.addresses if addr['id'] == user.selected_address_id), None)
