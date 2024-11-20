@@ -726,14 +726,11 @@ const styles = StyleSheet.create({
     height: 44, // Fixed height for consistent alignment
     borderRadius: 22, // Half of width/height for a perfect circle
     borderWidth: 2,
-    borderColor: 'blue', // Replace with dynamic color
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
     marginRight: 10, // Spacing between icon and username
   },
   friendProfileIcon: {
     fontSize: 28, // Size of the icon
-    color: 'blue', // Replace with dynamic color
   },
 });
