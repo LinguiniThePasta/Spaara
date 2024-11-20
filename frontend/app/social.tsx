@@ -28,14 +28,9 @@ import {router} from "expo-router";
 interface User {
   id: number;
   name: string;
+  profile_icon: string;
+  profile_color: string;
 }
-
-const mockUsers: User[] = [
-  { id: 1, name: 'John Doe' },
-  { id: 2, name: 'Jane Smith' },
-  { id: 3, name: 'Alice Johnson' },
-  // Add more mock users as needed
-];
 
 const SocialPage = () => {
   // Search term for what friend user is looking for
@@ -50,7 +45,7 @@ const SocialPage = () => {
   const [friends, setFriends] = useState<User[]>([]);
   // Friend request count
   const [friendRequestCount, setFriendRequestCount] = useState(0);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
   //API CALLS
@@ -144,6 +139,8 @@ const SocialPage = () => {
       const users = response.data.map((item) => ({
         id: item.id.toString(),
         name: item.username,
+        profile_icon: item.profile_icon,
+        profile_color: item.profile_color
       }));
 
       setFriends(users);
@@ -184,6 +181,8 @@ const SocialPage = () => {
       const users = response.data.map((item) => ({
         id: item.from_user.id.toString(),
         name: item.from_user.username,
+        profile_icon: item.from_user.profile_icon,
+        profile_color: item.from_user.profile_color,
       }));
 
       setIncomingRequests(users);
@@ -205,8 +204,12 @@ const SocialPage = () => {
 
       const users = response.data.map((item) => ({
         id: item.to_user.id.toString(),
-        name: item.to_user.username, 
+        name: item.to_user.username,
+        profile_icon: item.to_user.profile_icon,
+        profile_color: item.to_user.profile_color,
       }));
+
+      console.log(users);
 
       setOutgoingRequests(users);
 
@@ -445,10 +448,18 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
+                  <View style={styles.listItemLeft}>
+                    <View style={[styles.friendProfileIconContainer, , {borderColor: item.profile_color}]}>
+                      <Icon
+                        name={item.profile_icon}
+                        style={[styles.friendProfileIcon, {color: item.profile_color}]}
+                      />
+                    </View>
                     <TouchableOpacity onLongPress={() => handleRevokeRequest(item.name)}>
                       <Text style={styles.listItemTitle}>{item.name}</Text>
                     </TouchableOpacity>
-                    <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
+                  </View>
+                  <MatIcon style={styles.listItemIcon} name="outgoing-mail" />
                 </View>
               )}
             />
@@ -458,10 +469,18 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
+                <View style={styles.listItemLeft}>
+                  <View style={[styles.friendProfileIconContainer, {borderColor: item.profile_color}]}>
+                    <Icon
+                      name={item.profile_icon}
+                      style={[styles.friendProfileIcon, {color: item.profile_color}]}
+                    />
+                  </View>
                   <TouchableOpacity onLongPress={() => handleRemoveFriend(item.name)}>
                     <Text style={styles.listItemTitle}>{item.name}</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
               )}
             />
           </View>
@@ -586,6 +605,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 15,
+    paddingLeft: 10,
     height: 70,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.secondaryText,
@@ -695,5 +715,25 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  listItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  friendProfileIconContainer: {
+    width: 44, // Fixed width for consistent alignment
+    height: 44, // Fixed height for consistent alignment
+    borderRadius: 22, // Half of width/height for a perfect circle
+    borderWidth: 2,
+    borderColor: 'blue', // Replace with dynamic color
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    marginRight: 10, // Spacing between icon and username
+  },
+  friendProfileIcon: {
+    fontSize: 28, // Size of the icon
+    color: 'blue', // Replace with dynamic color
   },
 });

@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 from django.conf import settings
 
 load_dotenv()
-    
+
 class RegisterView(APIView):
     def post(self, request):
         '''
@@ -276,7 +276,7 @@ class FriendsView(APIView):
         '''
         user = request.user
         friends = user.friends.all()
-        data = [{'id': friend.id, 'username': friend.username} for friend in friends]
+        data = [{'id': friend.id, 'username': friend.username, 'profile_icon': friend.profile_icon, 'profile_color': friend.profile_color} for friend in friends]
         return Response(data, status=status.HTTP_200_OK)
     
     def post(self, request):
