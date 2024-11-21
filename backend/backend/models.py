@@ -191,7 +191,9 @@ class GroceryItemOptimized(ItemBase):
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.BooleanField(default=False)
+    checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    notes = models.CharField(max_length=200, blank=True, null=True)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='optimized_items')
 
     def __init__(self, *args, **kwargs):
@@ -246,6 +248,7 @@ class GroceryItemUnoptimized(ItemBase):
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    checked = models.BooleanField(default=False)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
 
     def __str__(self):
