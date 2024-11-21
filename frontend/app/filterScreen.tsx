@@ -96,7 +96,7 @@ export default function FilterScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header backButton={true} backLink={"/settings"} header={"Filters"} noProfile={true} />
+            <Header backButton={true} backLink={"/settings"} header={"Filters"} noProfile={false} />
             <View style={styles.content}>
                 <View>
                     <View style={styles.listItem}>

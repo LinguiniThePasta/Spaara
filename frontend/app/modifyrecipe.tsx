@@ -197,9 +197,30 @@ export default function RecipeScreen() {
 
     useEffect(() => {
         // Call the function to load shopping lists when the component mounts
+        fetchProfileInfo();
         fetchRecipes();
         fetchRecipeItems();
     }, []); // Empty dependency array ensures this runs only on component mount
+
+    const [selectedIcon, setSelectedIcon] = useState("");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
 
 
     const handleAddItem = async () => {
@@ -319,7 +340,12 @@ export default function RecipeScreen() {
                             <Icon name="pencil-outline" size={24} color={Colors.light.primaryText} />
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.profileIconContainer}></View>
+                    {/*<View style={styles.profileIconContainer}></View>*/}
+                    <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
+                        <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                            <Icon name={selectedIcon} size={30} color={selectedColor}/>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15} style={styles.shoppingListContainer}>
@@ -628,10 +654,8 @@ const styles = StyleSheet.create({
         color: Colors.light.primaryText,
     },
     profileIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#ccc',
+        width: 50,
+        height: 50,
         justifyContent: 'center',
         alignItems: 'center',
     },

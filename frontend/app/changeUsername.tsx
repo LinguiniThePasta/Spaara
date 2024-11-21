@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -10,7 +10,6 @@ import {
     View,
     Alert
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { API_BASE_URL } from '@/scripts/config';
 import { router } from 'expo-router';
 import { Colors } from '@/styles/Colors';
@@ -20,16 +19,16 @@ import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-export default function ChangePassword() {
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+export default function ChangeUsername() {
+    const [currentUsername, setCurrentUsername] = useState('');
+    const [newUsername, setNewUsername] = useState('');
+    const [confirmNewUsername, setConfirmNewUsername] = useState('');
     const [isDisabled, setIsDisabled] = useState(false);
 
-    const handleChangePassword = async () => {
+    const handleChangeUsername = async () => {
         if (isDisabled) return;
-        if (newPassword !== confirmNewPassword) {
-            Alert.alert('Error', 'New passwords do not match');
+        if (newUsername !== confirmNewUsername) {
+            Alert.alert('Error', 'New emails do not match');
             return;
         }
         setIsDisabled(true);
@@ -38,8 +37,8 @@ export default function ChangePassword() {
             const response = await axios.post(
                 `${API_BASE_URL}/api/user/update_info`,
                 {
-                    old_password: currentPassword,
-                    password: newPassword
+                    old_username: currentUsername,
+                    username: newUsername,
                 },
                 {
                     headers: {
@@ -48,23 +47,47 @@ export default function ChangePassword() {
                     },
                 }
             );
-            Alert.alert('Success', 'Password changed successfully');
-            router.replace('/profile');
+            Alert.alert('Success', 'Username changed successfully');
+            router.push('/profile');
         } catch (error) {
-            console.log(error);
-            if (error.response && error.response.data) {
-                Alert.alert('Error', error.response.data.message || 'An error occurred');
-            } else {
-                Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
-            }
+            const errorData = error.response.data;
+            const errorMessage = errorData.old_username || errorData.username || errorData.message || 'An error occurred';
+            Alert.alert('Error', errorMessage);
+
         } finally {
             setIsDisabled(false);
         }
     };
 
+
+
+    const fetchUserInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/update_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setCurrentUsername(response.data.username);
+            console.log("Fetched user info! email: " + response.data.email + "   password: " + response.data.password + "   username: " +  response.data.username);
+
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUserInfo();
+    }, []);
+
+
+
     return (
         <SafeAreaView style={styles.container}>
-            <Header header="Change Password"
+            <Header header="Change Username"
                     backButton={true}
                     backLink={"profile"}
                     noProfile={false}
@@ -76,34 +99,33 @@ export default function ChangePassword() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="Current Password"
-                        secureTextEntry
+                        placeholder={"Current Username: " + currentUsername}
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setCurrentPassword}
-                        value={currentPassword}
+                        //onChangeText={setCurrentUsername}
+                        //value={currentUsername}
+                        editable={false}
+                        //spellCheck={false}
                     />
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="New Password"
-                        secureTextEntry
+                        placeholder="New Username"
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setNewPassword}
-                        value={newPassword}
+                        onChangeText={setNewUsername}
+                        value={newUsername}
                     />
                     <TextInput
                         style={[globalStyles.primaryInput, styles.input]}
-                        placeholder="Confirm New Password"
-                        secureTextEntry
+                        placeholder="Confirm New Username"
                         placeholderTextColor={Colors.light.secondaryText}
-                        onChangeText={setConfirmNewPassword}
-                        value={confirmNewPassword}
+                        onChangeText={setConfirmNewUsername}
+                        value={confirmNewUsername}
                     />
                     <Pressable
-                        style={[globalStyles.primaryButton, styles.changePasswordButton]}
-                        onPress={handleChangePassword}
+                        style={[globalStyles.primaryButton, styles.changeUsernameButton]}
+                        onPress={handleChangeUsername}
                         disabled={isDisabled}
                     >
-                        <Text style={styles.changePasswordButtonText}>Change Password</Text>
+                        <Text style={styles.changeUsernameButtonText}>Change Username</Text>
                     </Pressable>
                 </View>
             </KeyboardAvoidingView>
@@ -130,12 +152,14 @@ const styles = StyleSheet.create({
     input: {
         marginBottom: 20,
         width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    changePasswordButton: {
+    changeUsernameButton: {
         width: '100%',
         marginTop: 20,
     },
-    changePasswordButtonText: {
+    changeUsernameButtonText: {
         ...globalStyles.buttonText,
     },
 });

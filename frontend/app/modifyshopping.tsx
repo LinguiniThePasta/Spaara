@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import {
     Modal,
     Button,
     TouchableWithoutFeedback,
+    PanResponder,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -28,6 +29,8 @@ import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import GestureDetector from 'react-native-gesture-handler';
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -65,18 +68,39 @@ export default function ShoppingListScreen() {
     const [contentVisable, setContentVisable] = useState('Favorite');
 
     const [itemGroups, setItemGroups] = useState([
-        {
-            id: 1000,
+        /*{
+            id: "1000",
             title: "Smallga",
             items: [{id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
         {
-            id: 1001,
+            id: "1001",
             title: "Bigitte",
             items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
-        },
+        },*/
+        /*{
+            id: 1111,
+            title: "GROUP",
+            items: [{
+                id: 2222,
+                title: "ITEM",
+                items: "ITEM",
+                description: "ITEM",
+                store: "ITEM",
+                quantity: 1,
+                units: "ITEM",
+                favorited: false,
+                order: "ITEM",
+            }],
+            description: "GROUP",
+            store: "GROUP",
+            quantity: "GROUP",
+            units: "GROUP",
+            favorited: "GROUP",
+            order: "GROUP",
+        },*/
     ]);
 
     const [allRecipes, setAllRecipes] = useState([]);
@@ -113,6 +137,7 @@ export default function ShoppingListScreen() {
     };
 
 
+    //const [baseItems, setBaseItems] = useState([]);
     const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -150,16 +175,46 @@ export default function ShoppingListScreen() {
                             title: 'Add Item',
                             favorited: false,
                             quantity: 0,
-                        }]
+                        },
+                        {
+                            id: -2,
+                            title: '',
+                            favorited: false,
+                            quantity: 0,
+                        },
+                        {
+                            id: -3,
+                            title: '',
+                            favorited: false,
+                            quantity: 0,
+                        },]
                         : []),
                 ],
             }));
 
+            //Format list of default items
+            var defaultItems = [];
+            parsedItemGroups.forEach((group) => {
+                if (group.title === 'Default') {
+                    defaultItems = group.items.map((item) => ({
+                        id: item.id,
+                        title: item.title,
+                        description: item.description,
+                        store: item.store,
+                        quantity: item.quantity,
+                        units: item.units,
+                        favorited: item.favorited,
+                        order: item.order,
+                    }));
+                }
+            });
+            defaultItems.sort((a, b) => a.order - b.order);
+            const finalItemList = [...parsedItemGroups, ...defaultItems];
             console.log("Parsed item groups:", parsedItemGroups);
 
             // Update state with parsed ItemGroups
-            setItemGroups(parsedItemGroups);
-
+            setItemGroups(finalItemList);
+            
             // Flatten items if you need a flat list for any other purpose
             const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
             setShoppingItems(allItems);
@@ -278,27 +333,27 @@ export default function ShoppingListScreen() {
     const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-
+    
             const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
-
+    
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 title: item.name,
             }));
-
+    
             setAllRecipes(lists);
-
+    
             /*let listName = "Unnamed List";
             lists.forEach(list => {
                 if (list.id === local.id) {
                     listName = list.title;
                 }
             });*/
-
+    
             console.log("Correctly fetched recipes!");
             //setRecipeName(listName);
         } catch (error) {
@@ -471,11 +526,32 @@ export default function ShoppingListScreen() {
     useEffect(() => {
         //fetchItemGroups();
         //fetchShoppingItems();
+        fetchProfileInfo();
         fetchRecipes();
         fetchShoppingList();
         fetchFavorites();
         fetchRecipes();
     }, []); // Empty dependency array ensures this runs only on component mount
+
+    const [selectedIcon, setSelectedIcon] = useState("");
+    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+
+    const fetchProfileInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/profile_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedIcon(response.data.icon);
+            setSelectedColor(response.data.color);
+        } catch (error) {
+            console.error('Error fetching profile info:', error);
+        }
+    };
 
 
     const handleAddItem = async () => {
@@ -503,6 +579,47 @@ export default function ShoppingListScreen() {
         }
     };
 
+
+
+    const handleReorderItems = async (items) => {
+        const groceryListId = local.id;
+        var itemsOrderList = [];
+        items.forEach((item) => {
+            if (item.order) {
+                //console.log("item.id: " + item.id + "   item.title: " + item.title + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
+                itemsOrderList.push(
+                    {
+                        item_id: item.id,
+                        order: item.order
+                    }
+                );
+            }
+        });
+        /*
+        itemsOrderList.forEach((item) => {
+            console.log("item_id: " + item.item_id + "   order: " + item.order)
+        });
+        */
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery/${groceryListId}/reorder-items/`, {
+                items_order: itemsOrderList
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            console.log("Reordered Items successfully!");
+        } catch (error) {
+            console.error('Error reordering items:', error);
+        } finally {
+            await fetchShoppingList();
+        }
+    };
+
+
+
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
@@ -517,7 +634,7 @@ export default function ShoppingListScreen() {
             setNewItemName('');
             await fetchShoppingList();
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error removing a shopping item:', error);
         }
     }
 
@@ -535,15 +652,47 @@ export default function ShoppingListScreen() {
         );
     };
 
-    const renderItem = ({item}) => {
-        //const isDefault = (item.title === "Default");
+
+    //const [currentDefaultIndex, setCurrentDefaultIndex] = useState(0);
+    const renderItem = ({item, drag, isActive}) => {
+        const isDefault = (item.title === "Default");
         const isInput = (item.id === -1);
+        const isSpacer = (item.id < -1);
+        const isItem = (!item.items);
+        //console.log("item rendered! title: " + item.title + "   isItem: "  + isItem + "   isInput: " + isInput);
+
+        if (isDefault) {
+            return (
+                <View/>
+            );
+        }
+
+        if (isSpacer) {
+            return (
+                <View>
+                    <SpacerItem/>
+                </View>
+            )
+        }
+
         if (isInput) {
             return (
                 <View>
                     <InputItem initialText={newItemName} onChangeText={setNewItemName}
                                handleAddItem={handleAddItem}></InputItem>
                 </View>
+            );
+        }
+
+        if (isItem) {
+            return (
+                <ScaleDecorator>
+                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                                      onLongPress={drag}>
+                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                                   handleRemoveItem={handleRemove}></CheckItem>
+                    </TouchableOpacity>
+                </ScaleDecorator>
             );
         }
 
@@ -555,6 +704,34 @@ export default function ShoppingListScreen() {
             </View>
         );
     };
+
+    const [dummy, setDummy] = useState([]);
+    const handleDragEnd = ({data}) => {
+        //setItemGroups(data)
+        //setDummy(data);
+
+        data.forEach((item) => {
+            if (item.order) {
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+            }
+        });
+        var iterator = 1;
+        data.forEach((item) => {
+            if (item.order) {
+                item.order = iterator++;
+            }
+        });
+        data.forEach((item) => {
+            if (item.order) {
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+            }
+        });
+
+        setItemGroups(data)
+        handleReorderItems(data);
+    };
+
+
 
     const handleAddRecipe = async (recipe) => {
         try {
@@ -592,8 +769,35 @@ export default function ShoppingListScreen() {
 
     const renderFavoriteItem = ({item}) => (
         <FavoriteItem item={item} addFavoriteItem={setFavoriteItems}
-                      removeFromFavorite={setFavoriteItems}></FavoriteItem>
+                      removeFromFavorite={handleAddFavorite}></FavoriteItem>
     );
+
+
+
+    const handleAddFavorite = async (item) => {
+        //console.log("Adding this: " + newItemName);
+        //if (newItemName === "-1") return;
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+                name: item.title,
+                quantity: 1,
+                units: "units",
+                list: local.id
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            // Refresh the shopping lists after adding a new one
+            setNewItemName("");
+        } catch (error) {
+            console.error('Error adding new shopping item:', error);
+        } finally {
+            await fetchShoppingList();
+        }
+    };
 
     const renderRecipe = ({item}) => (
         <View style={styles.recipeContainer}>
@@ -651,26 +855,23 @@ export default function ShoppingListScreen() {
     // };
 
 
+    /*
     const renderItemGroup = ({item}) => (
         <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite}
                    handleRemoveItem={handleRemove} onChangeText={setNewItemName}
                    handleAddItem={handleAddItem}></ItemGroup>
     );
+    */
     const dismissModal = () => {
         setIsRenameModalVisible(false);
     }
 
-    const handleOptimizeSubheadings = () => {
-        const updatedItemGroups = itemGroups.map(group => ({
-            ...group,
-            title: Math.random() > 0.5 ? "Walmart" : "Kroger"
-        }));
-        setItemGroups(updatedItemGroups);
-    };
+
 
     return (
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
+                {/*HEADER*/}
                 <View style={styles.header}>
                     <View style={styles.left}>
                         <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
@@ -681,31 +882,32 @@ export default function ShoppingListScreen() {
                             <Icon name="pencil-outline" size={24} color={Colors.light.primaryText}/>
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.profileIconContainer}></View>
+                    <View style={{borderColor: selectedColor, borderRadius: 100, borderWidth: 2}}>
+                        <TouchableOpacity style={styles.profileIconContainer} onPress={() => router.push('/profile')}>
+                            <Icon name={selectedIcon} size={30} color={selectedColor}/>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
+                {/*ITEM LIST*/}
                 <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={15}
                                       style={styles.shoppingListContainer}>
-                    <FlatList
+                    <DraggableFlatList
                         data={itemGroups}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item, index) => String(index)}
                         renderItem={renderItem}
                         contentContainerStyle={styles.listContainer}
+                        onDragEnd={handleDragEnd}
                     />
                 </KeyboardAvoidingView>
 
-                {/*<FlatList
-                    data={shoppingItems}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.listContainer}
-                />*/}
-
+                {/*ADD FAVORITES*/}
                 <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optimizeButton} onPress={() => handleOptimizeSubheadings()}>
+                {/*OPTIMIZE*/}
+                <TouchableOpacity style={styles.optimizeButton}>
                     <Icon
                         name="hammer-outline"
                         size={24}
@@ -713,6 +915,7 @@ export default function ShoppingListScreen() {
                     />
                 </TouchableOpacity>
 
+                {/*FAVORITES MENU*/}
                 <Modal
                     visible={isRenameModalVisible}
                     transparent={true}
@@ -1037,10 +1240,8 @@ const styles = StyleSheet.create({
         color: Colors.light.primaryText,
     },
     profileIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#ccc',
+        width: 50,
+        height: 50,
         justifyContent: 'center',
         alignItems: 'center',
     },
