@@ -278,16 +278,12 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroceryItemOptimized
-        fields = '__all__'
-
-class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
     subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
 
     class Meta:
-        model = GroceryItemUnoptimized
-        fields = ['name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
+        model = GroceryItemOptimized
+        fields = ['name', 'description', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order']
+
     def create(self, validated_data):
         # Check if 'subheading' is provided
         subheading = validated_data.get('subheading')
@@ -297,7 +293,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
         item_id = validated_data.get('id')
 
-        existing_item = GroceryItemUnoptimized.objects.filter(
+        existing_item = GroceryItemOptimized.objects.filter(
             id=item_id,
             subheading__grocery=grocery,
             favorited=True
@@ -308,7 +304,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
         if not subheading:
             try:
-                default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Default')
+                default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Unoptimized')
             except Exception as e:
                 raise serializers.ValidationError(
                     f"An error occurred while retrieving or creating the default subheading: {str(e)}"
@@ -328,6 +324,12 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         # Call the parent class's create method to save the instance with the default or provided subheading
         return super().create(validated_data)
 
+class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
+    subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
+
+    class Meta:
+        model = GroceryItemUnoptimized
+        fields = ['name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
     def create(self, validated_data):
         # Check if 'subheading' is provided
         subheading = validated_data.get('subheading')

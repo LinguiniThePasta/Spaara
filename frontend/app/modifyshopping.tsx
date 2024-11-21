@@ -65,6 +65,7 @@ export default function ShoppingListScreen() {
     const [selectedButton, setSelectedButton] = useState('Favorite');
     const [notSelectedButton, setNotSelectedButton] = useState(false);
     const [contentVisable, setContentVisable] = useState('Favorite');
+    let isOptimized = false;
 
     const [itemGroups, setItemGroups] = useState([
         {
@@ -131,37 +132,80 @@ export default function ShoppingListScreen() {
 
             // Get the subheadings array
             const {name, subheadings} = response.data;
+
+            console.log(response.data)
+
             setShoppingListName(name);
 
-            const isOptimized = checkIfListIsOptimized(subheadings);
-            console.log('Is list optimized:', isOptimized);
+            isOptimized = checkIfListIsOptimized(subheadings);
+            console.log(isOptimized)
 
-            // Parse subheadings into ItemGroups
-            const parsedItemGroups = subheadings.map((subheading) => ({
-                id: subheading.id,
-                title: subheading.name,
-                items: [
-                    ...subheading.items.map((item) => ({
-                        id: item.id,
-                        title: item.name,
-                        description: item.description,
-                        store: item.store,
-                        quantity: item.quantity,
-                        units: item.units,
-                        favorited: item.favorited,
-                        order: item.order,
-                    })),
-                    // Add 'Add Item' only if the subheading name is 'Default'
-                    ...(subheading.name === 'Default'
-                        ? [{
-                            id: -1,
-                            title: 'Add Item',
-                            favorited: false,
-                            quantity: 0,
-                        }]
-                        : []),
-                ],
-            }));
+            const filteredSubheadings = subheadings.filter(subheading => {
+                if (isOptimized) {
+                    return (subheading.optimized_items && subheading.optimized_items.length > 0) || subheading.name === "Unoptimized";
+                } else {
+                    return !subheading.optimized_items || subheading.optimized_items.length === 0;
+                }
+            });
+
+
+            const parsedItemGroups = filteredSubheadings.map((subheading) => {
+                let storeName = subheading.name;
+                let location = "";
+
+                if (isOptimized && subheading.name.includes(";")) {
+                    // Split the subheading name into store name and location
+                    [storeName, location] = subheading.name.split(";", 2);
+                }
+
+                return {
+                    id: subheading.id,
+                    title: storeName, // Use the store name as the title
+                    location: isOptimized ? location.trim() : null, // Add location if optimized
+                    items: [
+                        ...(isOptimized
+                            ? subheading.optimized_items.map((item) => ({
+                                id: item.id,
+                                title: item.name,
+                                description: item.description,
+                                store: item.store,
+                                quantity: item.quantity,
+                                units: item.units,
+                                favorited: item.favorited,
+                                order: item.order,
+                                price: item.price, // Assuming optimized items have a price field
+                            }))
+                            : subheading.items.map((item) => ({
+                                id: item.id,
+                                title: item.name,
+                                description: item.description,
+                                store: item.store,
+                                quantity: item.quantity,
+                                units: item.units,
+                                favorited: item.favorited,
+                                order: item.order,
+                            }))),
+                        // Add 'Add Item' only if the subheading name is 'Default' and the list is not optimized
+                        ...(subheading.name === "Default" && !isOptimized
+                            ? [{
+                                id: -1,
+                                title: "Add Item",
+                                favorited: false,
+                                quantity: 0,
+                            }]
+                            : []),
+                        ...(subheading.name === "Unoptimized" && isOptimized
+                            ? [{
+                                id: -1,
+                                title: "Add Item",
+                                favorited: false,
+                                quantity: 0,
+                            }]
+                            : [])
+                    ],
+                };
+            });
+
 
             console.log("Parsed item groups:", parsedItemGroups);
 
@@ -277,28 +321,68 @@ export default function ShoppingListScreen() {
     const handleAddItem = async () => {
         console.log("Adding this: " + newItemName);
         if (newItemName === "-1") return;
+
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                name: newItemName,
-                quantity: 1,
-                units: "units",
-                list: local.id
-            }, {
-                headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+            const listId = local.id;
+
+            const unoptimizedResponse = await axios.post(
+                `${API_BASE_URL}/api/grocery_items/unoptimized/`,
+                {
+                    name: newItemName,
+                    quantity: 1,
+                    units: "units",
+                    list: listId,
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
                 }
+            );
+
+            console.log('Unoptimized item added:', unoptimizedResponse.data);
+
+            // Check if the list is optimized
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
             });
 
+            const isOptimized = checkIfListIsOptimized(response.data.subheadings);
 
-            // Refresh the shopping lists after adding a new one
+            // If optimized, add an optimized item with the same details
+            if (isOptimized) {
+                const optimizedResponse = await axios.post(
+                    `${API_BASE_URL}/api/grocery_items/optimized/`,
+                    {
+                        name: newItemName,
+                        quantity: 1,
+                        units: "units",
+                        list: listId,
+                        price: 0, // Placeholder for price, adjust as needed
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                        }
+                    }
+                );
+
+                console.log('Optimized item added:', optimizedResponse.data);
+            }
+
+            // Clear the input field
             setNewItemName("");
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error adding shopping item:', error);
         } finally {
+            // Refresh the shopping list
             await fetchShoppingList();
         }
     };
+
 
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
@@ -442,8 +526,9 @@ export default function ShoppingListScreen() {
     const handleOptimizeSubheadings = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/api/optimize`, {
-                body: curActiveList,
+            const listId = local.id;
+
+            const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${listId}`, {
                 headers: {
                     'Authorization': 'Bearer ' + jwtToken,
                 }
@@ -499,7 +584,7 @@ export default function ShoppingListScreen() {
                     <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optimizeButton}>
+                <TouchableOpacity style={styles.optimizeButton} onPress={() => handleOptimizeSubheadings()}>
                     <Icon
                         name="hammer-outline"
                         size={24}
