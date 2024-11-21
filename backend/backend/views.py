@@ -114,7 +114,7 @@ class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = serializers.EmailSerializer(data=request.data)
         if not serializer.is_valid():
-            print(serializer.errors)
+            # print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(email__iexact=serializer.validated_data['email'])
@@ -367,7 +367,7 @@ class LoginView(APIView):
 
         # Check if the serializer is valid and return errors if not
         if not serializer.is_valid():
-            print(serializer.errors)
+            # print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Authenticate using email and password
@@ -407,6 +407,7 @@ class LoginView(APIView):
 
 
 class OptimizeView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         '''
         When a user optimize, the unoptimized AND optimized grocery list is sent to them. The frontend will parse both items
@@ -418,7 +419,6 @@ class OptimizeView(APIView):
         unoptimized_items = GroceryItemUnoptimized.objects.all().filter(subheading__grocery=grocery_id)
         subheading_dict = collections.defaultdict(list)
         for item in unoptimized_items:
-            print(item.name)
             name_query = SearchQuery(item.name)
             store_query = SearchQuery(item.store)
             units_query = SearchQuery(item.units)
@@ -433,7 +433,6 @@ class OptimizeView(APIView):
                 ),
             ).filter(search=combined_query).order_by("price", "-rank")
 
-            print(results)
             if len(results) >= 1:
                 result = results.values()[0]
                 subheading_name = f"{result['store']};{result['store_location']}"
@@ -708,16 +707,16 @@ class GetCoordinatesView(APIView):
                     "longitude": location["lng"]
                 }
             else:
-                print("No results found for the provided address.")
+                # print("No results found for the provided address.")
                 return None
         except requests.exceptions.RequestException as e:
-            print(f"Request error: {e}")
+            # print(f"Request error: {e}")
             return None
 
     def get(self, request, *args, **kwargs):
         address = request.GET.get('address', None)
 
-        print(address)
+        # print(address)
 
         if not address:
             return Response({"error": "Address parameter is required"}, status=400)
@@ -1179,7 +1178,7 @@ class StoreView(APIView):
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set up headers and parameters for Kroger API request
-        print(f"{latitude}, {longitude}, {radius_miles}")
+        # print(f"{latitude}, {longitude}, {radius_miles}")
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/json',
@@ -1197,8 +1196,8 @@ class StoreView(APIView):
 
             kroger_stores = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
         except requests.RequestException as e:
-            print("Error fetching Kroger stores:", e)
-            print("Response content:", response.content)  # Log the exact response content for debugging
+            # print("Error fetching Kroger stores:", e)
+            # print("Response content:", response.content)  # Log the exact response content for debugging
             return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Combine Walmart and Kroger store data

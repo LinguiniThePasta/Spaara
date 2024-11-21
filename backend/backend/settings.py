@@ -121,7 +121,8 @@ DATABASES = {
         'USER':'dev',
         'PASSWORD':'Team33Admin',
         'HOST':'spaara-dev.cd2e4qwko0n0.us-east-2.rds.amazonaws.com',
-        'PORT':'5432'
+        'PORT':'5432',
+        'CONN_MAX_AGE': 3600
     }
 }
 
