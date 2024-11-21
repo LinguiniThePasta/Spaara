@@ -88,6 +88,10 @@ export default function ShoppingListScreen() {
         setSelectedButton(button);
         setContentVisable(button);
     };
+    const checkIfListIsOptimized = (subheadings) => {
+        // Iterate over subheadings to see if any have optimized items
+        return subheadings.some(subheading => subheading.optimized_items && subheading.optimized_items.length > 0);
+    };
 
     const handleRename = async () => {
         try {
@@ -114,7 +118,6 @@ export default function ShoppingListScreen() {
         }
     };
 
-
     const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -129,6 +132,9 @@ export default function ShoppingListScreen() {
             // Get the subheadings array
             const {name, subheadings} = response.data;
             setShoppingListName(name);
+
+            const isOptimized = checkIfListIsOptimized(subheadings);
+            console.log('Is list optimized:', isOptimized);
 
             // Parse subheadings into ItemGroups
             const parsedItemGroups = subheadings.map((subheading) => ({
@@ -171,112 +177,6 @@ export default function ShoppingListScreen() {
         }
     };
 
-    //
-    // const [nextRecipeID, setNextRecipeID] = useState("");
-    // const [nextRecipeItems, setNextRecipeItems] = useState([]);
-    // const fetchShoppingItems = async () => {
-    //     try {
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });
-    //
-    //         const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             title: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));
-    //
-    //         const filteredItems = items.filter(item => item.list === local.id)
-    //         //console.log(filteredItems);
-    //         console.log("Correctly fetched shopping items!");
-    //
-    //
-    //         //setItemGroups
-    //         /*var recipes = [];
-    //         filteredItems.forEach((item) => {
-    //             if (item.quantity === -1) {
-    //                 recipes = [...recipes, item.title];
-    //                 console.log("-$- " + item.title);
-    //             }
-    //         });*/
-    //
-    //
-    //         /*recipes.forEach((id) => {
-    //             setNextRecipeID(id);
-    //             fetchNextRecipeItems();
-    //         });*/
-    //
-    //
-    //
-    //
-    //
-    //         //console.log("recipe fetch id: " + id);
-    //         /*const jwtToken2 = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response2 = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken2}`
-    //             }
-    //         });
-    //
-    //         const recipeItems = response2.data.map(item => ({
-    //             id: item.id.toString(),
-    //             title: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));*/
-    //
-    //
-    //
-    //
-    //         setShoppingItems([...itemGroups, ...filteredItems, {
-    //             id: -1,
-    //             title: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }, {
-    //             id: -2,
-    //             title: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         },
-    //         {
-    //             id: -3,
-    //             title: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);
-    //
-    //         /*shoppingItems.forEach(
-    //             (item) => {console.log(item.title + ": " + item.id)}
-    //         );*/
-    //
-    //     } catch (error) {
-    //         console.error('Error fetching shopping items:', error);
-    //     }
-    // };
-
-
     const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -307,132 +207,6 @@ export default function ShoppingListScreen() {
             console.error('Error fetching recipes:', error);
         }
     };
-
-
-    // const [recipeItems, setRecipeItems] = useState([]);
-    // const fetchRecipeItems = async (id) => {
-    //     try {
-    //         console.log("recipe fetch id: " + id);
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });
-    //
-    //         const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             title: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));
-    //
-    //
-    //         items.forEach(
-    //             (item) => {console.log("   |   " + item.title + ": " + item.id)}
-    //         );
-    //
-    //
-    //         const filteredItems = items.filter(item => item.list === id)
-    //
-    //
-    //         filteredItems.forEach(
-    //             (item) => {console.log("      |   " + item.title + ": " + item.id)}
-    //         );
-    //         //const filteredItems = items;
-    //         //console.log(filteredItems);
-    //         console.log("Correctly fetched recipe items!");
-    //         setRecipeItems([...filteredItems, {
-    //             id: -1,
-    //             title: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }])
-    //         /*setRecipeItems([...filteredItems, {
-    //             id: -1,
-    //             title: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }, {
-    //             id: -2,
-    //             title: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         },
-    //         {
-    //             id: -3,
-    //             title: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);*/
-    //
-    //         console.log("items:");
-    //         recipeItems.forEach(
-    //             (item) => {console.log(item.title + ": " + item.id)}
-    //         );
-    //
-    //     } catch (error) {
-    //         console.error('Error fetching recipe items:', error);
-    //     }
-    // };
-
-
-    // const fetchItemGroups = async () => {
-    //     try {
-    //         /*const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });*/
-    //
-    //         /*const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             title: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));*/
-    //
-    //         //const filteredItems = items.filter(item => item.list === local.id)
-    //
-    //         const filteredItems = itemGroups
-    //
-    //         console.log("Correctly fetched item groups!");
-    //         /*setShoppingItems([...filteredItems, {
-    //             id: -1,
-    //             title: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);*/
-    //         setShoppingItems([...shoppingItems, ...filteredItems])
-    //     } catch (error) {
-    //         console.error('Error fetching item groups:', error);
-    //     }
-    // };
-
     const fetchFavorites = async () => {
 
         //console.log("Adding this: " + newItemName);
@@ -471,8 +245,6 @@ export default function ShoppingListScreen() {
 
 
     useEffect(() => {
-        //fetchItemGroups();
-        //fetchShoppingItems();
         fetchProfileInfo();
         fetchRecipes();
         fetchShoppingList();
@@ -517,6 +289,7 @@ export default function ShoppingListScreen() {
                     'Authorization': 'Bearer ' + jwtToken,
                 }
             });
+
 
             // Refresh the shopping lists after adding a new one
             setNewItemName("");
@@ -620,7 +393,6 @@ export default function ShoppingListScreen() {
     );
 
 
-
     const handleAddFavorite = async (item) => {
         //console.log("Adding this: " + newItemName);
         //if (newItemName === "-1") return;
@@ -658,50 +430,6 @@ export default function ShoppingListScreen() {
             </View>
         </View>
     );
-
-
-    // const handleAddRecipe = async (item) => {
-    //
-    //     console.log("Adding this: " + item.id);
-    //     //if (newItemName === "-1") return;
-    //     try {
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //         const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-    //             name: item.id,
-    //             quantity: -1,
-    //             units: "units",
-    //             list: local.id,
-    //         }, {
-    //             headers: {
-    //                 'Authorization': 'Bearer ' + jwtToken,
-    //             }
-    //         });
-    //
-    //         // Refresh the shopping lists after adding a new one
-    //         setNewItemName('');
-    //         fetchShoppingItems();
-    //     } catch (error) {
-    //         console.error('Error adding new shopping item:', error);
-    //     }
-    //
-    //     console.log("Recipe: " + item.title);
-    //
-    //     await fetchRecipeItems(item.id);
-    //
-    //     console.log("Recipe Items: ");
-    //     recipeItems.forEach((item) => console.log(" + " + item.title));
-    //
-    //
-    //     const newId = 1000 + itemGroups.length;
-    //     let newRecipe = {id: newId, title: item.title, items: recipeItems};
-    //
-    //     setItemGroups([...itemGroups, newRecipe]);
-    //     itemGroups.forEach((item) => console.log(item.title));
-    //     await fetchShoppingItems();
-    //     itemGroups.forEach((item) => console.log("--" + item.title));
-    // };
-
-
     const renderItemGroup = ({item}) => (
         <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite}
                    handleRemoveItem={handleRemove} onChangeText={setNewItemName}
@@ -712,7 +440,7 @@ export default function ShoppingListScreen() {
     }
 
     const handleOptimizeSubheadings = async () => {
-         try {
+        try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/optimize`, {
                 body: curActiveList,
@@ -733,7 +461,8 @@ export default function ShoppingListScreen() {
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <View style={styles.left}>
-                        <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                        <Pressable onPress={() => router.replace('/shopping')}
+                                   style={{paddingRight: 10, marginLeft: -10}}>
                             <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                         </Pressable>
                         <Text style={styles.headerTitle}>{`${shoppingListName}`}</Text>

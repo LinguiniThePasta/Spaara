@@ -148,6 +148,7 @@ class Subheading(models.Model):
     order = models.PositiveIntegerField(default=0)
     recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, related_name='subheadings', null=True, blank=True,
                                default=None)
+    optimized = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order']
@@ -161,9 +162,16 @@ class Subheading(models.Model):
 def create_default_subheading(sender, instance, created, **kwargs):
     if created:
         Subheading.objects.create(
-            name='Default',  # You can choose a different default name if desired
+            name='Default',
             grocery=instance,
-            order=1  # Initial order
+            order=0
+            # recipe is null by default, supporting user-defined subheadings
+        )
+        Subheading.objects.create(
+            name='Unoptimized',
+            grocery=instance,
+            order=1,
+            optimized=1
             # recipe is null by default, supporting user-defined subheadings
         )
 
@@ -183,12 +191,44 @@ class GroceryItemOptimized(ItemBase):
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.BooleanField(default=False)
-    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
+    order = models.PositiveIntegerField(default=0)
+    subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='optimized_items')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
 
+    @classmethod
+    def from_store_item(cls, store_item, subheading, order):
+        """
+        Converts a StoreItem instance to a GroceryItemOptimized instance.
+        """
+        return cls(
+            name=store_item['name'],
+            description=store_item['description'],
+            store=store_item['store'],
+            quantity=store_item['quantity'],
+            units=store_item['units'],
+            price=store_item['price'],
+            subheading=subheading,
+            order=order
+        )
+
+    @classmethod
+    def from_unoptimized_item(cls, unoptimized_item, subheading, order):
+        """
+        Converts a StoreItem instance to a GroceryItemOptimized instance.
+        """
+        return cls(
+            name=unoptimized_item.name,
+            description=unoptimized_item.description,
+            store="",
+            quantity=unoptimized_item.quantity,
+            units=unoptimized_item.units,
+            price=0.0,
+            subheading=subheading,
+            order=order
+        )
 
 # class GroceryItemUnoptimized(ItemBase):
 #     quantity = models.IntegerField()

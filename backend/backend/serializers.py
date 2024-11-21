@@ -288,8 +288,6 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroceryItemUnoptimized
         fields = ['name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
-
-
     def create(self, validated_data):
         # Check if 'subheading' is provided
         subheading = validated_data.get('subheading')
@@ -302,7 +300,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         existing_item = GroceryItemUnoptimized.objects.filter(
             id=item_id,
             subheading__grocery=grocery,
-            favorited=True  # Assuming this is a criterion for "favorited"
+            favorited=True
         ).exists()
 
         if existing_item:
@@ -325,18 +323,59 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
             if last_item:
                 validated_data['order'] = last_item.order + 1
             else:
-                validated_data['order'] = 1  # Start ordering from 1
+                validated_data['order'] = 1
+
+        # Call the parent class's create method to save the instance with the default or provided subheading
+        return super().create(validated_data)
+
+    def create(self, validated_data):
+        # Check if 'subheading' is provided
+        subheading = validated_data.get('subheading')
+        grocery = self.context.get('grocery')
+        if not grocery:
+            raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
+
+        item_id = validated_data.get('id')
+
+        existing_item = GroceryItemUnoptimized.objects.filter(
+            id=item_id,
+            subheading__grocery=grocery,
+            favorited=True
+        ).exists()
+
+        if existing_item:
+            raise serializers.ValidationError("This favorited item already exists in the grocery list.")
+
+        if not subheading:
+            try:
+                default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Default')
+            except Exception as e:
+                raise serializers.ValidationError(
+                    f"An error occurred while retrieving or creating the default subheading: {str(e)}"
+                )
+
+            validated_data['subheading'] = default_subheading
+        order = validated_data.get('order')
+        if order is None:
+            # Assign the next available order within the subheading
+            last_item = GroceryItemUnoptimized.objects.filter(subheading=validated_data['subheading']).order_by(
+                '-order').first()
+            if last_item:
+                validated_data['order'] = last_item.order + 1
+            else:
+                validated_data['order'] = 1
 
         # Call the parent class's create method to save the instance with the default or provided subheading
         return super().create(validated_data)
 
 class SubheadingSerializer(serializers.ModelSerializer):
     items = GroceryItemUnoptimizedSerializer(many=True)
-    recipe = RecipeSerializer(read_only=True)  # Optional: If you want to include recipe details
+    optimized_items = GroceryItemUnoptimizedSerializer(many=True)
+    recipe = RecipeSerializer(read_only=True)
 
     class Meta:
         model = Subheading
-        fields = ['id', 'name', 'order', 'recipe', 'items']
+        fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized_items']
 
 class GrocerySerializer(serializers.ModelSerializer):
     subheadings = SubheadingSerializer(many=True, required=False)
