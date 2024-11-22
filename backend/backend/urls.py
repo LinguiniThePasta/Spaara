@@ -51,6 +51,7 @@ urlpatterns = [
     path('api/user/save_settings', SettingsView.as_view(), name='save_dietary_restrictions'),
     path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),
     path('api/user/profile_info', ProfileView.as_view(), name='profile_info'),
+    path('api/user/theme_info', ThemeView.as_view(), name='theme_info'),
     path('api/other_users', OtherUsersView.as_view(), name='other_users'),
     path('verify-email/<str:uidb64>/<str:token>/', VerifyEmailView.as_view(), name='verify-email'),
     path('api/user/friends', FriendsView.as_view(), name='friends'),
