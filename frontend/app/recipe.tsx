@@ -27,6 +27,7 @@ import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import shortenTime from "@/scripts/shortenTime";
+import AppbarAction from 'react-native-paper/lib/typescript/components/Appbar/AppbarAction';
 
 export default function Recipe() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -224,11 +225,11 @@ export default function Recipe() {
     };
 
     const handleShare = async (item) => {
-        setSelectedRecipe(item)
+        setSelectedRecipe(item.id)
     }
 
     const renderItem = ({item}) => (
-        <SwipeableItem handleShare={handleShare(item)}>
+        <SwipeableItem item={item}>
             <Pressable
                 onPress={() => router.replace(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
                 onLongPress={() => handleLongPress(item)}
@@ -297,7 +298,7 @@ export default function Recipe() {
         }
     };
 
-    const SwipeableItem = ({children, handleShare}) => {
+    const SwipeableItem = ({children, item}) => {
         const translateX = useRef(new Animated.Value(0)).current;
         
         const panResponder = useRef(
@@ -334,7 +335,7 @@ export default function Recipe() {
                 <View style={styles.hiddenButton}>
                     <TouchableOpacity style={styles.shareButton} onPress={() => {
                         setFriendVisable(true);
-                        handleShare;
+                        setSelectedRecipe(item.id);
                         }}>
                         <Icon name="arrow-redo-outline" size={20}></Icon>
                     </TouchableOpacity>
@@ -355,7 +356,24 @@ export default function Recipe() {
     };
 
     const sendRecipe = async (item) => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(
+                `${API_BASE_URL}/api/friend_recipe/send/`,
+                {
+                    username:item.name,
+                    recipe:selectedRecipe,
+                },
+                {
+                    headers: {
+                        //'Content-Type': 'application/json',
+                        Authorization: `Bearer ${jwtToken}`,
+                      },
+                },
+            );
+        } catch (error) {
 
+        }
     };
 
 

@@ -281,8 +281,8 @@ class FavoriteManager:
 class FriendRecipe (models.Model):
     from_user = models.ForeignKey(User, related_name='recipe_sent', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='recipe_received', on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, related_name="recipe", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
-    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True, blank=True, default=None)
 
     class Meta:
         unique_together = ('from_user', 'to_user')

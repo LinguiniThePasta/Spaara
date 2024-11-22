@@ -260,7 +260,7 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         friend_request.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
         
-class FriendRecipeViewSet:
+class FriendRecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     # GET METHODS 
@@ -294,11 +294,13 @@ class FriendRecipeViewSet:
     def send(self, request):
         user = request.user
         username = request.data.get('username', None)
+        recipe_id = request.data.get('recipe', None)
         friend = User.objects.filter(username=username).first()
+        recipe = Recipe.objects.filter(id=recipe_id).first()
         if friend is None:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        FriendRecipe.objects.create(from_user=user, to_user=friend)
-        return Response({'message': 'Friend request sent'}, status=status.HTTP_201_CREATED)
+        FriendRecipe.objects.create(from_user=user, to_user=friend, recipe=recipe)
+        return Response({'message': 'recipe not sent'}, status=status.HTTP_201_CREATED)
     
     # POST /api/friend_recipe/accept
     # Accepts a recipie from another user.
@@ -306,15 +308,16 @@ class FriendRecipeViewSet:
     def approve(self, request):
         user = request.user
         username = request.data.get('username', None)
+        recipe = request.data.get('recipe', None)
         friend = User.objects.filter(username=username).first()
+        
         if friend is None:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_recipe.delete()
-        user.friends.add(friend)
-        user.save()
+        friend.recipe.add(recipe)
         return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
 
     # DELETE /api/friend_recipe/reject

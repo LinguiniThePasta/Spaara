@@ -46,6 +46,7 @@ const SocialPage = () => {
   const [outgoingRequests, setOutgoingRequests] = useState<User[]>([]);
   // Incoming requests list
   const [incomingRequests, setIncomingRequests] = useState<User[]>([]);
+  const [incomingRecipes, setIncomingRecipes] = useState([])
   // Friends list
   const [friends, setFriends] = useState<User[]>([]);
   // Friend request count
@@ -169,6 +170,26 @@ const SocialPage = () => {
       console.error('Error fetching friend requests:', error.message);
     }
   };
+  
+  const fetchRecipe = async () => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.get(`${API_BASE_URL}/api/friend_recipe/incoming/`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      const recipes = response.data.map((item) => ({
+        recipe: item
+      }));
+
+      setIncomingRecipes(recipes);
+    } catch (error) {
+      console.error('Error fetching friend requests:', error.message);
+    }
+  }
 
   // Fetch incoming friend requests
   const fetchIncomingRequests = async () => {
@@ -485,6 +506,32 @@ const SocialPage = () => {
               {incomingRequests.length > 0 ? (
                 <FlatList
                   data={incomingRequests}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.friendRequestItem}>
+                      <Text style={styles.friendRequestName}>{item.name}</Text>
+                      <View style={styles.friendRequestButtons}>
+                        <TouchableOpacity
+                          onPress={() => approveFriendRequest(item.name)}
+                        >
+                          <Icon style={styles.buttonText} name="checkmark"/>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => rejectFriendRequest(item.name)}
+                        >
+                         <Icon style={styles.buttonText} name="close-outline"/>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                />
+              ) : (
+                <Text>No friend requests</Text>
+              )}
+              <Text style={styles.modalTitle}>Recipes</Text>
+              {incomingRecipes.length > 0 ? (
+                <FlatList
+                  data={incomingRecipess}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => (
                     <View style={styles.friendRequestItem}>
