@@ -35,7 +35,7 @@ export default function Footer() {
                 <Text style={styles.footerText}>Map</Text>
             </Pressable>
 
-            <Pressable style={styles.footerItem} onPress={() => goToLastAccessedList()}>
+            <Pressable style={styles.footerItem} onPress={() => router.replace("/draganddroptest")}>
                 <Icon name="cart-outline" size={24} color="#000"/>
                 <Text style={styles.footerText}>List</Text>
             </Pressable>

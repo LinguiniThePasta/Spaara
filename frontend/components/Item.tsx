@@ -55,7 +55,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
                 <Pressable onPress={toggleCheck}>
                     <Icon name={checked ? "checkmark-circle" : "ellipse-outline"} size={24} color={checked ? Colors.light.primaryColor : Colors.light.secondaryText} style={styles.checkboxIcon}/>
                 </Pressable>
-                <Text style={styles.itemText}>{item.title}</Text>
+                <Text style={styles.itemText}>{item.label}</Text>
             </View>
 
             <View style={styles.rightContainer}>
@@ -143,9 +143,8 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
                     <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
                 </Pressable>
                 <TextInput 
-                    style={styles.itemText}
+                    style={styles.addItemText}
                     placeholder='Add Item'
-                    placeholderTextColor={Colors.light.secondaryText}
                     editable={true}
                     defaultValue={initialText}
                     onChangeText={(text) => onChangeText(text)}
@@ -219,6 +218,11 @@ const styles = StyleSheet.create({
     itemText: {
         color: Colors.light.primaryText,
         fontSize: 21,
+    },
+    addItemText: {
+        color: 'gray',
+        fontStyle: 'italic',
+        fontSize: 18,
     },
     checkboxIcon: {
         marginRight: 5,
