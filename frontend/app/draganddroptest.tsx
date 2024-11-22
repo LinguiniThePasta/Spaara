@@ -20,7 +20,7 @@ type Item = {
     quantity: number,
     units: number,
     favorited: boolean,
-    order: number,
+    index: number,
     group?: string;
     isInput?: boolean;
 };
@@ -36,23 +36,24 @@ export default function App() {
     const inputItem: Item = {
         id: 'input',
         label: 'Add Item',
+        description: 'Add Item',
+        store: 'Add Store',
         isInput: true,
         quantity: 1,
         units: 1,
         favorited: false,
-        order: 0,
+        index: 0,
     };
     // Flatlist data
     const [items, setItems] = useState<Item[]>([
-        {id: '1', label: 'Item 1', description: 'Description 1', store: 'Store 1', quantity: 1, units: 1, favorited: false, order: 1, group: 'A'},
-        {id: '2', label: 'Item 2', description: 'Description 2', store: 'Store 2', quantity: 1, units: 1, favorited: false, order: 2, group: 'A'},
-        {id: '3', label: 'Item 3', description: 'Description 3', store: 'Store 3', quantity: 1, units: 1, favorited: false, order: 3, group: 'A'},
-        {id: '4', label: 'Item 4', description: 'Description 4', store: 'Store 4', quantity: 1, units: 1, favorited: false, order: 4, group: 'B'},
-        {id: '5', label: 'Item 5', description: 'Description 5', store: 'Store 5', quantity: 1, units: 1, favorited: false, order: 5, group: 'B'},
-        {id: '6', label: 'Item 6', description: 'Description 6', store: 'Store 6', quantity: 1, units: 1, favorited: false, order: 6, group: 'B'},
-        {id: '7', label: 'Item 7', description: 'Description 7', store: 'Store 7', quantity: 1, units: 1, favorited: false, order: 7},
-        {id: '8', label: 'Item 8', description: 'Description 8', store: 'Store 8', quantity: 1, units: 1, favorited: false, order: 8},
-        {id: '9', label: 'Item 9', description: 'Description 9', store: 'Store 9', quantity: 1, units: 1, favorited: false, order: 9},
+      {id: '1', label: 'Milk', description: 'Whole Milk', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 0, group: 'B'},
+      {id: '2', label: 'Eggs', description: 'Large Eggs', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 1, group: 'B'},
+      {id: '3', label: 'Bread', description: 'Whole Wheat Bread', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 2, group: 'A'},
+      {id: '4', label: 'Butter', description: 'Unsalted Butter', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 3},
+      {id: '5', label: 'Cheese', description: 'Cheddar Cheese', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 4, group: 'A'},
+      {id: '6', label: 'Apples', description: 'Red Apples', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 5, group: 'A'},
+      {id: '7', label: 'Bananas', description: 'Yellow Bananas', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 6},
+      {id: '8', label: 'Oranges', description: 'Navel Oranges', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 7, group: 'A'},
     ]);
 
     const [groups, setGroups] = useState<Group[]>([
