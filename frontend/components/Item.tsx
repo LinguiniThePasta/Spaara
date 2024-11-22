@@ -23,18 +23,26 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({ item, handleFavoriteItem, handleRemoveItem }) {
+export function CheckItem({ item, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
+    const [note, setNote] = useState(item.notes || "");
     const price = item.price !== undefined && item.price !== null ? item.price : 0.00; // Default price if not provided
 
     function increaseItem() {
         setNumber(number + 1);
+        item.quantity = number + 1;
+        handleModifyItem(item);
+        if (number === 0) {
+            handleRemoveItem(item);
+        }
     }
 
     function decreaseItem() {
         setNumber(number - 1);
+        item.quantity = number - 1;
+        handleModifyItem(item);
         if (number === 0) {
             handleRemoveItem(item);
         }
@@ -49,6 +57,12 @@ export function CheckItem({ item, handleFavoriteItem, handleRemoveItem }) {
         handleFavoriteItem(item);
     }
 
+    function onNoteChange(note) {
+        setNote(note);
+        item.notes = note;
+        handleModifyItem(item);
+    }
+
     console.log("Price value:", price);
     return (
         <View style={styles.item}>
@@ -61,7 +75,17 @@ export function CheckItem({ item, handleFavoriteItem, handleRemoveItem }) {
                         style={styles.checkboxIcon}
                     />
                 </Pressable>
-                <Text style={styles.itemText}>{item.title}</Text>
+                <View>
+                    <Text style={styles.itemText}>{item.title}</Text>
+                    <TextInput
+                        style={styles.noteInput}
+                        placeholder="Add a note..."
+                        placeholderTextColor={Colors.light.secondaryText}
+                        value={note}
+                        onChangeText={(text) => setNote(text)}
+                        onBlur={() => onNoteChange(note)}
+                    />
+                </View>
             </View>
 
             <View style={styles.rightContainer}>
@@ -260,5 +284,13 @@ const styles = StyleSheet.create({
     },
     notFavorite: {
         color: Colors.light.secondaryText,
+    },
+    noteInput: {
+        marginTop: 5,
+        fontSize: 14,
+        color: Colors.light.primaryText,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.secondaryText,
+        padding: 2,
     },
 });

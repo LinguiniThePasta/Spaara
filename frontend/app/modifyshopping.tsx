@@ -553,7 +553,7 @@ export default function ShoppingListScreen() {
                         style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
                         onLongPress={drag}>
                         <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                                   handleRemoveItem={handleRemove}></CheckItem>
+                                   handleRemoveItem={handleRemove} handleModifyItem={() => handleModifyItem(item)}></CheckItem>
                     </TouchableOpacity>
                 </ScaleDecorator>
             );
@@ -693,6 +693,51 @@ export default function ShoppingListScreen() {
             console.error('Error optimizing:', error);
         }
     };
+
+    const handleModifyItem = async (item) => {
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+        console.log("modifying");
+
+        try {
+            try {
+                const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`, {
+                    name: item.name,
+                    store: item.store,
+                    description: item.description,
+                    quantity: item.quantity,
+                    units: item.units,
+                    notes: item.notes,
+                }, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+                console.log("unoptimized patch");
+
+
+            } catch (unoptimizedError) {
+                console.log("QUANT" + item.quantity);
+                const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/optimized/${item.id}/`, {
+                    name: item.name,
+                    store: item.store,
+                    description: item.description,
+                    quantity: item.quantity,
+                    units: item.units,
+                    note: item.note,
+                }, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+                console.log("optimized patch");
+
+            }
+        } catch (error) {
+            console.log("Could not update item:", error);
+        } finally {
+            fetchShoppingList();
+        }
+    }
 
     const [searchResults, setSearchResults] = useState([]);
     const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -837,7 +882,7 @@ export default function ShoppingListScreen() {
                             }}
                         />
                     </View>
-                    {dropdownVisible && searchResults.length > 0  || searchTerm.length === 0 ? (
+                    {dropdownVisible && searchResults.length > 0 || searchTerm.length === 0 ? (
                         <View style={styles.dropdown}>
                             <FlatList
                                 data={searchResults}
