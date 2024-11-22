@@ -53,6 +53,7 @@ const SocialPage = () => {
   const [friends, setFriends] = useState<User[]>([]);
   // Friend request count
   const [friendRequestCount, setFriendRequestCount] = useState(0);
+  const [recipeCount, setRecipeCount] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -174,6 +175,22 @@ const SocialPage = () => {
       console.error('Error fetching friend requests:', error.message);
     }
   };
+
+  const fetchRecipeCount = async () => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.get(`${API_BASE_URL}/api/friend_recipe/count/`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+      setRecipeCount(response.data.count);
+      console.log('Correctly fetched recipie count!');
+    } catch (error) {
+      console.error('Error fetching recipies:', error.message);
+    }
+  };
   
   const fetchRecipe = async () => {
     try {
@@ -255,6 +272,7 @@ const SocialPage = () => {
     fetchOtherUsers();
     fetchFriends();
     fetchRequestCount();
+    fetchRecipeCount();
     fetchOutgoingRequests();
     fetchIncomingRequests();
     fetchRecipe();
@@ -358,6 +376,7 @@ const SocialPage = () => {
       console.log('recipe approved!');
 
       // Update state
+      fetchRecipeCount();
       setIncomingRecipes((prevRecipe) => prevRecipe.filter((req) => req.name !== recipe.name));
       fetchFriends(); // Refresh friends list
     } catch (error) {
@@ -407,6 +426,7 @@ const SocialPage = () => {
       console.log('recipe rejected!');
 
       // Update state
+      fetchRecipeCount();
       fetchRecipe(); // Refresh incoming requests
     } catch (error) {
       console.error('Error rejecting recipe:', error.message);
@@ -472,7 +492,7 @@ const SocialPage = () => {
                 }}
               >
                 <Icon name="notifications-outline" size={36} color={Colors.light.primaryColor} />
-                {friendRequestCount > 0 && (
+                {friendRequestCount + recipeCount > 0 && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{friendRequestCount > 99 ? '99+' : friendRequestCount}</Text>
                   </View>
