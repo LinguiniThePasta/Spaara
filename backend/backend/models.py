@@ -247,8 +247,9 @@ class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
     checked = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+    notes = models.CharField(max_length=200, blank=True, null=True)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
 
     def __str__(self):

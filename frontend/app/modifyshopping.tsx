@@ -29,7 +29,7 @@ import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
 import GestureDetector from 'react-native-gesture-handler';
 import {setCurrentListJson, setLastAccessedList} from "@/store/shoppingListSlice";
 //import { setSearchQuery } from '../store/shoppingListSlice';
@@ -83,8 +83,8 @@ export default function ShoppingListScreen() {
             items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
+         */
     ]);
-
     const [allRecipes, setAllRecipes] = useState([]);
 
 
@@ -126,7 +126,6 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const listId = local.id;
-
             const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
@@ -138,16 +137,10 @@ export default function ShoppingListScreen() {
             setShoppingListName(name);
 
             isOptimized = checkIfListIsOptimized(subheadings);
-            console.log(isOptimized)
 
             const filteredSubheadings = subheadings.filter(subheading => {
-                if (isOptimized) {
-                    return (subheading.optimized_items && subheading.optimized_items.length > 0) || subheading.name === "Unoptimized";
-                } else {
-                    return !subheading.optimized_items || subheading.optimized_items.length === 0;
-                }
+                return subheading.optimized === isOptimized;
             });
-
 
             const parsedItemGroups = filteredSubheadings.map((subheading) => {
                 let storeName = subheading.name;
@@ -160,8 +153,8 @@ export default function ShoppingListScreen() {
 
                 return {
                     id: subheading.id,
-                    title: storeName, // Use the store name as the title
-                    location: isOptimized ? location.trim() : null, // Add location if optimized
+                    title: storeName,
+                    location: isOptimized ? location.trim() : null,
                     items: [
                         ...(isOptimized
                             ? subheading.optimized_items.map((item) => ({
@@ -173,7 +166,7 @@ export default function ShoppingListScreen() {
                                 units: item.units,
                                 favorited: item.favorited,
                                 order: item.order,
-                                price: item.price, // Assuming optimized items have a price field
+                                price: item.price,
                             }))
                             : subheading.items.map((item) => ({
                                 id: item.id,
@@ -193,18 +186,18 @@ export default function ShoppingListScreen() {
                                 favorited: false,
                                 quantity: 0,
                             },
-                            {
-                                id: -2,
-                                title: '',
-                                favorited: false,
-                                quantity: 0,
-                            },
-                            {
-                                id: -3,
-                                title: '',
-                                favorited: false,
-                                quantity: 0,
-                            }
+                                // {
+                                //     id: -2,
+                                //     title: '',
+                                //     favorited: false,
+                                //     quantity: 0,
+                                // },
+                                // {
+                                //     id: -3,
+                                //     title: '',
+                                //     favorited: false,
+                                //     quantity: 0,
+                                // }
                             ]
                             : []),
                         ...(subheading.name === "Unoptimized" && isOptimized
@@ -214,29 +207,29 @@ export default function ShoppingListScreen() {
                                 favorited: false,
                                 quantity: 0,
                             },
-                            {
-                                id: -2,
-                                title: '',
-                                favorited: false,
-                                quantity: 0,
-                            },
-                            {
-                                id: -3,
-                                title: '',
-                                favorited: false,
-                                quantity: 0,
-                            }
+                                // {
+                                //     id: -2,
+                                //     title: '',
+                                //     favorited: false,
+                                //     quantity: 0,
+                                // },
+                                // {
+                                //     id: -3,
+                                //     title: '',
+                                //     favorited: false,
+                                //     quantity: 0,
+                                // }
                             ]
                             : [])
                     ],
                 };
             });
 
-
+            console.log("parsedItemGroups");
             //Format list of default items
             var defaultItems = [];
             parsedItemGroups.forEach((group) => {
-                if (group.title === 'Default') {
+                if (group.title === 'Default' || group.title === 'Unoptimized') {
                     defaultItems = group.items.map((item) => ({
                         id: item.id,
                         title: item.title,
@@ -287,14 +280,16 @@ export default function ShoppingListScreen() {
                 if (list.id === local.id) {
                     listName = list.title;
                 }
-            });*/
+            });
 
             console.log("Correctly fetched recipes!");
             //setRecipeName(listName);
+             */
         } catch (error) {
             console.error('Error fetching recipes:', error);
         }
     };
+
     const fetchFavorites = async () => {
 
         //console.log("Adding this: " + newItemName);
@@ -427,8 +422,6 @@ export default function ShoppingListScreen() {
     };
 
 
-
-
     const handleReorderItems = async (items) => {
         const groceryListId = local.id;
         var itemsOrderList = [];
@@ -467,16 +460,37 @@ export default function ShoppingListScreen() {
     };
 
 
-
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.delete(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`, {
-                headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+            try {
+                const unoptimizedResponse = await axios.delete(
+                    `${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`,
+                    {
+                        headers: {
+                            'Authorization': 'Bearer ' + jwtToken,
+                        }
+                    }
+                );
+                console.log("Successfully removed item from unoptimized list:", unoptimizedResponse.data);
+            } catch (unoptimizedError) {
+                console.warn("Failed to remove from unoptimized. Trying optimized endpoint...");
+                try {
+                    const optimizedResponse = await axios.delete(
+                        `${API_BASE_URL}/api/grocery_items/optimized/${item.id}/?list=${local.id}`,
+                        {
+                            headers: {
+                                'Authorization': 'Bearer ' + jwtToken,
+                            }
+                        }
+                    );
+                    console.log("Successfully removed item from optimized list:", optimizedResponse.data);
+                } catch (optimizedError) {
+                    console.error("Failed to remove from both unoptimized and optimized lists.");
+                    throw optimizedError;
                 }
-            });
+            }
 
             // Refresh the shopping lists after adding a new one
             setNewItemName('');
@@ -535,8 +549,9 @@ export default function ShoppingListScreen() {
         if (isItem) {
             return (
                 <ScaleDecorator>
-                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
-                                      onLongPress={drag}>
+                    <TouchableOpacity
+                        style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                        onLongPress={drag}>
                         <CheckItem item={item} handleFavoriteItem={handleFavorite}
                                    handleRemoveItem={handleRemove}></CheckItem>
                     </TouchableOpacity>
@@ -578,7 +593,6 @@ export default function ShoppingListScreen() {
         setItemGroups(data)
         handleReorderItems(data);
     };
-
 
 
     const handleAddRecipe = async (recipe) => {
@@ -659,56 +673,6 @@ export default function ShoppingListScreen() {
         </View>
     );
 
-
-    // const handleAddRecipe = async (item) => {
-    //
-    //     console.log("Adding this: " + item.id);
-    //     //if (newItemName === "-1") return;
-    //     try {
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //         const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-    //             name: item.id,
-    //             quantity: -1,
-    //             units: "units",
-    //             list: local.id,
-    //         }, {
-    //             headers: {
-    //                 'Authorization': 'Bearer ' + jwtToken,
-    //             }
-    //         });
-    //
-    //         // Refresh the shopping lists after adding a new one
-    //         setNewItemName('');
-    //         fetchShoppingItems();
-    //     } catch (error) {
-    //         console.error('Error adding new shopping item:', error);
-    //     }
-    //
-    //     console.log("Recipe: " + item.title);
-    //
-    //     await fetchRecipeItems(item.id);
-    //
-    //     console.log("Recipe Items: ");
-    //     recipeItems.forEach((item) => console.log(" + " + item.title));
-    //
-    //
-    //     const newId = 1000 + itemGroups.length;
-    //     let newRecipe = {id: newId, title: item.title, items: recipeItems};
-    //
-    //     setItemGroups([...itemGroups, newRecipe]);
-    //     itemGroups.forEach((item) => console.log(item.title));
-    //     await fetchShoppingItems();
-    //     itemGroups.forEach((item) => console.log("--" + item.title));
-    // };
-
-
-    /*
-    const renderItemGroup = ({item}) => (
-        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite}
-                   handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                   handleAddItem={handleAddItem}></ItemGroup>
-    );
-    */
     const dismissModal = () => {
         setIsRenameModalVisible(false);
     }
@@ -717,20 +681,18 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const listId = local.id;
-
             const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${listId}`, {
                 headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+                    'Authorization': `Bearer ${jwtToken}`
                 }
             });
             console.log(response.data);
             const {name, subheadings} = response.data;
 
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error optimizing:', error);
         }
     };
-
 
 
     return (

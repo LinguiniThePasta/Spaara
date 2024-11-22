@@ -407,7 +407,7 @@ class LoginView(APIView):
 
 
 class OptimizeView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     def post(self, request):
         '''
         When a user optimize, the unoptimized AND optimized grocery list is sent to them. The frontend will parse both items
@@ -446,7 +446,6 @@ class OptimizeView(APIView):
                 pass
                 subheading_dict['Unoptimized'].append(item)
                 # optimized_item.save()
-
         for key, value in subheading_dict.items():
             subheading, created = Subheading.objects.get_or_create(
                 name=key,
@@ -1229,12 +1228,16 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
                 {'error': 'Recipe ID and Item ID must be provided.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        print(grocery_id)
+        print(item_id)
         # Check if item exists and belongs to the specified recipe
-        item = get_object_or_404(GroceryItemUnoptimized, id=item_id, subheading__grocery=grocery_id)
+        item = get_object_or_404(GroceryItemOptimized, id=item_id, subheading__grocery=grocery_id)
 
-        # Proceed with deletion
+        subheading = item.subheading
         item.delete()
+        if subheading.optimized_items.count() == 0 and subheading.name != "Unoptimized":
+            subheading.delete()
+
         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
@@ -1377,8 +1380,11 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         # Check if item exists and belongs to the specified recipe
         item = get_object_or_404(GroceryItemUnoptimized, id=item_id, subheading__grocery=grocery_id)
 
-        # Proceed with deletion
+        subheading = item.subheading
         item.delete()
+        if subheading.items.count() == 0 and subheading.name != "Default":
+            subheading.delete()
+
         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):

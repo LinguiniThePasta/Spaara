@@ -282,7 +282,7 @@ class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemOptimized
-        fields = ['name', 'description', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order']
+        fields = ['id', 'name', 'description', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
 
     def create(self, validated_data):
         # Check if 'subheading' is provided
@@ -314,7 +314,7 @@ class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
         order = validated_data.get('order')
         if order is None:
             # Assign the next available order within the subheading
-            last_item = GroceryItemUnoptimized.objects.filter(subheading=validated_data['subheading']).order_by(
+            last_item = GroceryItemOptimized.objects.filter(subheading=validated_data['subheading']).order_by(
                 '-order').first()
             if last_item:
                 validated_data['order'] = last_item.order + 1
@@ -329,7 +329,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemUnoptimized
-        fields = ['id', 'name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
+        fields = ['id', 'name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
 
 
     def create(self, validated_data):
@@ -374,12 +374,12 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
 class SubheadingSerializer(serializers.ModelSerializer):
     items = GroceryItemUnoptimizedSerializer(many=True)
-    optimized_items = GroceryItemUnoptimizedSerializer(many=True)
+    optimized_items = GroceryItemOptimizedSerializer(many=True)
     recipe = RecipeSerializer(read_only=True)
 
     class Meta:
         model = Subheading
-        fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized_items']
+        fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized_items', 'optimized']
 
 class GrocerySerializer(serializers.ModelSerializer):
     subheadings = SubheadingSerializer(many=True, required=False)

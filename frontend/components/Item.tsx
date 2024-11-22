@@ -23,10 +23,11 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
+export function CheckItem({ item, handleFavoriteItem, handleRemoveItem }) {
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
+    const price = item.price !== undefined && item.price !== null ? item.price : 0.00; // Default price if not provided
 
     function increaseItem() {
         setNumber(number + 1);
@@ -48,34 +49,40 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
         handleFavoriteItem(item);
     }
 
-
+    console.log("Price value:", price);
     return (
-        <View style={styles.item}>    
+        <View style={styles.item}>
             <View style={styles.leftContainer}>
                 <Pressable onPress={toggleCheck}>
-                    <Icon name={checked ? "checkmark-circle" : "ellipse-outline"} size={24} color={checked ? Colors.light.primaryColor : Colors.light.secondaryText} style={styles.checkboxIcon}/>
+                    <Icon
+                        name={checked ? "checkmark-circle" : "ellipse-outline"}
+                        size={24}
+                        color={checked ? Colors.light.primaryColor : Colors.light.secondaryText}
+                        style={styles.checkboxIcon}
+                    />
                 </Pressable>
                 <Text style={styles.itemText}>{item.title}</Text>
             </View>
 
             <View style={styles.rightContainer}>
-                <Pressable onPress={toggleFavorite/*() => {handleFavoriteItem(item, 10); setFavorite(!favorite);}*/}>
-                    <Icon 
-                        name={favorite ? "star" : "star-outline" }
-                        size={20} 
-                        color={favorite ? Colors.light.primaryColor : Colors.light.secondaryText} 
+                <Text style={styles.priceText}>${price}</Text>
+                <Pressable onPress={toggleFavorite}>
+                    <Icon
+                        name={favorite ? "star" : "star-outline"}
+                        size={20}
+                        color={favorite ? Colors.light.primaryColor : Colors.light.secondaryText}
                         style={styles.checkboxText}
                     />
                 </Pressable>
                 <View style={styles.plusMinusContainer}>
-                    <Pressable onPress={(item) => {number - 1 === 0 ? handleRemoveItem(item) : decreaseItem()}}>
-                        <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>
+                    <Pressable onPress={() => { number - 1 === 0 ? handleRemoveItem(item) : decreaseItem(); }}>
+                        <Icon name="remove-outline" size={20} color={Colors.light.primaryText} style={styles.itemText} />
                     </Pressable>
                     <View style={styles.divider}></View>
                     <Text style={styles.itemText}>{number}</Text>
                     <View style={styles.divider}></View>
                     <Pressable onPress={increaseItem}>
-                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText}/>                    
+                        <Icon name="add-outline" size={20} color={Colors.light.primaryText} style={styles.itemText} />
                     </Pressable>
                 </View>
             </View>
@@ -137,12 +144,12 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
     //const [initialText, setInitialText] = useState("");
     return (
         <View style={styles.item}>
-            
+
             <View style={styles.leftContainer}>
                 <Pressable >
                     <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
                 </Pressable>
-                <TextInput 
+                <TextInput
                     style={styles.itemText}
                     placeholder='Add Item'
                     placeholderTextColor={Colors.light.secondaryText}
@@ -150,7 +157,7 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
                     defaultValue={initialText}
                     onChangeText={(text) => onChangeText(text)}
                     onSubmitEditing={() => handleAddItem()}
-                    
+
                 />
             </View>
         </View>
@@ -237,7 +244,13 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         alignItems: 'center',
         flexDirection: 'row',
+        width: '50%',
         padding: 3,
+    },
+    priceText: {
+        fontSize: 16,
+        marginRight: 10,
+        color: Colors.light.primaryText,
     },
     favoriteButton: {
         fontSize: 25,
