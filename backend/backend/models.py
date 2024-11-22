@@ -285,4 +285,4 @@ class FriendRecipe (models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.from_user} to {self.to_user} ({self.status})"
+        return f"{self.from_user} to {self.to_user} ()"

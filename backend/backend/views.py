@@ -23,6 +23,7 @@ import uuid
 import rest_framework.mixins as mixins
 import os
 import requests
+from copy import copy
 from dotenv import load_dotenv
 from django.conf import settings
 
@@ -308,15 +309,17 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
     def approve(self, request):
         user = request.user
         recipe = request.data.get('recipe', None)
-        friend = User.objects.filter(username=username).first()
+        print(recipe)
+        print(recipe['id'])
+        friend_recipe = FriendRecipe.objects.filter(recipe_id=recipe['id']).first()
+        copy_recipe = copy(friend_recipe)
         
-        if friend is None:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
-        friend_recipe.delete()
+        copy_recipe.recipe.user = user
         
+        copy_recipe.save()
+        friend_recipe.delete()
         return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
 
     # DELETE /api/friend_recipe/reject
