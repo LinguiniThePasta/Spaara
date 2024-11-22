@@ -42,24 +42,24 @@ export default function ShoppingListScreen() {
     const [searchTerm, setSearchTerm] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
-    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
+    const [newItem, setNewItem] = useState({id: -1, label: "EYES!", favorited: false, checked: false});
     const [newItemName, setNewItemName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [shoppingItems, setShoppingItems] = useState([
-        /*{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false },
-        { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false },
-        { id: -1, title: '', price: 0, favorited: false, checked: false },*/
+        /*{ id: 998, label: 'Ham', price: 3.99, favorited: false, checked: false },
+        { id: 999, label: 'Cheese', price: 4.99, favorited: false, checked: false },
+        { id: -1, label: '', price: 0, favorited: false, checked: false },*/
     ]);
     const [favoriteItems, setFavoriteItems] = useState([
-        {id: 1, title: 'Milk', favorited: true},
-        {id: 2, title: 'Rice', favorited: true},
+        {id: 1, label: 'Milk', favorited: true},
+        {id: 2, label: 'Rice', favorited: true},
     ]);
     const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
 
     const [recipeTemp, setRecipe] = useState([
-        {id: 1, title: 'Beefed Banana'},
-        {id: 2, title: 'Porked Lemons'},
+        {id: 1, label: 'Beefed Banana'},
+        {id: 2, label: 'Porked Lemons'},
     ]);
 
     const curActiveList = useSelector((state) => state.shoppingList.currentListJson);
@@ -73,9 +73,9 @@ export default function ShoppingListScreen() {
     const [itemGroups, setItemGroups] = useState([
         /*{
             id: "1000",
-            title: "Smallga",
-            items: [{id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
-                {id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
+            label: "Smallga",
+            items: [{id: 998, label: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
+                {id: 999, label: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
         {
             id: "1001",
@@ -232,7 +232,7 @@ export default function ShoppingListScreen() {
                 if (group.title === 'Default' || group.title === 'Unoptimized') {
                     defaultItems = group.items.map((item) => ({
                         id: item.id,
-                        title: item.title,
+                        label: item.label,
                         description: item.description,
                         store: item.store,
                         quantity: item.quantity,
@@ -270,7 +270,7 @@ export default function ShoppingListScreen() {
 
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
-                title: item.name,
+                label: item.name,
             }));
 
             setAllRecipes(lists);
@@ -278,7 +278,7 @@ export default function ShoppingListScreen() {
             /*let listName = "Unnamed List";
             lists.forEach(list => {
                 if (list.id === local.id) {
-                    listName = list.title;
+                    listName = list.label;
                 }
             });
 
@@ -305,7 +305,7 @@ export default function ShoppingListScreen() {
 
             const items = response.data.map(item => ({
                 id: item.id.toString(),
-                title: item.name,
+                label: item.name,
                 price: 0,
                 favorited: false,
                 checked: false,
@@ -466,7 +466,7 @@ export default function ShoppingListScreen() {
         var itemsOrderList = [];
         items.forEach((item) => {
             if (item.order) {
-                //console.log("item.id: " + item.id + "   item.title: " + item.title + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
+                //console.log("item.id: " + item.id + "   item.label: " + item.label + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
                 itemsOrderList.push(
                     {
                         item_id: item.id,
@@ -558,11 +558,11 @@ export default function ShoppingListScreen() {
 
     //const [currentDefaultIndex, setCurrentDefaultIndex] = useState(0);
     const renderItem = ({item, drag, isActive}) => {
-        const isDefault = (item.title === "Default");
+        const isDefault = (item.label === "Default");
         const isInput = (item.id === -1);
         const isSpacer = (item.id < -1);
         const isItem = (!item.items);
-        //console.log("item rendered! title: " + item.title + "   isItem: "  + isItem + "   isInput: " + isInput);
+        //console.log("item rendered! label: " + item.label + "   isItem: "  + isItem + "   isInput: " + isInput);
 
         if (isDefault) {
             return (
@@ -614,7 +614,7 @@ export default function ShoppingListScreen() {
 
         return (
             <View>
-                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
+                <ItemGroup name={item.label} items={item.items} handleFavoriteItem={handleFavorite}
                            handleRemoveItem={handleRemove} onChangeText={setNewItemName}
                            handleAddItem={handleAddItem}></ItemGroup>
             </View>
@@ -628,7 +628,7 @@ export default function ShoppingListScreen() {
 
         data.forEach((item) => {
             if (item.order) {
-                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.label);
             }
         });
         var iterator = 1;
@@ -639,7 +639,7 @@ export default function ShoppingListScreen() {
         });
         data.forEach((item) => {
             if (item.order) {
-                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.title);
+                console.log("order: " + item.order + "   data index: " + data.indexOf(item) + "   itemGroups index: " + itemGroups.indexOf(item) + "   " + item.label);
             }
         });
 
@@ -694,7 +694,7 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                name: item.title,
+                name: item.label,
                 quantity: 1,
                 units: "units",
                 list: local.id
@@ -716,7 +716,7 @@ export default function ShoppingListScreen() {
     const renderRecipe = ({item}) => (
         <View style={styles.recipeContainer}>
             <View style={styles.recipeLeft}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemlabel}>{item.label}</Text>
             </View>
             <View style={styles.recipeRight}>
                 <Pressable onPress={() => handleAddRecipe(item)}>
@@ -751,21 +751,21 @@ export default function ShoppingListScreen() {
     //         console.error('Error adding new shopping item:', error);
     //     }
     //
-    //     console.log("Recipe: " + item.title);
+    //     console.log("Recipe: " + item.label);
     //
     //     await fetchRecipeItems(item.id);
     //
     //     console.log("Recipe Items: ");
-    //     recipeItems.forEach((item) => console.log(" + " + item.title));
+    //     recipeItems.forEach((item) => console.log(" + " + item.label));
     //
     //
     //     const newId = 1000 + itemGroups.length;
-    //     let newRecipe = {id: newId, title: item.title, items: recipeItems};
+    //     let newRecipe = {id: newId, label: item.label, items: recipeItems};
     //
     //     setItemGroups([...itemGroups, newRecipe]);
-    //     itemGroups.forEach((item) => console.log(item.title));
+    //     itemGroups.forEach((item) => console.log(item.label));
     //     await fetchShoppingItems();
-    //     itemGroups.forEach((item) => console.log("--" + item.title));
+    //     itemGroups.forEach((item) => console.log("--" + item.label));
     // };
 
 
@@ -961,7 +961,7 @@ export default function ShoppingListScreen() {
                                    style={{paddingRight: 10, marginLeft: -10}}>
                             <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                         </Pressable>
-                        <Text style={styles.headerTitle}>{`${shoppingListName}`}</Text>
+                        <Text style={styles.headerlabel}>{`${shoppingListName}`}</Text>
                         <TouchableOpacity style={{marginLeft: 10}} onPress={() => setIsRenameModalVisible(true)}>
                             <Icon name="pencil-outline" size={24} color={Colors.light.primaryText}/>
                         </TouchableOpacity>
@@ -1048,7 +1048,7 @@ export default function ShoppingListScreen() {
                             keyboardVerticalOffset={60}
                         >
                             <View style={styles.nameModalContent}>
-                                <Text style={styles.nameModalTitle}>Rename Shopping List</Text>
+                                <Text style={styles.nameModallabel}>Rename Shopping List</Text>
                                 <TextInput
                                     style={styles.nameInput}
                                     placeholder="Enter new name"
@@ -1170,7 +1170,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         marginHorizontal: 10,
     },
-    itemTitle: {
+    itemlabel: {
         fontSize: 18,
     },
     itemInfoContainer: {
@@ -1196,7 +1196,7 @@ const styles = StyleSheet.create({
     listItemLeft: {
         flexDirection: 'column',
     },
-    listItemTitle: {
+    listItemlabel: {
         fontSize: 18,
         fontWeight: 'bold',
         color: Colors.light.primaryText,
@@ -1252,7 +1252,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'flex-start'
     },
-    modalTitle: {
+    modallabel: {
         fontSize: 24,
         top: 5,
         fontWeight: 'bold',
@@ -1353,7 +1353,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         color: Colors.light.primaryText,
     },
-    headerTitle: {
+    headerlabel: {
         fontSize: 28,
         fontWeight: 'bold',
         color: Colors.light.primaryText,
@@ -1378,7 +1378,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
-    nameModalTitle: {
+    nameModallabel: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,

@@ -120,6 +120,7 @@ class FriendRequest(models.Model):
         return f"{self.from_user} to {self.to_user} ({self.status})"
 
 
+
 class ListBase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)

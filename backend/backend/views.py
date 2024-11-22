@@ -12,12 +12,12 @@ from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction, Subheading, FriendRequest, StoreItem
+    DietRestriction, Subheading, FriendRequest, StoreItem, FriendRecipe
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer, \
-    SubheadingSerializer, StoreItemSerializer
+    FriendRecipeSerializer, SubheadingSerializer, StoreItemSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -30,7 +30,6 @@ from dotenv import load_dotenv
 from django.conf import settings
 
 load_dotenv()
-
 
 class RegisterView(APIView):
     def post(self, request):
@@ -270,6 +269,96 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_request.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+        
+class FriendRecipeViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    # GET METHODS
+    # GET /api/friend_recipe/count
+    # Returns the number of pending sent recipes for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def count(self, request):
+        count = FriendRecipe.objects.filter(to_user=request.user).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+
+    # GET /api/friend_recipe/incoming
+    # Returns a list of incoming sent recipies for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def incoming(self, request):
+        incoming_recipe = FriendRecipe.objects.filter(to_user=request.user)
+        serializer = FriendRecipeSerializer(incoming_recipe, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # GET /api/friend_recipe/outgoing
+    # Returns a list of outgoing sent recipiess for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def outgoing(self, request):
+        outgoing_recipe = FriendRecipe.objects.filter(from_user=request.user)
+        serializer = FriendRecipeSerializer(outgoing_recipe, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # POST METHODS
+    # POST /api/friend_recipe/send
+    # Sends a recipie to another user.
+    @action(detail=False, methods=['post'])
+    def send(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        recipe_id = request.data.get('recipe', None)
+        friend = User.objects.filter(username=username).first()
+        recipe = Recipe.objects.filter(id=recipe_id).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        FriendRecipe.objects.create(from_user=user, to_user=friend, recipe=recipe)
+        return Response({'message': 'recipe not sent'}, status=status.HTTP_201_CREATED)
+
+    # POST /api/friend_recipe/accept
+    # Accepts a recipie from another user.
+    @action(detail=False, methods=['post'])
+    def approve(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        recipe = request.data.get('recipe', None)
+        friend = User.objects.filter(username=username).first()
+
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
+        if friend_recipe is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe.delete()
+        friend.recipe.add(recipe)
+        return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/friend_recipe/reject
+    # Rejects an incoming recipie
+    @action(detail=False, methods=['delete'])
+    def reject(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
+        if friend_recipe is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+
+    # DELETE /api/friend_recipe/revoke
+    # Revokes an outgoing sent recipie
+    @action(detail=False, methods=['delete'])
+    def revoke(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRecipe.objects.filter(from_user=user, to_user=friend).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
 
 
 class FriendsView(APIView):
@@ -287,7 +376,7 @@ class FriendsView(APIView):
         '''
         user = request.user
         friends = user.friends.all()
-        data = [{'id': friend.id, 'username': friend.username} for friend in friends]
+        data = [{'id': friend.id, 'username': friend.username, 'profile_icon': friend.profile_icon, 'profile_color': friend.profile_color} for friend in friends]
         return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -1164,7 +1253,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
 class StoreView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # Get method for stores. Latitude and longitude can be passed in if desired but,
+    # if omitted, will use the latitude and longitude corresponding to the user's geocoded address.
     def get(self, request):
+        # GET LATITUDE AND LONGITUDE QUERY PARAMS
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+
         # USE GOOGLE PLACES TO GET WALMART STORES
         user = request.user
         address = get_selected_address(user)
@@ -1173,18 +1268,13 @@ class StoreView(APIView):
         radius = str(int(user.max_distance) * settings.METERS_PER_MILE)
         radius_miles = str(int(user.max_distance))
 
-        # Check latitude and longitude and, if none, use current location
-        latitude = None
-        longitude = None
-        if address.get('latitude') and address.get('longitude'):
-            latitude = address['latitude']
-            longitude = address['longitude']
-        else:
-            # Get the current location from the user's device
-            [latitude, longitude] = get_current_location()
-            if not latitude or not longitude:
-                return Response({'error': 'Could not find a latitude and longitude with associated user address'},
-                                status=status.HTTP_400_BAD_REQUEST)
+        # If latitude and longitude are passed, use those. If not, use selected address. Failing that, throw an error.
+        if not latitude or not longitude:
+            if address.get('latitude') and address.get('longitude'):
+                latitude = address['latitude']
+                longitude = address['longitude']
+            else:
+                return Response({'error' : 'Valid coordinates not found'}, status=status.HTTP_404_NOT_FOUND)
 
         response = requests.get(
             f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=walmart&location={latitude},{longitude}&radius={radius}&key={os.getenv('GOOGLE_API_KEY')}"

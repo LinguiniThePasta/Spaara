@@ -30,6 +30,7 @@ router.register(r'api/recipe', RecipeViewSet, basename='recipe')
 router.register(r'api/recipe_items', RecipeItemViewSet, basename='recipe-item')
 router.register(r'api/favorited/items', FavoritedItemViewSet, basename='favorited-item')
 router.register(r'api/friend_requests', FriendRequestViewSet, basename='friend-request')
+router.register(r'api/friend_recipe', FriendRecipeViewSet, basename='friend-recipe')
 router.register(r'api/user/addresses', AddressViewSet, basename='addresses')
 '''
 Create: POST /api/grocery

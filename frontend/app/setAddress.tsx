@@ -93,7 +93,7 @@ const SetAddress: React.FC = () => {
                             onPress: () => console.log("Cancel Pressed"),
                             style: "cancel"
                         },
-                        {text: "Delete", onPress: () => deleteAddress(addressId)}
+                        {text: "Delete", style: "destructive", onPress: () => deleteAddress(addressId)}
                     ],
                     {cancelable: false}
                 );
