@@ -24,7 +24,7 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem}) {
+export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
         item: {
@@ -514,7 +514,7 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
             <TextInput
             style={styles.itemText}
             placeholder={placeholder} // Bind placeholder to state
-            placeholderTextColor='gray'
+            placeholderTextColor={Colors.light.secondaryText}
             value={text} // Bind value to state
             onChangeText={(inputText) => {
                 setText(inputText); // Update input value

@@ -8,7 +8,7 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import DraggableItem from '@/components/DraggableItem';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import {Host} from 'react-native-portalize';
 import DraggableGroup from '@/components/DraggableGroup';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +17,7 @@ import {useRouter, useLocalSearchParams} from 'expo-router';
 import axios from 'axios';
 import {API_BASE_URL} from '@/scripts/config';
 import Footer from '@/components/Footer';
+import { useSelector } from 'react-redux';
 
 // Item data
 type Item = {
@@ -39,6 +40,82 @@ type Group = {
 };
 
 export default function ModifyShopping() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        gestureContainer: {
+          flex: 1,
+        },
+        container: {
+          flex: 1,
+          backgroundColor: Colors.light.background,
+          padding: 10,
+        },
+        groupListContainer: {
+          flex: 1,
+        },
+        groupContainer: {
+          marginBottom: 20,
+          paddingLeft: 20,
+          paddingRight: 10,
+          backgroundColor: Colors.light.background,
+          borderRadius: 10,
+        },
+        starButton: {
+          position: 'absolute',
+          bottom: 30,
+          right: 30,
+          backgroundColor: Colors.light.primaryColor, // Tomato color
+          borderRadius: 50,
+          padding: 15,
+          flexDirection: 'row',
+          alignItems: 'center',
+      },
+      folderButton: {
+          position: 'absolute',
+          bottom: 30,
+          left: "50%",
+          transform: [{translateX: -30}],
+          backgroundColor: Colors.light.primaryColor, // Tomato color
+          borderRadius: 50,
+          padding: 15,
+          flexDirection: 'row',
+          alignItems: 'center',
+      },
+      optimizeButton: {
+          position: 'absolute',
+          bottom: 30,
+          left: 30,
+          backgroundColor: Colors.light.primaryColor, // Tomato color
+          borderRadius: 50,
+          padding: 15,
+          flexDirection: 'row',
+          alignItems: 'center',
+      },
+        box: {
+          width: 100,
+          height: 100,
+          //backgroundColor: '#b58df1',
+          backgroundColor: Colors.light.background,
+          borderRadius: 20,
+        },
+        groupHeader: {
+          fontSize: 18,
+          fontWeight: 'bold',
+          marginBottom: 10,
+          //color: '#333',
+          color: Colors.light.primaryText,
+        },
+        itemGroupContainer: {
+          marginBottom: 20,
+        },
+        itemGrouplabel: {
+          backgroundColor: Colors.light.background,
+          color: Colors.light.primaryText,
+          fontSize: 24,
+         },
+      });
+
     // Create input item, which is appended to the end of every group to allow for expansion
     const inputItem: Item = {
         id: 'input',
@@ -352,7 +429,7 @@ export default function ModifyShopping() {
                     />
                     {/*ADD FAVORITES*/}
                     <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
-                        <Icon name="star-outline" size={24} color={Colors.light.primaryText}/>
+                        <Icon name="star-outline" size={24} color={Colors.light.background}/>
                     </TouchableOpacity>
 
                     {/*OPTIMIZE*/}
@@ -360,7 +437,7 @@ export default function ModifyShopping() {
                         <Icon
                             name="hammer-outline"
                             size={24}
-                            color={Colors.light.primaryText}
+                            color={Colors.light.background}
                         />
                     </TouchableOpacity>
                     {/*ADD FOLDER*/}
@@ -368,7 +445,7 @@ export default function ModifyShopping() {
                         <Icon
                             name="folder-outline"
                             size={24}
-                            color={Colors.light.primaryText}
+                            color={Colors.light.background}
                         />
                     </TouchableOpacity>
                 </SafeAreaView>
@@ -378,6 +455,7 @@ export default function ModifyShopping() {
   );
 }
 
+/*
 const styles = StyleSheet.create({
   gestureContainer: {
     flex: 1,
@@ -449,3 +527,4 @@ optimizeButton: {
     fontSize: 24,
    },
 });
+*/

@@ -1,10 +1,35 @@
 import React, { useState, useRef, useEffect } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import DraggableItem from "@/components/DraggableItem";
-import { Colors } from "@/styles/Colors";
+//import { Colors } from "@/styles/Colors";
 import { InputItem } from "@/components/Item";
+import { useSelector } from "react-redux";
 
 const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd }) => {
+
+  const Colors = useSelector((state) => state.colorScheme);
+  const styles = StyleSheet.create({
+    itemGrouplabel: {
+      backgroundColor: Colors.light.background,
+      color: Colors.light.primaryText,
+      fontSize: 24,
+      paddingVertical: 5,
+    },
+    dropZone: {
+      height: 40,
+      justifyContent: "center",
+      alignItems: "center",
+      borderColor: Colors.light.primaryColor,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      marginVertical: 5,
+    },
+    dropText: {
+      color: Colors.light.primaryText,
+      fontSize: 14,
+    },
+  });
+
   const [activeItem, setActiveItem] = useState(null);
   const itemRefs = useRef([]); // To store references to items
   const [newItemName, setNewItemName] = useState("");
@@ -58,6 +83,7 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd
   );
 };
 
+/*
 const styles = StyleSheet.create({
   itemGrouplabel: {
     backgroundColor: Colors.light.background,
@@ -79,5 +105,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+*/
 
 export default DraggableGroup;
