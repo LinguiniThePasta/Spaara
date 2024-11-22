@@ -421,46 +421,6 @@ export default function ShoppingListScreen() {
         }
     };
 
-
-    const handleReorderItems = async (items) => {
-        const groceryListId = local.id;
-        var itemsOrderList = [];
-        items.forEach((item) => {
-            if (item.order) {
-                //console.log("item.id: " + item.id + "   item.title: " + item.title + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
-                itemsOrderList.push(
-                    {
-                        item_id: item.id,
-                        order: item.order
-                    }
-                );
-            }
-        });
-        /*
-        itemsOrderList.forEach((item) => {
-            console.log("item_id: " + item.item_id + "   order: " + item.order)
-        });
-        */
-        try {
-            const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/api/grocery/${groceryListId}/reorder-items/`, {
-                items_order: itemsOrderList
-            }, {
-                headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
-                }
-            });
-
-            console.log("Reordered Items successfully!");
-        } catch (error) {
-            console.error('Error reordering items:', error);
-        } finally {
-            await fetchShoppingList();
-        }
-    };
-
-
-
     const handleReorderItems = async (items) => {
         const groceryListId = local.id;
         var itemsOrderList = [];
