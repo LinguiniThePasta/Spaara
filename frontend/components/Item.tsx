@@ -29,6 +29,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
     const [note, setNote] = useState(item.notes || "");
+    const [isEditing, setIsEditing] = useState(false);
     const price = item.price !== undefined && item.price !== null ? item.price : 0.00; // Default price if not provided
 
     function increaseItem() {
@@ -69,6 +70,12 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
         }
     }
 
+    function handleDeleteNote() {
+        setNote("");
+        item.notes = "";
+        handleModifyItem(item);
+    }
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>
@@ -82,18 +89,23 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
                 </Pressable>
                 <View>
                     <Text style={styles.itemText}>{item.title}</Text>
-                    <TextInput
-                        style={styles.noteInput}
-                        placeholder="Add a note..."
-                        placeholderTextColor={Colors.light.secondaryText}
-                        value={note}
-                        onChangeText={(text) => setNote(text)}
-                        onBlur={() => {
-                            console.log("onBlur triggered");
-                            onNoteChange(note);
-                        }
-                        }
-                    />
+                    <View style={styles.notesContainer}>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.noteInput}
+                                placeholder="Add a note..."
+                                placeholderTextColor={Colors.light.secondaryText}
+                                value={note}
+                                onChangeText={(text) => setNote(text)}
+                                onBlur={() => {
+                                    setIsEditing(false);
+                                    onNoteChange(note);
+                                }}
+                            />
+                        ) : (
+                            <Text style={styles.noteText}>{note || "No notes added."}</Text>
+                        )}
+                    </View>
                 </View>
             </View>
 
@@ -107,6 +119,14 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
                         style={styles.checkboxText}
                     />
                 </Pressable>
+                <View style={styles.buttonsContainer}>
+                    <Pressable onPress={() => setIsEditing(true)} style={styles.button}>
+                        <Icon name="pencil-outline"></Icon>
+                    </Pressable>
+                    <Pressable onPress={handleDeleteNote} style={styles.button}>
+                        <Icon name="trash-outline"></Icon>
+                    </Pressable>
+                </View>
                 <View style={styles.plusMinusContainer}>
                     <Pressable onPress={() => {
                         number - 1 === 0 ? handleRemoveItem(item) : decreaseItem();
@@ -123,7 +143,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
             </View>
         </View>
     );
-};
+}
 
 
 export function SpacerItem() {
@@ -294,12 +314,8 @@ const styles = StyleSheet.create({
     notFavorite: {
         color: Colors.light.secondaryText,
     },
-    noteInput: {
+    notesContainer: {
         marginTop: 5,
-        fontSize: 14,
-        color: Colors.light.primaryText,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        padding: 2,
     },
+
 });
