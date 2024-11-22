@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert, ScrollView, FlatList} from 'react-native';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router';
@@ -13,6 +13,45 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import ProfileColorItem from '@/components/ProfileColorItem';
 
 export default function ProfileColorsScreen() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+            justifyContent: 'space-between',
+        },
+        listContainer: {
+        },
+        row: {
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-evenly",
+        },
+        content: {
+            flex: 1,
+            marginHorizontal: 20,
+            justifyContent: "space-between"
+        },
+        optionText: {
+            fontSize: 18,
+            fontWeight: "bold",
+            color: Colors.light.primaryText,
+        },
+        listItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 15,
+            height: 70,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+        },
+    });
+    
+
     const [colorList, setColorList] = useState([
         {name: "#FF8FC5", selected: false, id: '0'},
         {name: "#E0474C", selected: false, id: '1'},
@@ -140,38 +179,3 @@ export default function ProfileColorsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    listContainer: {
-    },
-    row: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-evenly",
-    },
-    content: {
-        flex: 1,
-        marginHorizontal: 20,
-        justifyContent: "space-between"
-    },
-    optionText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: Colors.light.primaryText,
-    },
-    listItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        height: 70,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-});

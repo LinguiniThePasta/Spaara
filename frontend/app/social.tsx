@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '@/components/Header';
 import { globalStyles } from '@/styles/globalStyles';
-import { Colors } from '@/styles/Colors';
+//import { Colors } from '@/styles/Colors';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MatIcon from 'react-native-vector-icons/MaterialIcons';
@@ -33,6 +33,207 @@ interface User {
 }
 
 const SocialPage = () => {
+
+  const Colors = useSelector((state) => state.colorScheme);
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Colors.light.background,
+    },
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between', // Aligns Header to the left and Bell Icon Button to the right
+      paddingRight: 35,
+    },
+    bellIconButton: {
+      marginRight: 15,
+    },
+    badge: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      backgroundColor: 'red',
+      borderRadius: 12,
+      width: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    badgeText: {
+      color: 'white',
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    searchContainer: {
+      position: 'relative',
+      zIndex: 2,
+    },
+    dropdown: {
+      position: 'absolute',
+      top: 50,
+      width: 300,
+      left: '50%',
+      transform: [{ translateX: -150 }],
+      backgroundColor: 'white',
+      borderColor: Colors.light.primaryColor,
+      borderWidth: 1,
+      borderRadius: 4,
+      maxHeight: 150,
+      zIndex: 2,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: Colors.light.primaryText,
+    },
+    dropdownItem: {
+      padding: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors.light.primaryColor,
+    },
+    listContainer: {
+      paddingHorizontal: 20,
+    },
+    listItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 15,
+      paddingLeft: 10,
+      height: 70,
+      borderBottomWidth: 1,
+      borderBottomColor: Colors.light.secondaryText,
+      position: 'relative',
+    },
+    listItemTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: Colors.light.primaryText,
+    },
+    listItemMessage: {
+      justifyContent: 'flex-end',
+      fontSize: 12,
+      paddingRight: 20,
+      fontWeight: 'bold',
+      color: Colors.light.secondaryText,
+    },
+    listItemIcon: {
+      justifyContent: 'flex-end',
+      fontSize: 35,
+      paddingRight: 20,
+      fontWeight: 'bold',
+      color: Colors.light.primaryColor,
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 3,
+    },
+    modalContent: {
+      width: '80%',
+      backgroundColor: Colors.light.background,
+      borderRadius: 10,
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      color: Colors.light.primaryText,
+      textAlign: 'center',
+    },
+    friendRequestItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    friendRequestName: {
+      fontSize: 16,
+      color: Colors.light.primaryText,
+    },
+    friendRequestButtons: {
+      flexDirection: 'row',
+    },
+    approveButton: {
+      backgroundColor: 'green',
+      padding: 10,
+      borderRadius: 5,
+      marginRight: 5,
+    },
+    rejectButton: {
+      backgroundColor: 'red',
+      padding: 10,
+      borderRadius: 5,
+    },
+    buttonText: {
+      fontSize: 40,
+      paddingHorizontal: 10,
+      color: Colors.light.primaryColor,
+      fontWeight: 'bold',
+    },
+    closeButton: {
+      marginTop: 20,
+      alignSelf: 'center',
+    },
+    closeButtonText: {
+      fontSize: 16,
+      color: Colors.light.primaryColor,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        color: Colors.light.primaryText,
+    },
+    left: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: Colors.light.primaryText,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: Colors.light.primaryText,
+    },
+    profileIconContainer: {
+      width: 50,
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    iconContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    listItemLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    friendProfileIconContainer: {
+      width: 44, // Fixed width for consistent alignment
+      height: 44, // Fixed height for consistent alignment
+      borderRadius: 22, // Half of width/height for a perfect circle
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10, // Spacing between icon and username
+    },
+    friendProfileIcon: {
+      fontSize: 28, // Size of the icon
+    },
+  });
+  
+
   // Search term for what friend user is looking for
   const [searchTerm, setSearchTerm] = useState('');
   // Dropdown visibility state
@@ -428,7 +629,7 @@ const SocialPage = () => {
         </View>
 
           <View style={styles.searchContainer}>
-            <View style={globalStyles.searchBar}>
+            <View style={{...globalStyles.searchBar, ...{borderColor: Colors.light.primaryColor}}}>
               <Icon
                 name="search-outline"
                 size={20}
@@ -542,7 +743,7 @@ const SocialPage = () => {
                   )}
                 />
               ) : (
-                <Text>No friend requests</Text>
+                <Text style={[styles.friendRequestName, {color: Colors.light.primaryText}]}>No friend requests</Text>
               )}
               <Text style={styles.modalTitle}>Recipes</Text>
               {incomingRecipes.length > 0 ? (
@@ -568,7 +769,7 @@ const SocialPage = () => {
                   )}
                 />
               ) : (
-                <Text>No friend requests</Text>
+                <Text style={[styles.friendRequestName, {color: Colors.light.primaryText}]}>No incoming recipes</Text>
               )}
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>Close</Text>
@@ -583,200 +784,3 @@ const SocialPage = () => {
 
 export default SocialPage;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // Aligns Header to the left and Bell Icon Button to the right
-    paddingRight: 35,
-  },
-  bellIconButton: {
-    marginRight: 15,
-  },
-  badge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: 'red',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    position: 'relative',
-    zIndex: 2,
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 50,
-    width: 300,
-    left: '50%',
-    transform: [{ translateX: -150 }],
-    backgroundColor: 'white',
-    borderColor: Colors.light.primaryColor,
-    borderWidth: 1,
-    borderRadius: 4,
-    maxHeight: 150,
-    zIndex: 2,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.light.primaryText,
-  },
-  dropdownItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.primaryColor,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-  },
-  listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingLeft: 10,
-    height: 70,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.secondaryText,
-    position: 'relative',
-  },
-  listItemTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.light.primaryText,
-  },
-  listItemMessage: {
-    justifyContent: 'flex-end',
-    fontSize: 12,
-    paddingRight: 20,
-    fontWeight: 'bold',
-    color: Colors.light.secondaryText,
-  },
-  listItemIcon: {
-    justifyContent: 'flex-end',
-    fontSize: 35,
-    paddingRight: 20,
-    fontWeight: 'bold',
-    color: Colors.light.primaryColor,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 3,
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: Colors.light.background,
-    borderRadius: 10,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: Colors.light.primaryText,
-    textAlign: 'center',
-  },
-  friendRequestItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  friendRequestName: {
-    fontSize: 16,
-    color: Colors.light.primaryText,
-  },
-  friendRequestButtons: {
-    flexDirection: 'row',
-  },
-  approveButton: {
-    backgroundColor: 'green',
-    padding: 10,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-  rejectButton: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    fontSize: 40,
-    paddingHorizontal: 10,
-    color: Colors.light.primaryColor,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    marginTop: 20,
-    alignSelf: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: Colors.light.primaryColor,
-  },
-  header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 20,
-      color: Colors.light.primaryText,
-  },
-  left: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      color: Colors.light.primaryText,
-  },
-  headerTitle: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: Colors.light.primaryText,
-  },
-  profileIconContainer: {
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  listItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  friendProfileIconContainer: {
-    width: 44, // Fixed width for consistent alignment
-    height: 44, // Fixed height for consistent alignment
-    borderRadius: 22, // Half of width/height for a perfect circle
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10, // Spacing between icon and username
-  },
-  friendProfileIcon: {
-    fontSize: 28, // Size of the icon
-  },
-});

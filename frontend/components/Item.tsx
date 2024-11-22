@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {Colors} from "@/styles/Colors";
+//import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
@@ -24,6 +24,68 @@ import {useSelector} from "react-redux";
  */
 
 export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft:10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            padding: 3,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+    });
+
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
@@ -86,6 +148,68 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
 
 
 export function SpacerItem() {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft:10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            padding: 3,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+    });
+
     return (
         <View style={styles.item}>    
             <View style={styles.leftContainer}>
@@ -101,6 +225,68 @@ export function SpacerItem() {
 
 
 export function RecipeItem({item}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft:10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            padding: 3,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+    });
+
     return (
         <View style={styles.item}>    
             <View style={styles.leftContainer}>
@@ -133,6 +319,68 @@ export function RecipeItem({item}) {
  */
 
 export function InputItem({initialText, onChangeText, handleAddItem}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft:10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            padding: 3,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+    });
+
     const [number, setNumber] = useState(0);
     //const [initialText, setInitialText] = useState("");
     return (
@@ -169,6 +417,68 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
  */
 
 export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft:10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            padding: 3,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+    });
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>
@@ -189,63 +499,3 @@ export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
     );
 };
 
-const styles = StyleSheet.create({
-    item: {
-        width: '100%',
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 5,
-        marginBottom: 10,
-    },
-    plusMinusContainer: {
-        alignSelf: 'flex-end',
-        alignItems: 'center',
-        flexDirection: 'row',
-        borderWidth: 2,
-        borderRadius: 50,
-        borderColor: Colors.light.secondaryText,
-        padding: 1,
-        marginLeft:10,
-    },
-    divider: {
-        width: 2,
-        height: '100%',
-        backgroundColor: Colors.light.secondaryText,
-        borderColor: Colors.light.secondaryText,
-        color: Colors.light.secondaryText,
-
-    },
-    itemText: {
-        color: Colors.light.primaryText,
-        fontSize: 21,
-    },
-    checkboxIcon: {
-        marginRight: 5,
-        fontSize: 25,
-    },
-    checkboxText: {
-        fontSize: 25,
-    },
-    rightContainer: {
-        alignSelf: 'flex-end',
-        alignItems: 'center',
-        flexDirection: 'row',
-        
-    },
-    leftContainer: {
-        alignSelf: 'flex-start',
-        alignItems: 'center',
-        flexDirection: 'row',
-        padding: 3,
-    },
-    favoriteButton: {
-        fontSize: 25,
-    },
-    isFavorite: {
-        color: Colors.light.primaryColor,
-    },
-    notFavorite: {
-        color: Colors.light.secondaryText,
-    },
-});

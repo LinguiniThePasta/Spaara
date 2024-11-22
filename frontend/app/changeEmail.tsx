@@ -12,14 +12,51 @@ import {
 } from 'react-native';
 import { API_BASE_URL } from '@/scripts/config';
 import { router } from 'expo-router';
-import { Colors } from '@/styles/Colors';
+//import { Colors } from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import { globalStyles } from "@/styles/globalStyles";
 import Header from "@/components/Header";
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { useSelector } from 'react-redux';
 
 export default function ChangeEmail() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+        },
+        content: {
+            flex: 1,
+            alignItems: 'center',
+            paddingHorizontal: 20,
+        },
+        inputContainer: {
+            width: '100%',
+            alignItems: 'center',
+            marginTop: 20,
+        },
+        input: {
+            marginBottom: 20,
+            width: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderColor: Colors.light.primaryColor,
+            color: Colors.light.primaryText,
+        },
+        changeEmailButton: {
+            width: '100%',
+            marginTop: 20,
+            backgroundColor: Colors.light.primaryColor,
+        },
+        changeEmailButtonText: {
+            ...globalStyles.buttonText,
+            color: Colors.light.background,
+        },
+    });
+
     const [currentEmail, setCurrentEmail] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const [confirmNewEmail, setConfirmNewEmail] = useState('');
@@ -106,30 +143,3 @@ export default function ChangeEmail() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    content: {
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    inputContainer: {
-        width: '100%',
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    input: {
-        marginBottom: 20,
-        width: '100%',
-    },
-    changeEmailButton: {
-        width: '100%',
-        marginTop: 20,
-    },
-    changeEmailButtonText: {
-        ...globalStyles.buttonText,
-    },
-});

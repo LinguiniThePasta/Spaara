@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert, ScrollView} from 'react-native';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router';
@@ -12,7 +12,49 @@ import {useSelector} from "react-redux";
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function ProfileColorItem({iconColor, iconName, handleColorSelected}) {
-    //console.log("color name: " + iconColor.name + "   selected: " + iconColor.selected);
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+            justifyContent: 'space-between',
+        },
+        listContainer: {
+        },
+        row: {
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-evenly",
+        },
+        selectedItem: {
+            height: 70,
+            width: 70,
+            borderColor: "#009900",
+            borderWidth: 3,
+            borderRadius: 100,
+            margin: 10,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        item: {
+            height: 70,
+            width: 70,
+            borderColor: Colors.light.background,
+            borderWidth: 3,
+            borderRadius: 100,
+            margin: 10,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        dummyItem: {
+            height: 70,
+            width: 70,
+            margin: 10,
+        },
+    });
+
     if (iconColor.selected) {
         return(
             <View>
@@ -32,43 +74,3 @@ export default function ProfileColorItem({iconColor, iconName, handleColorSelect
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    listContainer: {
-    },
-    row: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-evenly",
-    },
-    selectedItem: {
-        height: 70,
-        width: 70,
-        borderColor: "#009900",
-        borderWidth: 3,
-        borderRadius: 100,
-        margin: 10,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    item: {
-        height: 70,
-        width: 70,
-        borderColor: Colors.light.background,
-        borderWidth: 3,
-        borderRadius: 100,
-        margin: 10,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    dummyItem: {
-        height: 70,
-        width: 70,
-        margin: 10,
-    },
-});

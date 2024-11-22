@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Text, Pressable } from 'react-native';
-import { Colors } from '@/styles/Colors';
+//import { Colors } from '@/styles/Colors';
 import {router} from 'expo-router';
 import Footer from "@/components/Footer";
 import MapView, { Marker, Callout, CalloutSubview } from 'react-native-maps';
@@ -11,8 +11,117 @@ import { API_BASE_URL } from '@/scripts/config';
 import * as Location from 'expo-location';
 import { Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 
 export default function App() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+        },
+        map: {
+            flex: 1,
+        },
+        marker: {
+            backgroundColor: Colors.light.background,
+            padding: 2,
+            borderRadius: 15,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        markerContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        outerCircle: {
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: '#FFFFFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        innerCircle: {
+            width: 15,
+            height: 15,
+            borderRadius: 7.5,
+            backgroundColor: '#007AFF', // Blue color for the inner dot
+        },
+        storeMarker: {
+            backgroundColor: Colors.light.background,
+            padding: 2,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        loadingOverlay: {
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        settingsIcon: {
+            position: 'absolute',
+            bottom: 120, // Above the footer
+            right: 20, // Right side of the screen
+            backgroundColor: Colors.light.background,
+            borderRadius: 20,
+            padding: 10,
+            elevation: 3, // Adds a shadow on Android
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+        },
+        calloutContainer: {
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: 300,
+            padding: 10,
+            //backgroundColor: '#fff',
+            backgroundColor: Colors.light.background,
+            borderRadius: 8,
+          },
+          calloutRow: {
+            flexDirection: 'row', // Ensures children are placed in a row
+            alignItems: 'center', // Vertically centers the items
+            justifyContent: 'space-between', // Distributes space between children
+            width: '100%', // Ensures the row takes up the full width
+        },
+        
+        calloutLeft: {
+            flex: 1, // Allows the left section to take remaining space
+            paddingRight: 10, // Adds spacing between text and divider
+        },
+        
+        calloutDivider: {
+            width: 1,
+            height: '60%', // Adjusts divider height to fit better visually
+            backgroundColor: '#ccc',
+            marginHorizontal: 10, // Adds spacing around the divider
+        },
+        
+        calloutIconContainer: {
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            padding: 5, // Adds padding to the icon
+        },
+          calloutTitle: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            //color: '#000',
+            color: Colors.light.primaryText,
+          },
+          calloutText: {
+            fontSize: 14,
+            //color: '#666',
+            color: Colors.light.secondaryText,
+          },
+    });
+    
+
     const [addressCoords, setAddressCoords] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [stores, setStores] = useState([]); // State to store Kroger locations
@@ -328,104 +437,3 @@ export default function App() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    map: {
-        flex: 1,
-    },
-    marker: {
-        backgroundColor: Colors.light.background,
-        padding: 2,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    markerContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    outerCircle: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    innerCircle: {
-        width: 15,
-        height: 15,
-        borderRadius: 7.5,
-        backgroundColor: '#007AFF', // Blue color for the inner dot
-    },
-    storeMarker: {
-        backgroundColor: Colors.light.background,
-        padding: 2,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    loadingOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    settingsIcon: {
-        position: 'absolute',
-        bottom: 120, // Above the footer
-        right: 20, // Right side of the screen
-        backgroundColor: Colors.light.background,
-        borderRadius: 20,
-        padding: 10,
-        elevation: 3, // Adds a shadow on Android
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-    },
-    calloutContainer: {
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: 300,
-        padding: 10,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-      },
-      calloutRow: {
-        flexDirection: 'row', // Ensures children are placed in a row
-        alignItems: 'center', // Vertically centers the items
-        justifyContent: 'space-between', // Distributes space between children
-        width: '100%', // Ensures the row takes up the full width
-    },
-    
-    calloutLeft: {
-        flex: 1, // Allows the left section to take remaining space
-        paddingRight: 10, // Adds spacing between text and divider
-    },
-    
-    calloutDivider: {
-        width: 1,
-        height: '60%', // Adjusts divider height to fit better visually
-        backgroundColor: '#ccc',
-        marginHorizontal: 10, // Adds spacing around the divider
-    },
-    
-    calloutIconContainer: {
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        padding: 5, // Adds padding to the icon
-    },
-      calloutTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#000',
-      },
-      calloutText: {
-        fontSize: 14,
-        color: '#666',
-      },
-});

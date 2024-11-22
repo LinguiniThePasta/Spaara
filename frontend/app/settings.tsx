@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet, Alert} from 'react-native';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router';
@@ -10,6 +10,36 @@ import * as SecureStore from 'expo-secure-store';
 import {useSelector} from "react-redux";
 
 export default function SettingScreen() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+            justifyContent: 'space-between',
+        },
+        content: {
+            flex: 1,
+            marginHorizontal: 20,
+            justifyContent: "space-between"
+        },
+        optionText: {
+            fontSize: 18,
+            fontWeight: "bold",
+            color: Colors.light.primaryText,
+        },
+        listItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 15,
+            height: 70,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+        },
+    });
+    
 
     const role = useSelector((state) => state.role.role);
 
@@ -83,30 +113,3 @@ export default function SettingScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-        marginHorizontal: 20,
-        justifyContent: "space-between"
-    },
-    optionText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: Colors.light.primaryText,
-    },
-    listItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        height: 70,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-});
