@@ -86,7 +86,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']
+        fields = ['id', 'username', 'profile_icon', 'profile_color']
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()

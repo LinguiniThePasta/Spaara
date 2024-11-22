@@ -30,7 +30,7 @@ export default function Footer() {
                 </Pressable>
             )
             }
-            <Pressable style={styles.footerItem} onPress={() => router.replace("/map")}>
+            <Pressable style={styles.footerItem} onPress={() => router.push("/map")}>
                 <Icon name="location-outline" size={24} color="#000"/>
                 <Text style={styles.footerText}>Map</Text>
             </Pressable>
