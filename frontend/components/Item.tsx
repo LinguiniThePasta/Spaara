@@ -23,7 +23,7 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
+export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem}) {
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
@@ -41,6 +41,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem}) {
 
     function toggleCheck() {
         setChecked(!checked);
+        handleCheckItem(item);
     }
 
     function toggleFavorite() {
@@ -133,28 +134,45 @@ export function RecipeItem({item}) {
  */
 
 export function InputItem({initialText, onChangeText, handleAddItem}) {
-    const [number, setNumber] = useState(0);
-    //const [initialText, setInitialText] = useState("");
+    const [text, setText] = useState(''); // State for the input value
+    const [placeholder, setPlaceholder] = useState(initialText); // State for the placeholder
+    
+    const handleSubmit = () => {
+        if (text.trim() !== '') { // Only handle non-empty input
+        handleAddItem(text); // Call the parent-provided add item function
+        setText(''); // Reset the input field
+        setPlaceholder(initialText); // Reset the placeholder text
+        }
+    };
+    
     return (
         <View style={styles.item}>
-            
-            <View style={styles.leftContainer}>
-                <Pressable >
-                    <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
-                </Pressable>
-                <TextInput 
-                    style={styles.addItemText}
-                    placeholder='Add Item'
-                    editable={true}
-                    defaultValue={initialText}
-                    onChangeText={(text) => onChangeText(text)}
-                    onSubmitEditing={() => handleAddItem()}
-                    
-                />
-            </View>
+        <View style={styles.leftContainer}>
+            <Pressable>
+            <Icon
+                name="ellipse-outline"
+                size={30}
+                color={Colors.light.background}
+                style={styles.checkboxText}
+            />
+            </Pressable>
+            <TextInput
+            style={styles.itemText}
+            placeholder={placeholder} // Bind placeholder to state
+            placeholderTextColor='gray'
+            value={text} // Bind value to state
+            onChangeText={(inputText) => {
+                setText(inputText); // Update input value
+                onChangeText(inputText); // Trigger the parent callback
+            }}
+            onFocus={() => setPlaceholder('')} // Clear placeholder when focused
+            onBlur={() => !text && setPlaceholder(initialText)} // Reset placeholder if empty
+            onSubmitEditing={handleSubmit} // Handle submission
+            />
         </View>
-    );
-}
+        </View>
+        );
+    };
 
 
 /**

@@ -4,11 +4,10 @@ import DraggableItem from "@/components/DraggableItem";
 import { Colors } from "@/styles/Colors";
 import { InputItem } from "@/components/Item";
 
-const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop }) => {
+const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd }) => {
   const [activeItem, setActiveItem] = useState(null);
   const itemRefs = useRef([]); // To store references to items
   const [newItemName, setNewItemName] = useState("");
-  const [currentItems, setCurrentItems] = useState(items);
 
   const handleItemStateChange = (itemId, isDragging) => {
     if (isDragging) {
@@ -30,7 +29,8 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop }) => 
   };
 
   const handleAddItem = (item) => {
-    currentItems.splice(currentItems.length - 1, 0, item); // Add item to the end of the list
+    const newItem =  {id: items.length + 1, label: item, quantity: 1, favorited: false, index: items.length, group: groupId};
+    onAdd(newItem);
   };
 
   return (
