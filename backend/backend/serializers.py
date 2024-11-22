@@ -329,7 +329,9 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemUnoptimized
-        fields = ['name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
+        fields = ['id', 'name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order']
+
+
     def create(self, validated_data):
         # Check if 'subheading' is provided
         subheading = validated_data.get('subheading')

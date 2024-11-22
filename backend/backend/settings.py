@@ -34,7 +34,8 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
-FRONTEND_URL = "http://172.20.10.3:8000"
+# FRONTEND_URL = "http://172.20.10.3:8000" # (?)
+FRONTEND_URL = "http://10.186.49.64:8000" # Envision Center (eduroam)
 KROGER_API_BASE_URL = "https://api.kroger.com"
 METERS_PER_MILE = 1609.34
 

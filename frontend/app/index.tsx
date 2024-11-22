@@ -9,6 +9,7 @@ import axios from "axios";
 import {API_BASE_URL} from "@/scripts/config";
 import {setRole} from "@/store/roleSlice";
 import {useDispatch} from "react-redux";
+import 'react-native-gesture-handler';
 
 const {width, height} = Dimensions.get('window');
 
