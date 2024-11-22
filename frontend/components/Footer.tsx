@@ -19,7 +19,7 @@ export default function Footer() {
             paddingTop: 0.03 * height,
             backgroundColor: Colors.light.background,  // Change to match your app's theme
             borderTopWidth: 1,
-            borderColor: Colors.light.secondColor,
+            borderColor: Colors.light.secondaryText,
         },
         footerItem: {
             alignItems: 'center',
@@ -85,23 +85,3 @@ export default function Footer() {
     );
 }
 
-/*
-const styles = StyleSheet.create({
-    footerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingBottom: 0.04 * height,
-        paddingTop: 0.03 * height,
-        backgroundColor: Colors.light.background,  // Change to match your app's theme
-        borderTopWidth: 1,
-        borderColor: '#ccc',
-    },
-    footerItem: {
-        alignItems: 'center',
-    },
-    footerText: {
-        fontSize: 12,
-        color: '#000',  // Adjust to match your app's text color
-    },
-});
-*/

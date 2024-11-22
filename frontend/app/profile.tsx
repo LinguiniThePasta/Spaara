@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, SafeAreaView, Pressable, StyleSheet} from 'react-native';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {router} from 'expo-router';
@@ -10,6 +10,37 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 
 export default function ProfileScreen() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+            justifyContent: 'space-between',
+        },
+        content: {
+            flex: 1,
+            marginHorizontal: 20,
+            justifyContent: "space-between"
+        },
+        optionText: {
+            fontSize: 18,
+            fontWeight: "bold",
+            fontFamily: 'Lato-Bold',
+            color: Colors.light.primaryText,
+        },
+        listItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 15,
+            height: 70,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+        },
+    });
+
     const role = useSelector((state) => state.role.role);
 
     const [username, setUsername] = useState("");
@@ -50,15 +81,15 @@ export default function ProfileScreen() {
                 <View style={styles.content}>
                     <View>
                         <Pressable style={styles.listItem} onPress={() => router.replace('/changeUsername')}>
-                            <Text style={styles.optionText}>Change username</Text>
+                            <Text style={styles.optionText}>Change Username</Text>
                         </Pressable>
 
                         <Pressable style={styles.listItem} onPress={() => router.replace('/changeEmail')}>
-                            <Text style={styles.optionText}>Change email</Text>
+                            <Text style={styles.optionText}>Change Email</Text>
                         </Pressable>
 
                         <Pressable style={styles.listItem} onPress={() => router.replace('/changePassword')}>
-                            <Text style={styles.optionText}>Change password</Text>
+                            <Text style={styles.optionText}>Change Password</Text>
                         </Pressable>
 
                         <Pressable style={styles.listItem} onPress={() => router.replace('/settings')}>
@@ -80,31 +111,3 @@ export default function ProfileScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-        marginHorizontal: 20,
-        justifyContent: "space-between"
-    },
-    optionText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        fontFamily: 'Lato-Bold',
-        color: Colors.light.primaryText,
-    },
-    listItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        height: 70,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-});

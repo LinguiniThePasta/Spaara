@@ -115,7 +115,7 @@ export default function Shopping() {
         modalContent: {
             width: 300,
             padding: 20,
-            backgroundColor: 'white',
+            backgroundColor: Colors.light.background,
             borderRadius: 10,
             alignItems: 'center',
         },
@@ -133,13 +133,14 @@ export default function Shopping() {
         modalTitle: {
             fontSize: 18,
             marginBottom: 20,
-            color: 'black', // Ensure the text color contrasts with the background
+            color: Colors.light.primaryText, // Ensure the text color contrasts with the background
         },
         input: {
             width: '100%',
             padding: 10,
             borderWidth: 1,
             borderColor: Colors.light.primaryColor,
+            color: Colors.light.primaryText,
             borderRadius: 5,
             marginBottom: 10,
     
@@ -162,18 +163,18 @@ export default function Shopping() {
             ...globalStyles.primaryButton,
         },
         submitButtonText: {
-            color: 'white',
+            color: Colors.light.background,
             fontWeight: 'bold',
         },
         modalButton: {
-            backgroundColor: '#FF6347',
+            backgroundColor: Colors.light.primaryColor,
             padding: 10,
             borderRadius: 5,
             alignItems: 'center',
             marginTop: 10,
         },
         modalButtonText: {
-            color: 'white',
+            color: Colors.light.background,
             fontWeight: 'bold',
         },
         modalButtonContainer: {
@@ -426,7 +427,7 @@ export default function Shopping() {
                     backLink={""}
                     noProfile={false}
                 />
-                    <View style={globalStyles.searchBar}>
+                    <View style={{...globalStyles.searchBar, ...{borderColor: Colors.light.primaryColor}}}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
                               style={styles.searchIcon}/>
                         <TextInput
@@ -478,156 +479,5 @@ export default function Shopping() {
             </View>
         </TouchableWithoutFeedback>
     );
-
-
-/*const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    searchIcon: {
-        marginRight: 10,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: Colors.light.primaryText,
-    },
-    listContainer: {
-        paddingHorizontal: 20,
-    },
-    listItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        height: 70,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-    listItemLeft: {
-        flexDirection: 'column',
-    },
-    listItemTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.light.primaryText,
-    },
-    listItemDate: {
-        fontSize: 14,
-        color: Colors.light.secondaryText,
-    },
-    addButton: {
-        position: 'absolute',
-        bottom: 30,
-        right: 30,
-        backgroundColor: Colors.light.primaryColor,
-        borderRadius: 50,
-        padding: 15,
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        width: 300,
-        padding: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        marginBottom: 10,
-    },
-    closeButton: {
-        marginRight: 30,
-        marginBottom: 20
-    },
-    modalTitle: {
-        fontSize: 18,
-        marginBottom: 20,
-        color: 'black', // Ensure the text color contrasts with the background
-    },
-    input: {
-        width: '100%',
-        padding: 10,
-        borderWidth: 1,
-        borderColor: Colors.light.primaryColor,
-        borderRadius: 5,
-        marginBottom: 10,
-
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 20,
-        paddingHorizontal: 10,
-
-
-    },
-    renameInput: {
-        fontSize: 16, // Smaller font size
-        paddingVertical: 5, // Smaller vertical padding
-        paddingHorizontal: 10,
-        color: Colors.light.primaryText,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-    },
-    submitButton: {
-        ...globalStyles.primaryButton,
-    },
-    submitButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    modalButton: {
-        backgroundColor: '#FF6347',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    modalButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    modalButtonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 20,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    deleteBlock: {
-        position: 'absolute',
-        left: -120,
-        top: 0,
-        bottom: 0,
-        width: 75,
-        backgroundColor: '#FF6347',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    deleteBlockText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    deleteButton: {
-        backgroundColor: '#FF6347',
-        padding: 10,
-        borderRadius: 5,
-    },
-    deleteButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-});*/
 }
+

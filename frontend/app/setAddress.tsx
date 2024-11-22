@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, TextInput, FlatList, SafeAreaView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { Colors } from '@/styles/Colors';
+//import { Colors } from '@/styles/Colors';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import axios from 'axios';
@@ -8,8 +8,117 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@/scripts/config';
 import { globalStyles } from '@/styles/globalStyles';
 import UnifiedIcon from '@/components/UnifiedIcon';
+import { useSelector } from 'react-redux';
 
 const SetAddress: React.FC = () => {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+      searchContainer: {
+          position: 'relative',
+          zIndex: 2,
+      },
+      dropdown: {
+          position: 'absolute',
+          top: 50,
+          width: 270,
+          left: '50%',
+          transform: [{ translateX: -135 }],
+          backgroundColor: Colors.light.background,
+          borderColor: Colors.light.primaryColor,
+          borderWidth: 1,
+          borderRadius: 4,
+          maxHeight: 150,
+          zIndex: 2,
+      },
+      searchIcon: {
+          marginRight: 10,
+      },
+      searchInput: {
+          flex: 1,
+          fontSize: 16,
+          color: Colors.light.primaryText,
+      },
+      dropdownItem: {
+          padding: 15,
+          borderBottomWidth: 1,
+          borderBottomColor: Colors.light.primaryColor,
+      },
+      container: {
+          flex: 1,
+          backgroundColor: Colors.light.background,
+          justifyContent: 'space-between',
+      },
+      content: {
+          flex: 1,
+          marginHorizontal: 20,
+      },
+      label: {
+          fontSize: 16,
+          marginBottom: 8
+      },
+      subheader: {
+          fontSize: 24,
+          marginBottom: 10,
+          color: Colors.light.primaryText,
+      },
+      subtext: {
+          fontSize: 12,
+          marginBottom: 8
+      },
+      input: {
+          height: 40,
+          backgroundColor: Colors.light.background,
+          borderColor: Colors.light.secondaryText,
+          borderWidth: 1,
+          marginBottom: 16,
+          paddingHorizontal: 8
+      },
+      predictionItem: {
+          paddingVertical: 10,
+          paddingHorizontal: 8,
+          borderBottomColor: Colors.light.secondaryText,
+          borderBottomWidth: 1,
+      },
+      predictionName: {
+          fontWeight: 'bold',
+      },
+      emptyPredictionText: {
+          textAlign: 'center',
+          color: Colors.light.secondaryText,
+          marginVertical: 20,
+      },
+      emptyText: {
+          textAlign: 'center',
+          color: Colors.light.secondaryText,
+          paddingVertical: 20,
+      },
+      addressItem: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 15,
+          borderBottomColor: Colors.light.secondaryText,
+          borderBottomWidth: 1,
+        },
+        addressIcon: {
+          color: Colors.light.primaryColor,
+        },
+        locationIcon: {
+          //color: "#14b7f7",
+          color: Colors.light.primaryColor,
+        },
+        addressText: {
+          flex: 1,
+          fontSize: 16,
+          marginLeft: 10,
+          color: Colors.light.primaryText,
+        },
+        checkIcon: {
+          color: Colors.light.primaryColor,
+          marginLeft: 10,
+        },
+  });
+
     const [newAddress, setNewAddress] = useState('');
     const [autocompletePredictions, setAutocompletePredictions] = useState([]);
     const [addresses, setAddresses] = useState([]);
@@ -231,13 +340,13 @@ const SetAddress: React.FC = () => {
         <View style={styles.content}>
           <Text style={styles.subheader}>Add Address</Text>
           <View style={styles.searchContainer}>
-            <View style={globalStyles.searchBar}>
+            <View style={[globalStyles.searchBar, {borderColor: Colors.light.primaryColor}]}>
               <UnifiedIcon
                 type="ionicon"
                 name="search-outline"
                 size={20}
                 style={styles.searchIcon}
-                color={null}
+                color={Colors.light.primaryColor}
               />
               <TextInput
                 style={styles.searchInput}
@@ -282,108 +391,6 @@ const SetAddress: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    searchContainer: {
-        position: 'relative',
-        zIndex: 2,
-    },
-    dropdown: {
-        position: 'absolute',
-        top: 50,
-        width: 270,
-        left: '50%',
-        transform: [{ translateX: -135 }],
-        backgroundColor: 'white',
-        borderColor: Colors.light.primaryColor,
-        borderWidth: 1,
-        borderRadius: 4,
-        maxHeight: 150,
-        zIndex: 2,
-    },
-    searchIcon: {
-        marginRight: 10,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: Colors.light.primaryText,
-    },
-    dropdownItem: {
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.primaryColor,
-    },
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-        marginHorizontal: 20,
-    },
-    label: {
-        fontSize: 16,
-        marginBottom: 8
-    },
-    subheader: {
-        fontSize: 24,
-        marginBottom: 10
-    },
-    subtext: {
-        fontSize: 12,
-        marginBottom: 8
-    },
-    input: {
-        height: 40,
-        backgroundColor: '#fff',
-        borderColor: '#ccc',
-        borderWidth: 1,
-        marginBottom: 16,
-        paddingHorizontal: 8
-    },
-    predictionItem: {
-        paddingVertical: 10,
-        paddingHorizontal: 8,
-        borderBottomColor: '#ccc',
-        borderBottomWidth: 1,
-    },
-    predictionName: {
-        fontWeight: 'bold',
-    },
-    emptyPredictionText: {
-        textAlign: 'center',
-        color: '#999',
-        marginVertical: 20,
-    },
-    emptyText: {
-        textAlign: 'center',
-        color: '#999',
-        paddingVertical: 20,
-    },
-    addressItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomColor: Colors.light.secondaryText,
-        borderBottomWidth: 1,
-      },
-      addressIcon: {
-        color: Colors.light.primaryColor,
-      },
-      locationIcon: {
-        color: "#14b7f7",
-      },
-      addressText: {
-        flex: 1,
-        fontSize: 16,
-        marginLeft: 10,
-        color: Colors.light.primaryText,
-      },
-      checkIcon: {
-        color: Colors.light.primaryColor,
-        marginLeft: 10,
-      },
-});
 
 export default SetAddress;
+

@@ -10,13 +10,20 @@ import DraggableItem from '@/components/DraggableItem';
 import {Colors} from '@/styles/Colors';
 import {Host} from 'react-native-portalize';
 import DraggableGroup from '@/components/DraggableGroup';
+import { v4 as uuidv4 } from 'uuid';
 
 // Item data
 type Item = {
     id: string;
     label: string;
+    description: string,
+    store: string,
+    quantity: number,
+    units: number,
+    favorited: boolean,
+    index: number,
     group?: string;
-    isDummy?: boolean;
+    isInput?: boolean;
 };
 
 type Group = {
@@ -26,16 +33,28 @@ type Group = {
 };
 
 export default function App() {
+    // Create input item, which is appended to the end of every group to allow for expansion
+    const inputItem: Item = {
+        id: 'input',
+        label: 'Add Item',
+        description: 'Add Item',
+        store: 'Add Store',
+        isInput: true,
+        quantity: 1,
+        units: 1,
+        favorited: false,
+        index: 0,
+    };
     // Flatlist data
     const [items, setItems] = useState<Item[]>([
-        { id: '1', label: 'Item 1', group: 'A' },
-        { id: '2', label: 'Item 2'},
-        { id: '3', label: 'Item 3', group: 'A' },
-        { id: '4', label: 'Item 4'},
-        { id: '5', label: 'Item 5', group: 'B' },
-        { id: '6', label: 'Item 6'},
-        { id: '7', label: 'Item 7', group: 'B' },
-        { id: '8', label: 'Item 8'},
+      {id: '1', label: 'Milk', description: 'Whole Milk', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 0, group: 'B'},
+      {id: '2', label: 'Eggs', description: 'Large Eggs', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 1, group: 'B'},
+      {id: '3', label: 'Bread', description: 'Whole Wheat Bread', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 2, group: 'A'},
+      {id: '4', label: 'Butter', description: 'Unsalted Butter', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 3},
+      {id: '5', label: 'Cheese', description: 'Cheddar Cheese', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 4, group: 'A'},
+      {id: '6', label: 'Apples', description: 'Red Apples', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 5, group: 'A'},
+      {id: '7', label: 'Bananas', description: 'Yellow Bananas', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 6},
+      {id: '8', label: 'Oranges', description: 'Navel Oranges', store: 'Walmart', quantity: 1, units: 1, favorited: false, index: 7, group: 'A'},
     ]);
 
     const [groups, setGroups] = useState<Group[]>([
@@ -46,15 +65,10 @@ export default function App() {
 
     const renderGroup = ({ group }: { group: Group }) => {
         return (
-            <DraggableGroup key={group.id} header={group.label} items={group.items} groupId = {group.id} onRegisterItems={registerItems} onDrop={(position, groupId, index)=>handleDrop(position, groupId, index)} />
+            <DraggableGroup key={group.id} header={group.label} items={[...group.items, inputItem]} groupId = {group.id} onRegisterItems={registerItems} onDrop={(position, groupId, index)=>handleDrop(position, groupId, index)} onAdd={(newItem, groupId)=>handleAdd(newItem, groupId)}/>
         );
     };
 
-    const dummyItem = {
-        id: "dummy",
-        label: "Drop here to add items",
-        isDummy: true,
-      };
     
     const allItemRefs = useRef([]);
 
@@ -62,70 +76,77 @@ export default function App() {
         allItemRefs.current[groupId] = refs; // Store refs by group ID
       };
 
-      const handleDrop = (position, groupId, index) => {
-        const refsInAllGroups = allItemRefs.current;
-      
-        // Variables to track the closest overlapping item
-        let closestItem = null;
-        let closestGroupId = null;
-        let minDistance = Infinity;
-      
-        // Iterate through all groups and their items
-        Object.entries(refsInAllGroups).forEach(([group, refs]) => {
-          refs.forEach((ref, idx) => {
-            if (ref) {
-              ref.measure((x, y, width, height, pageX, pageY) => {
-                const centerX = pageX + width / 2;
-                const centerY = pageY + height / 2;
-                const distance = Math.sqrt(
-                  Math.pow(position.x - centerX, 2) + Math.pow(position.y - centerY, 2)
-                );
-      
-                if (distance < minDistance) {
-                  minDistance = distance;
-                  closestItem = { group, idx };
-                  closestGroupId = group;
-                }
-              });
-            }
-          });
-        });
-      
-        if (closestItem && closestGroupId !== null) {
-          setGroups((prevGroups) => {
+
+      const handleAdd = (newItem) => {
+        setGroups((prevGroups) => {
             const updatedGroups = [...prevGroups];
-      
-            // Find the source and target groups
-            const sourceGroup = updatedGroups.find((g) => g.id === groupId);
-            const targetGroup = updatedGroups.find((g) => g.id === closestGroupId);
-      
-            if (sourceGroup && targetGroup) {
-              // Remove the dragged item from the source group
-              const [draggedItem] = sourceGroup.items.splice(index, 1);
-      
-              // If the target group contains a dummy item, replace it
-              const targetIndex = targetGroup.items.findIndex((item) => item.isDummy);
-              if (targetIndex !== -1) {
-                targetGroup.items[targetIndex] = draggedItem;
-              } else {
-                // Otherwise, insert the dragged item at the closest position
-                targetGroup.items.splice(closestItem.idx, 0, draggedItem);
-              }
-      
-              // Add a dummy item if the source group is now empty
-              if (sourceGroup.items.length === 0) {
-                sourceGroup.items.push(dummyItem);
-              }
+            const targetGroup = updatedGroups.find((g) => g.id === newItem.group);
+    
+            if (targetGroup) {
+                // Generate a unique id for the new item
+                const uniqueId = `item-${Date.now()}`;
+                const newItemWithId = { ...newItem, id: uniqueId };
+    
+                // Add the new item before the input item
+                targetGroup.items.splice(targetGroup.items.length - 1, 0, newItemWithId);
             }
-      
+    
             return updatedGroups;
-          });
-      
-          console.log(`Switched items between group ${groupId} and group ${closestGroupId}`);
-        } else {
-          console.log("No overlapping item found");
-        }
-      };
+        });
+    };
+
+    const handleDrop = (position, groupId, index) => {
+      const refsInAllGroups = allItemRefs.current;
+    
+      // Variables to track the closest overlapping item
+      let closestItem = null;
+      let closestGroupId = null;
+      let minDistance = Infinity;
+    
+      // Iterate through all groups and their items
+      Object.entries(refsInAllGroups).forEach(([group, refs]) => {
+        refs.forEach((ref, idx) => {
+          if (ref) {
+            ref.measure((x, y, width, height, pageX, pageY) => {
+              const centerX = pageX + width / 2;
+              const centerY = pageY + height / 2;
+              const distance = Math.sqrt(
+                Math.pow(position.x - centerX, 2) + Math.pow(position.y - centerY, 2)
+              );
+    
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestItem = { group, idx };
+                closestGroupId = group;
+              }
+            });
+          }
+        });
+      });
+    
+      if (closestItem && closestGroupId !== null) {
+        setGroups((prevGroups) => {
+          const updatedGroups = [...prevGroups];
+    
+          // Find the source and target groups
+          const sourceGroup = updatedGroups.find((g) => g.id === groupId);
+          const targetGroup = updatedGroups.find((g) => g.id === closestGroupId);
+    
+          if (sourceGroup && targetGroup) {
+            // Remove the dragged item from the source group
+            const [draggedItem] = sourceGroup.items.splice(index, 1);
+    
+            targetGroup.items.splice(closestItem.idx, 0, draggedItem);
+          }
+    
+          return updatedGroups;
+        });
+    
+        console.log(`Switched items between group ${groupId} and group ${closestGroupId}`);
+      } else {
+        console.log("No overlapping item found");
+      }
+    };
     
 
   return (

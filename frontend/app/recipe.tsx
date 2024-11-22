@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {API_BASE_URL} from '@/scripts/config';
 import {Link, router} from 'expo-router';
-import {Colors} from '@/styles/Colors';
+//import {Colors} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
@@ -28,8 +28,201 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import shortenTime from "@/scripts/shortenTime";
 import AppbarAction from 'react-native-paper/lib/typescript/components/Appbar/AppbarAction';
+import { useSelector } from 'react-redux';
 
 export default function Recipe() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+        },
+        searchIcon: {
+            marginRight: 10,
+        },
+        searchInput: {
+            flex: 1,
+            fontSize: 16,
+            color: Colors.light.primaryText,
+        },
+        listContainer: {
+            paddingHorizontal: 20,
+        },
+        listItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 15,
+            height: 70,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+        },
+        listItemLeft: {
+            flexDirection: 'column',
+        },
+        listItemTitle: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: Colors.light.primaryText,
+        },
+        listItemDate: {
+            fontSize: 14,
+            color: Colors.light.secondaryText,
+        },
+        addButton: {
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            backgroundColor: Colors.light.primaryColor,
+            borderRadius: 50,
+            padding: 15,
+        },
+        shareButton: {
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            
+        },
+        modalContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        modalContent: {
+            width: 300,
+            padding: 20,
+            backgroundColor: Colors.light.background,
+            borderRadius: 10,
+            alignItems: 'center',
+        },
+        modalHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            marginBottom: 10,
+        },
+        closeButton: {
+            marginRight: 30,
+            marginBottom: 20
+        },
+        hiddenButton: {
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            left: 0,
+            backgroundColor: Colors.light.primaryColor,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+        modalTitle: {
+            fontSize: 18,
+            marginBottom: 20,
+            color: Colors.light.primaryText, // Ensure the text color contrasts with the background
+        },
+        input: {
+            width: '100%',
+            padding: 10,
+            borderWidth: 1,
+            borderColor: Colors.light.primaryColor,
+            color: Colors.light.primaryText,
+            borderRadius: 5,
+            marginBottom: 10,
+    
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginHorizontal: 20,
+            paddingHorizontal: 10,
+    
+    
+        },
+        renameInput: {
+            fontSize: 16, // Smaller font size
+            paddingVertical: 5, // Smaller vertical padding
+            paddingHorizontal: 10,
+            color: Colors.light.primaryText,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+        },
+        submitButton: {
+            ...globalStyles.primaryButton,
+        },
+        submitButtonText: {
+            color: Colors.light.background,
+            fontWeight: 'bold',
+        },
+        modalButton: {
+            backgroundColor: '#FF6347',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginTop: 10,
+        },
+        modalButtonText: {
+            color: Colors.light.background,
+            fontWeight: 'bold',
+        },
+        modalButtonContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginTop: 20,
+        },
+        buttonRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            width: '100%',
+        },
+        deleteBlock: {
+            position: 'absolute',
+            left: -120,
+            top: 0,
+            bottom: 0,
+            width: 75,
+            backgroundColor: '#FF6347',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        deleteBlockText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        deleteButton: {
+            backgroundColor: '#FF6347',
+            padding: 10,
+            borderRadius: 5,
+        },
+        deleteButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        item: {
+            backgroundColor: Colors.light.background,
+            padding: 20,
+            borderBottomWidth: 1,
+            borderColor: '#ddd',
+            zIndex: 1,
+        },
+        friendContainer: {
+            flex: 1,
+            justifyContent: 'flex-end',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        friendContent: {
+            backgroundColor: Colors.light.background,
+            padding: 20,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            minHeight: '50%',
+            flexDirection: 'column',
+            justifyContent: 'flex-start'
+        }
+    
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
     const [recipes, setRecipes] = useState([]);
     const [selectedRecipe, setSelectedRecipe] = useState('');
@@ -384,7 +577,7 @@ export default function Recipe() {
             <View style={styles.container}>
                 <View style={[styles.container, {paddingTop: insets.top, paddingBottom: insets.bottom}]}>
                     <Header header={"Recipes"}/>
-                    <View style={globalStyles.searchBar}>
+                    <View style={{...globalStyles.searchBar, ...{borderColor: Colors.light.primaryColor}}}>
                         <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
                               style={styles.searchIcon}/>
                         <TextInput
@@ -464,191 +657,3 @@ export default function Recipe() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    searchIcon: {
-        marginRight: 10,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: Colors.light.primaryText,
-    },
-    listContainer: {
-        paddingHorizontal: 20,
-    },
-    listItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 15,
-        height: 70,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-    listItemLeft: {
-        flexDirection: 'column',
-    },
-    listItemTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.light.primaryText,
-    },
-    listItemDate: {
-        fontSize: 14,
-        color: Colors.light.secondaryText,
-    },
-    addButton: {
-        position: 'absolute',
-        bottom: 30,
-        right: 30,
-        backgroundColor: Colors.light.primaryColor,
-        borderRadius: 50,
-        padding: 15,
-    },
-    shareButton: {
-        position: 'absolute',
-        bottom: 30,
-        right: 30,
-        
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        width: 300,
-        padding: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        marginBottom: 10,
-    },
-    closeButton: {
-        marginRight: 30,
-        marginBottom: 20
-    },
-    hiddenButton: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        right: 0,
-        left: 0,
-        backgroundColor: Colors.light.primaryColor,
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-    modalTitle: {
-        fontSize: 18,
-        marginBottom: 20,
-        color: 'black', // Ensure the text color contrasts with the background
-    },
-    input: {
-        width: '100%',
-        padding: 10,
-        borderWidth: 1,
-        borderColor: Colors.light.primaryColor,
-        borderRadius: 5,
-        marginBottom: 10,
-
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: 20,
-        paddingHorizontal: 10,
-
-
-    },
-    renameInput: {
-        fontSize: 16, // Smaller font size
-        paddingVertical: 5, // Smaller vertical padding
-        paddingHorizontal: 10,
-        color: Colors.light.primaryText,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-    },
-    submitButton: {
-        ...globalStyles.primaryButton,
-    },
-    submitButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    modalButton: {
-        backgroundColor: '#FF6347',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    modalButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    modalButtonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 20,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    deleteBlock: {
-        position: 'absolute',
-        left: -120,
-        top: 0,
-        bottom: 0,
-        width: 75,
-        backgroundColor: '#FF6347',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    deleteBlockText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    deleteButton: {
-        backgroundColor: '#FF6347',
-        padding: 10,
-        borderRadius: 5,
-    },
-    deleteButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-    },
-    item: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderColor: '#ddd',
-        zIndex: 1,
-    },
-    friendContainer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    friendContent: {
-        backgroundColor: Colors.light.background,
-        padding: 20,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        minHeight: '50%',
-        flexDirection: 'column',
-        justifyContent: 'flex-start'
-    }
-
-});

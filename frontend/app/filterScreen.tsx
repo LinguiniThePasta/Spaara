@@ -3,13 +3,74 @@ import { View, StyleSheet, Text, SafeAreaView, Pressable, Alert } from 'react-na
 import Slider from '@react-native-community/slider';
 import { Checkbox } from 'react-native-paper';
 import Header from "@/components/Header";
-import { Colors } from "@/styles/Colors";
+//import { Colors } from "@/styles/Colors";
 import { globalStyles } from "@/styles/globalStyles";
 import axios from "axios";
 import { API_BASE_URL } from "@/scripts/config";
 import * as SecureStore from "expo-secure-store";
+import { useSelector } from 'react-redux';
 
 export default function FilterScreen() {
+
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+            justifyContent: 'space-between',
+        },
+        content: {
+            flex: 1,
+            marginHorizontal: 20,
+            justifyContent: "space-between",
+        },
+        inlineContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        subHeader: {
+            fontSize: 18,
+            fontWeight: "regular",
+            color: Colors.light.primaryText,
+        },
+        buttonContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 30,
+        },
+        clearButton: {
+            ...globalStyles.secondaryGreyButton,
+            width: "45%",
+            borderColor: Colors.light.primaryColor,
+            color: Colors.light.primaryColor,
+        },
+        applyButton: {
+            ...globalStyles.primaryButton,
+            width: "45%",
+            backgroundColor: Colors.light.primaryColor,
+            color: Colors.light.background,
+        },
+        listItem: {
+            marginVertical: 15,
+            paddingVertical: 20,
+            justifyContent: 'space-between',
+            height: 100,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+            color: Colors.light.primaryColor,
+        },
+        sliderContainer: {
+            width: '95%',
+            alignSelf: 'center',
+        },
+        slider: {
+            height: 40,
+        },
+    });
+
     const [numberOfStores, setNumberOfStores] = useState(3);
     const [distance, setDistance] = useState(5.0);
     const [dietaryRestriction, setDietaryRestriction] = useState([]);
@@ -143,6 +204,8 @@ export default function FilterScreen() {
                     {dietRestrictionList.map((checkListItem) => (
                         <View key={checkListItem.id}>
                             <Checkbox.Item
+                                color={Colors.light.primaryColor}
+                                labelStyle={{color: Colors.light.primaryText}}
                                 label={checkListItem.name}
                                 status={dietaryRestriction.includes(checkListItem.id) ? 'checked' : 'unchecked'}
                                 onPress={() => {
@@ -158,66 +221,14 @@ export default function FilterScreen() {
                 </View>
             </View>
             <View style={styles.buttonContainer}>
-                <Pressable onPress={handleClear} style={styles.clearButton}>
-                    <Text>Clear</Text>
+                <Pressable onPress={handleClear} style={[styles.clearButton, {backgroundColor: Colors.light.background}]}>
+                    <Text style={{color: Colors.light.primaryColor}}>Clear</Text>
                 </Pressable>
                 <Pressable onPress={handleApplyFilters} style={styles.applyButton}>
-                    <Text>Apply Filters</Text>
+                    <Text style={{color: Colors.light.background}}>Apply Filters</Text>
                 </Pressable>
             </View>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-        marginHorizontal: 20,
-        justifyContent: "space-between",
-    },
-    inlineContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    subHeader: {
-        fontSize: 18,
-        fontWeight: "regular",
-        color: Colors.light.primaryText,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 30,
-    },
-    clearButton: {
-        ...globalStyles.secondaryGreyButton,
-        width: "45%",
-    },
-    applyButton: {
-        ...globalStyles.primaryButton,
-        width: "45%",
-    },
-    listItem: {
-        marginVertical: 15,
-        paddingVertical: 20,
-        justifyContent: 'space-between',
-        height: 100,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.light.secondaryText,
-        position: 'relative',
-    },
-    sliderContainer: {
-        width: '95%',
-        alignSelf: 'center',
-    },
-    slider: {
-        height: 40,
-    },
-});

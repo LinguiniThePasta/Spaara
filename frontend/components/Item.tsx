@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, Pressable, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {Colors} from "@/styles/Colors";
+//import {Colors} from "@/styles/Colors";
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
@@ -24,7 +24,85 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
+export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft: 10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        addItemText: {
+            //color: 'gray',
+            color: Colors.light.secondaryText,
+            fontStyle: 'italic',
+            fontSize: 18,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+    
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            width: '50%',
+            padding: 3,
+        },
+        priceText: {
+            fontSize: 16,
+            marginRight: 10,
+            color: Colors.light.primaryText,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+        notesContainer: {
+            marginTop: 5,
+        },
+    
+    });
+
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
@@ -52,6 +130,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
 
     function toggleCheck() {
         setChecked(!checked);
+        handleCheckItem(item);
     }
 
     function toggleFavorite() {
@@ -87,26 +166,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
                         style={styles.checkboxIcon}
                     />
                 </Pressable>
-                <View>
-                    <Text style={styles.itemText}>{item.title}</Text>
-                    <View style={styles.notesContainer}>
-                        {isEditing ? (
-                            <TextInput
-                                style={styles.noteInput}
-                                placeholder="Add a note..."
-                                placeholderTextColor={Colors.light.secondaryText}
-                                value={note}
-                                onChangeText={(text) => setNote(text)}
-                                onBlur={() => {
-                                    setIsEditing(false);
-                                    onNoteChange(note);
-                                }}
-                            />
-                        ) : (
-                            <Text style={styles.noteText}>{note || "No notes added."}</Text>
-                        )}
-                    </View>
-                </View>
+                <Text style={styles.itemText}>{item.label}</Text>
             </View>
 
             <View style={styles.rightContainer}>
@@ -147,6 +207,84 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
 
 
 export function SpacerItem() {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft: 10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        addItemText: {
+            //color: 'gray',
+            color: Colors.light.secondaryText,
+            fontStyle: 'italic',
+            fontSize: 18,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+    
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            width: '50%',
+            padding: 3,
+        },
+        priceText: {
+            fontSize: 16,
+            marginRight: 10,
+            color: Colors.light.primaryText,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+        notesContainer: {
+            marginTop: 5,
+        },
+    
+    });
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>
@@ -161,6 +299,84 @@ export function SpacerItem() {
 
 
 export function RecipeItem({item}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft: 10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        addItemText: {
+            //color: 'gray',
+            color: Colors.light.secondaryText,
+            fontStyle: 'italic',
+            fontSize: 18,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+    
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            width: '50%',
+            padding: 3,
+        },
+        priceText: {
+            fontSize: 16,
+            marginRight: 10,
+            color: Colors.light.primaryText,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+        notesContainer: {
+            marginTop: 5,
+        },
+    
+    });
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>
@@ -193,29 +409,125 @@ export function RecipeItem({item}) {
  */
 
 export function InputItem({initialText, onChangeText, handleAddItem}) {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft: 10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        addItemText: {
+            //color: 'gray',
+            color: Colors.light.secondaryText,
+            fontStyle: 'italic',
+            fontSize: 18,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+    
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            width: '50%',
+            padding: 3,
+        },
+        priceText: {
+            fontSize: 16,
+            marginRight: 10,
+            color: Colors.light.primaryText,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+        notesContainer: {
+            marginTop: 5,
+        },
+    
+    });
+
     const [number, setNumber] = useState(0);
     //const [initialText, setInitialText] = useState("");
+    const [text, setText] = useState(''); // State for the input value
+    const [placeholder, setPlaceholder] = useState(initialText); // State for the placeholder
+    
+    const handleSubmit = () => {
+        if (text.trim() !== '') { // Only handle non-empty input
+        handleAddItem(text); // Call the parent-provided add item function
+        setText(''); // Reset the input field
+        setPlaceholder(initialText); // Reset the placeholder text
+        }
+    };
+    
     return (
         <View style={styles.item}>
-
-            <View style={styles.leftContainer}>
-                <Pressable>
-                    <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
-                </Pressable>
-                <TextInput
-                    style={styles.itemText}
-                    placeholder='Add Item'
-                    placeholderTextColor={Colors.light.secondaryText}
-                    editable={true}
-                    defaultValue={initialText}
-                    onChangeText={(text) => onChangeText(text)}
-                    onSubmitEditing={() => handleAddItem()}
-
-                />
-            </View>
+        <View style={styles.leftContainer}>
+            <Pressable>
+            <Icon
+                name="ellipse-outline"
+                size={30}
+                color={Colors.light.background}
+                style={styles.checkboxText}
+            />
+            </Pressable>
+            <TextInput
+            style={styles.itemText}
+            placeholder={placeholder} // Bind placeholder to state
+            placeholderTextColor={Colors.light.secondaryText}
+            value={text} // Bind value to state
+            onChangeText={(inputText) => {
+                setText(inputText); // Update input value
+                onChangeText(inputText); // Trigger the parent callback
+            }}
+            onFocus={() => setPlaceholder('')} // Clear placeholder when focused
+            onBlur={() => !text && setPlaceholder(initialText)} // Reset placeholder if empty
+            onSubmitEditing={handleSubmit} // Handle submission
+            />
         </View>
-    );
-}
+        </View>
+        );
+    };
 
 
 /**
@@ -229,6 +541,84 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
  */
 
 export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
+    const Colors = useSelector((state) => state.colorScheme);
+    const styles = StyleSheet.create({
+        item: {
+            width: '100%',
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 5,
+            marginBottom: 10,
+        },
+        plusMinusContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+            borderWidth: 2,
+            borderRadius: 50,
+            borderColor: Colors.light.secondaryText,
+            padding: 1,
+            marginLeft: 10,
+        },
+        divider: {
+            width: 2,
+            height: '100%',
+            backgroundColor: Colors.light.secondaryText,
+            borderColor: Colors.light.secondaryText,
+            color: Colors.light.secondaryText,
+    
+        },
+        itemText: {
+            color: Colors.light.primaryText,
+            fontSize: 21,
+        },
+        addItemText: {
+            //color: 'gray',
+            color: Colors.light.secondaryText,
+            fontStyle: 'italic',
+            fontSize: 18,
+        },
+        checkboxIcon: {
+            marginRight: 5,
+            fontSize: 25,
+        },
+        checkboxText: {
+            fontSize: 25,
+        },
+        rightContainer: {
+            alignSelf: 'flex-end',
+            alignItems: 'center',
+            flexDirection: 'row',
+    
+        },
+        leftContainer: {
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            flexDirection: 'row',
+            width: '50%',
+            padding: 3,
+        },
+        priceText: {
+            fontSize: 16,
+            marginRight: 10,
+            color: Colors.light.primaryText,
+        },
+        favoriteButton: {
+            fontSize: 25,
+        },
+        isFavorite: {
+            color: Colors.light.primaryColor,
+        },
+        notFavorite: {
+            color: Colors.light.secondaryText,
+        },
+        notesContainer: {
+            marginTop: 5,
+        },
+    
+    });
+
     return (
         <View style={styles.item}>
             <View style={styles.leftContainer}>
@@ -249,6 +639,7 @@ export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
     );
 };
 
+/*
 const styles = StyleSheet.create({
     item: {
         width: '100%',
@@ -279,6 +670,11 @@ const styles = StyleSheet.create({
     itemText: {
         color: Colors.light.primaryText,
         fontSize: 21,
+    },
+    addItemText: {
+        color: 'gray',
+        fontStyle: 'italic',
+        fontSize: 18,
     },
     checkboxIcon: {
         marginRight: 5,
@@ -319,3 +715,4 @@ const styles = StyleSheet.create({
     },
 
 });
+*/
