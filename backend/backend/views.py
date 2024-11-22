@@ -307,7 +307,6 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def approve(self, request):
         user = request.user
-        username = request.data.get('username', None)
         recipe = request.data.get('recipe', None)
         friend = User.objects.filter(username=username).first()
         
@@ -317,7 +316,7 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_recipe.delete()
-        friend.recipe.add(recipe)
+        
         return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
 
     # DELETE /api/friend_recipe/reject
@@ -325,11 +324,9 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['delete'])
     def reject(self, request):
         user = request.user
-        username = request.data.get('username', None)
-        friend = User.objects.filter(username=username).first()
-        if friend is None:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
+        recipe = request.data.get('recipe', None)
+        
+        friend_recipe = FriendRecipe.objects.filter(recipe_id=recipe).first()
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_recipe.delete()
