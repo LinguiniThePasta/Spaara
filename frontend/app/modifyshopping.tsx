@@ -242,12 +242,6 @@ export default function ModifyShopping() {
           console.error('Error fetching shopping items:', error);
         }
       };
-      
-      const singleTapGesture = Gesture.Tap()
-  .onEnd(() => {
-    console.log('Single tap gesture detected');
-    addGroup();
-  });
 
     const renderGroup = ({ group }: { group: Group }) => {
         return (
