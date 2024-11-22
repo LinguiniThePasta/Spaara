@@ -33,7 +33,6 @@ export default function Header({header, backButton, backLink, noProfile}) {
 
             setSelectedIcon(response.data.icon);
             setSelectedColor(response.data.color);
-            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
         } catch (error) {
             console.error('Error fetching profile info:', error);
         }

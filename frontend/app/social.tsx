@@ -229,25 +229,24 @@ const SocialPage = () => {
   }, []);
 
   const [selectedIcon, setSelectedIcon] = useState("");
-    const [selectedColor, setSelectedColor] = useState(Colors.light.background);
+  const [selectedColor, setSelectedColor] = useState(Colors.light.background);
 
-    const fetchProfileInfo = async () => {
-        try {
-            const jwtToken = await SecureStore.getItemAsync("jwtToken");
-            const response = await axios.get(
-                `${API_BASE_URL}/api/user/profile_info`, {
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`
-                    }
-                });
+  const fetchProfileInfo = async () => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync("jwtToken");
+      const response = await axios.get(
+        `${API_BASE_URL}/api/user/profile_info`, {
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`
+          }
+      });
 
-            setSelectedIcon(response.data.icon);
-            setSelectedColor(response.data.color);
-            console.log("Fetched profile info! color: " + response.data.color + "   icon: " + response.data.icon);
-        } catch (error) {
-            console.error('Error fetching profile info:', error);
-        }
-    };
+      setSelectedIcon(response.data.icon);
+      setSelectedColor(response.data.color);
+    } catch (error) {
+      console.error('Error fetching profile info:', error);
+    }
+  };
 
 
 
