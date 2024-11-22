@@ -73,7 +73,7 @@ export default function Login() {
                     },
                 }
             );
-
+            console.log("Reaches")
             await SecureStore.setItemAsync('jwtToken', response.data.access);
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
 

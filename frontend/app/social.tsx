@@ -32,6 +32,13 @@ interface User {
   profile_color: string;
 }
 
+interface Recipe {
+  id: number;
+  name: string;
+}
+
+
+
 const SocialPage = () => {
 
   const Colors = useSelector((state) => state.colorScheme);
@@ -242,7 +249,7 @@ const SocialPage = () => {
   const [outgoingRequests, setOutgoingRequests] = useState<User[]>([]);
   // Incoming requests list
   const [incomingRequests, setIncomingRequests] = useState<User[]>([]);
-  const [incomingRecipes, setIncomingRecipes] = useState([])
+  const [incomingRecipes, setIncomingRecipes] = useState<Recipe[]>([])
   // Friends list
   const [friends, setFriends] = useState<User[]>([]);
   // Friend request count
@@ -380,12 +387,15 @@ const SocialPage = () => {
       });
 
       const recipes = response.data.map((item) => ({
-        recipe: item
+        id: item.recipe.id,
+        name: item.recipe.name,
+        user: item.recipe.user,
       }));
-
+      console.log(recipes)
       setIncomingRecipes(recipes);
+      console.log('correctly fetched recipes')
     } catch (error) {
-      console.error('Error fetching friend requests:', error.message);
+      console.error('Error fetching recipes:', error.message);
     }
   }
 
@@ -448,6 +458,7 @@ const SocialPage = () => {
     fetchRequestCount();
     fetchOutgoingRequests();
     fetchIncomingRequests();
+    fetchRecipe();
   }, []);
 
   const [selectedIcon, setSelectedIcon] = useState("");
@@ -529,6 +540,32 @@ const SocialPage = () => {
     }
   };
 
+  const approveRecipeRequest = async (recipe) => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/friend_recipe/approve/`,
+        {
+          recipe: recipe,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+      console.log('recipe approved!');
+
+      // Update state
+      setIncomingRecipes((prevRecipe) => prevRecipe.filter((req) => req.name !== recipe.name));
+      fetchFriends(); // Refresh friends list
+    } catch (error) {
+      console.error('Error approving friend request:', error.message);
+    }
+  }
+  
   /* Reject an incoming friend request */
   const rejectFriendRequest = async (username) => {
     try {
@@ -553,6 +590,30 @@ const SocialPage = () => {
       console.error('Error rejecting friend request:', error.message);
     }
   };
+
+  const rejectRecipe = async (recipe) => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/friend_recipe/reject/`,
+        {
+          data: {recipe: recipe.id},
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
+      console.log('recipe rejected!');
+
+      // Update state
+      fetchRecipe(); // Refresh incoming requests
+    } catch (error) {
+      console.error('Error rejecting recipe:', error.message);
+    }
+  };
+  
 
   /* Revokes an outgoing friend request */
   const revokeFriendRequest = async (username) => {
@@ -748,19 +809,19 @@ const SocialPage = () => {
               <Text style={styles.modalTitle}>Recipes</Text>
               {incomingRecipes.length > 0 ? (
                 <FlatList
-                  data={incomingRecipess}
+                  data={incomingRecipes}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => (
                     <View style={styles.friendRequestItem}>
                       <Text style={styles.friendRequestName}>{item.name}</Text>
                       <View style={styles.friendRequestButtons}>
                         <TouchableOpacity
-                          onPress={() => approveFriendRequest(item.name)}
+                          onPress={() => approveRecipeRequest(item)}
                         >
                           <Icon style={styles.buttonText} name="checkmark"/>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => rejectFriendRequest(item.name)}
+                          onPress={() => rejectRecipe(item)}
                         >
                          <Icon style={styles.buttonText} name="close-outline"/>
                         </TouchableOpacity>
