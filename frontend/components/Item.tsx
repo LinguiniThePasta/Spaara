@@ -24,7 +24,7 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
+export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem}) {
     const [number, setNumber] = useState(item.quantity);
     const [favorite, setFavorite] = useState(item.favorited);
     const [checked, setChecked] = useState(item.checked);
@@ -52,6 +52,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
 
     function toggleCheck() {
         setChecked(!checked);
+        handleCheckItem(item);
     }
 
     function toggleFavorite() {
@@ -87,26 +88,7 @@ export function CheckItem({item, handleFavoriteItem, handleRemoveItem, handleMod
                         style={styles.checkboxIcon}
                     />
                 </Pressable>
-                <View>
-                    <Text style={styles.itemText}>{item.title}</Text>
-                    <View style={styles.notesContainer}>
-                        {isEditing ? (
-                            <TextInput
-                                style={styles.noteInput}
-                                placeholder="Add a note..."
-                                placeholderTextColor={Colors.light.secondaryText}
-                                value={note}
-                                onChangeText={(text) => setNote(text)}
-                                onBlur={() => {
-                                    setIsEditing(false);
-                                    onNoteChange(note);
-                                }}
-                            />
-                        ) : (
-                            <Text style={styles.noteText}>{note || "No notes added."}</Text>
-                        )}
-                    </View>
-                </View>
+                <Text style={styles.itemText}>{item.label}</Text>
             </View>
 
             <View style={styles.rightContainer}>
@@ -193,29 +175,45 @@ export function RecipeItem({item}) {
  */
 
 export function InputItem({initialText, onChangeText, handleAddItem}) {
-    const [number, setNumber] = useState(0);
-    //const [initialText, setInitialText] = useState("");
+    const [text, setText] = useState(''); // State for the input value
+    const [placeholder, setPlaceholder] = useState(initialText); // State for the placeholder
+    
+    const handleSubmit = () => {
+        if (text.trim() !== '') { // Only handle non-empty input
+        handleAddItem(text); // Call the parent-provided add item function
+        setText(''); // Reset the input field
+        setPlaceholder(initialText); // Reset the placeholder text
+        }
+    };
+    
     return (
         <View style={styles.item}>
-
-            <View style={styles.leftContainer}>
-                <Pressable>
-                    <Icon name="ellipse-outline" size={30} color={Colors.light.background} style={styles.checkboxText}/>
-                </Pressable>
-                <TextInput
-                    style={styles.itemText}
-                    placeholder='Add Item'
-                    placeholderTextColor={Colors.light.secondaryText}
-                    editable={true}
-                    defaultValue={initialText}
-                    onChangeText={(text) => onChangeText(text)}
-                    onSubmitEditing={() => handleAddItem()}
-
-                />
-            </View>
+        <View style={styles.leftContainer}>
+            <Pressable>
+            <Icon
+                name="ellipse-outline"
+                size={30}
+                color={Colors.light.background}
+                style={styles.checkboxText}
+            />
+            </Pressable>
+            <TextInput
+            style={styles.itemText}
+            placeholder={placeholder} // Bind placeholder to state
+            placeholderTextColor='gray'
+            value={text} // Bind value to state
+            onChangeText={(inputText) => {
+                setText(inputText); // Update input value
+                onChangeText(inputText); // Trigger the parent callback
+            }}
+            onFocus={() => setPlaceholder('')} // Clear placeholder when focused
+            onBlur={() => !text && setPlaceholder(initialText)} // Reset placeholder if empty
+            onSubmitEditing={handleSubmit} // Handle submission
+            />
         </View>
-    );
-}
+        </View>
+        );
+    };
 
 
 /**
@@ -279,6 +277,11 @@ const styles = StyleSheet.create({
     itemText: {
         color: Colors.light.primaryText,
         fontSize: 21,
+    },
+    addItemText: {
+        color: 'gray',
+        fontStyle: 'italic',
+        fontSize: 18,
     },
     checkboxIcon: {
         marginRight: 5,
