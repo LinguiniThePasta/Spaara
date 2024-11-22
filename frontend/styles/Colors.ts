@@ -212,16 +212,16 @@ export const Colors = {
 
 
   light: {
-    //background: '#F2F4F3',
-    //primaryText: '#232528',
-    //secondaryText: '#959595',
-    //primaryColor: '#F6AA1C',
-    //secondColor: '#A0A0A0',
-    background: ColorThemes["darkMode"].background,
-    primaryText: ColorThemes["darkMode"].primaryText,
-    secondaryText: ColorThemes["darkMode"].secondaryText,
-    primaryColor: ColorThemes["darkMode"].primaryColor,
-    secondColor: ColorThemes["darkMode"].secondColor,
+    background: '#F2F4F3',
+    primaryText: '#232528',
+    secondaryText: '#959595',
+    primaryColor: '#F6AA1C',
+    secondColor: '#A0A0A0',
+    //background: ColorThemes["darkMode"].background,
+    //primaryText: ColorThemes["darkMode"].primaryText,
+    //secondaryText: ColorThemes["darkMode"].secondaryText,
+    //primaryColor: ColorThemes["darkMode"].primaryColor,
+    //secondColor: ColorThemes["darkMode"].secondColor,
     tint: tintColorLight,
   },
   dark: {
