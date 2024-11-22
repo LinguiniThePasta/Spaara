@@ -162,6 +162,7 @@ export default function ShoppingListScreen() {
                                 title: item.name,
                                 description: item.description,
                                 store: item.store,
+                                notes: item.notes,
                                 quantity: item.quantity,
                                 units: item.units,
                                 favorited: item.favorited,
@@ -173,6 +174,7 @@ export default function ShoppingListScreen() {
                                 title: item.name,
                                 description: item.description,
                                 store: item.store,
+                                notes: item.notes,
                                 quantity: item.quantity,
                                 units: item.units,
                                 favorited: item.favorited,
@@ -186,18 +188,18 @@ export default function ShoppingListScreen() {
                                 favorited: false,
                                 quantity: 0,
                             },
-                                // {
-                                //     id: -2,
-                                //     title: '',
-                                //     favorited: false,
-                                //     quantity: 0,
-                                // },
-                                // {
-                                //     id: -3,
-                                //     title: '',
-                                //     favorited: false,
-                                //     quantity: 0,
-                                // }
+                                {
+                                    id: -2,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                },
+                                {
+                                    id: -3,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                }
                             ]
                             : []),
                         ...(subheading.name === "Unoptimized" && isOptimized
@@ -207,18 +209,18 @@ export default function ShoppingListScreen() {
                                 favorited: false,
                                 quantity: 0,
                             },
-                                // {
-                                //     id: -2,
-                                //     title: '',
-                                //     favorited: false,
-                                //     quantity: 0,
-                                // },
-                                // {
-                                //     id: -3,
-                                //     title: '',
-                                //     favorited: false,
-                                //     quantity: 0,
-                                // }
+                                {
+                                    id: -2,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                },
+                                {
+                                    id: -3,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                }
                             ]
                             : [])
                     ],
@@ -234,6 +236,7 @@ export default function ShoppingListScreen() {
                         id: item.id,
                         label: item.label,
                         description: item.description,
+                        notes: item.notes,
                         store: item.store,
                         quantity: item.quantity,
                         units: item.units,
@@ -459,8 +462,6 @@ export default function ShoppingListScreen() {
     };
 
 
-
-
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
@@ -523,7 +524,7 @@ export default function ShoppingListScreen() {
         const isSpacer = (item.id < -1);
         const isItem = (!item.items);
         //console.log("item rendered! label: " + item.label + "   isItem: "  + isItem + "   isInput: " + isInput);
-
+        console.log("Item passed to CheckItem:", item);
         if (isDefault) {
             return (
                 <View/>
@@ -553,20 +554,11 @@ export default function ShoppingListScreen() {
                     <TouchableOpacity
                         style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
                         onLongPress={drag}>
-                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                                   handleRemoveItem={handleRemove} handleModifyItem={() => handleModifyItem(item)}></CheckItem>
-                    </TouchableOpacity>
-                </ScaleDecorator>
-            );
-        }
-
-        if (isItem) {
-            return (
-                <ScaleDecorator>
-                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
-                                      onLongPress={drag}>
-                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                                   handleRemoveItem={handleRemove}></CheckItem>
+                        <CheckItem item={item}
+                                   handleFavoriteItem={handleFavorite}
+                                   handleRemoveItem={handleRemove}
+                                   handleModifyItem={handleModifyItem}
+                        ></CheckItem>
                     </TouchableOpacity>
                 </ScaleDecorator>
             );
@@ -574,9 +566,9 @@ export default function ShoppingListScreen() {
 
         return (
             <View>
-                <ItemGroup name={item.label} items={item.items} handleFavoriteItem={handleFavorite}
+                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
                            handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                           handleAddItem={handleAddItem}></ItemGroup>
+                           handleAddItem={handleAddItem} handleModifyItem={handleModifyItem}></ItemGroup>
             </View>
         );
     };
@@ -758,48 +750,49 @@ export default function ShoppingListScreen() {
     };
 
     const handleModifyItem = async (item) => {
+        console.log("handleModifyItem called with item:", item);
         const jwtToken = await SecureStore.getItemAsync('jwtToken');
         console.log("modifying");
 
         try {
+
+            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`, {
+                name: item.name,
+                store: item.store,
+                description: item.description,
+                quantity: item.quantity,
+                units: item.units,
+                notes: item.notes,
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+            console.log("Unoptimized item patched:", response.data);
+        } catch (error) {
+            console.log("Unoptimized patch failed, trying optimized:", error);
+
             try {
-                const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`, {
-                    name: item.name,
-                    store: item.store,
-                    description: item.description,
-                    quantity: item.quantity,
-                    units: item.units,
-                    notes: item.notes,
-                }, {
-                    headers: {
-                        'Authorization': 'Bearer ' + jwtToken,
-                    }
-                });
-                console.log("unoptimized patch");
-
-
-            } catch (unoptimizedError) {
-                console.log("QUANT" + item.quantity);
                 const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/optimized/${item.id}/`, {
                     name: item.name,
                     store: item.store,
                     description: item.description,
                     quantity: item.quantity,
                     units: item.units,
-                    note: item.note,
+                    notes: item.notes, // Ensure this matches the backend field
                 }, {
                     headers: {
                         'Authorization': 'Bearer ' + jwtToken,
                     }
                 });
-                console.log("optimized patch");
-
+                console.log("Optimized item patched:", response.data);
+            } catch (optimizedError) {
+                console.error("Could not update item in optimized patch:", optimizedError);
             }
-        } catch (error) {
-            console.log("Could not update item:", error);
         } finally {
             fetchShoppingList();
         }
+
     }
 
     const [searchResults, setSearchResults] = useState([]);
@@ -907,8 +900,6 @@ export default function ShoppingListScreen() {
             Keyboard.dismiss(); // Hide the keyboard if visible
         }
     };
-
-
 
 
     return (

@@ -283,7 +283,7 @@ class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemOptimized
-        fields = ['id', 'name', 'description', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
+        fields = ['id', 'name', 'description', 'notes', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
 
     def create(self, validated_data):
         # Check if 'subheading' is provided
@@ -330,7 +330,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItemUnoptimized
-        fields = ['id', 'name', 'description', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
+        fields = ['id', 'name', 'description', 'notes', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
 
 
     def create(self, validated_data):
