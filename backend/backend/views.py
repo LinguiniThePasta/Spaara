@@ -1,4 +1,7 @@
+import collections
+
 from django.contrib.auth.models import Group
+from django.contrib.postgres.search import SearchQuery, SearchVector, SearchRank
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
@@ -9,12 +12,12 @@ from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction, Subheading, FriendRequest, FriendRecipe
+    DietRestriction, Subheading, FriendRequest, StoreItem, FriendRecipe
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer, \
-    FriendRecipeSerializer
+    FriendRecipeSerializer, SubheadingSerializer, StoreItemSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -57,9 +60,12 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             send_verification_email(user)
-            return Response({'message': 'User registered successfully. Please check your email to verify your account.'}, status=status.HTTP_201_CREATED)
+            return Response(
+                {'message': 'User registered successfully. Please check your email to verify your account.'},
+                status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class VerifyEmailView(APIView):
     def get(self, request, uidb64, token):
@@ -103,13 +109,14 @@ class VerifyEmailView(APIView):
         else:
             return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = serializers.EmailSerializer(data=request.data)
         if not serializer.is_valid():
-            print(serializer.errors)
+            # print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        try :
+        try:
             user = User.objects.get(email__iexact=serializer.validated_data['email'])
         except User.DoesNotExist:
             user = None
@@ -119,6 +126,7 @@ class ForgotPasswordView(APIView):
             return Response({'message': 'Email is linked to an account'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Email is not linked to an account'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class OtherUsersView(APIView):
     permission_classes = [IsAuthenticated]
@@ -144,6 +152,7 @@ class OtherUsersView(APIView):
         users = User.objects.exclude(id=request.user.id)
         data = [{'id': user.id, 'username': user.username} for user in users]
         return Response(data, status=status.HTTP_200_OK)
+
 
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -173,7 +182,8 @@ class DeleteUserView(APIView):
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         except:
             return Response({'message': 'Error in deletion'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+
 class FriendRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -213,7 +223,7 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         FriendRequest.objects.create(from_user=user, to_user=friend)
         return Response({'message': 'Friend request sent'}, status=status.HTTP_201_CREATED)
-    
+
     # POST /api/friend_requests/accept
     # Accepts a friend request from another user.
     @action(detail=False, methods=['post'])
@@ -245,7 +255,7 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_request.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
-    
+
     # DELETE /api/friend_requests/revoke
     # Revokes an outgoing friend request
     @action(detail=False, methods=['delete'])
@@ -264,9 +274,9 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
 class FriendRecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
-    # GET METHODS 
+    # GET METHODS
     # GET /api/friend_recipe/count
-    # Returns the number of pending sent recipes for the authenticated user. 
+    # Returns the number of pending sent recipes for the authenticated user.
     @action(detail=False, methods=['get'])
     def count(self, request):
         count = FriendRecipe.objects.filter(to_user=request.user).count()
@@ -302,7 +312,7 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         FriendRecipe.objects.create(from_user=user, to_user=friend, recipe=recipe)
         return Response({'message': 'recipe not sent'}, status=status.HTTP_201_CREATED)
-    
+
     # POST /api/friend_recipe/accept
     # Accepts a recipie from another user.
     @action(detail=False, methods=['post'])
@@ -334,7 +344,7 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_recipe.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
-    
+
     # DELETE /api/friend_recipe/revoke
     # Revokes an outgoing sent recipie
     @action(detail=False, methods=['delete'])
@@ -368,7 +378,7 @@ class FriendsView(APIView):
         friends = user.friends.all()
         data = [{'id': friend.id, 'username': friend.username, 'profile_icon': friend.profile_icon, 'profile_color': friend.profile_color} for friend in friends]
         return Response(data, status=status.HTTP_200_OK)
-    
+
     def post(self, request):
         '''
         Adds a user to the authenticated user's friends list.
@@ -394,7 +404,7 @@ class FriendsView(APIView):
         user.friends.add(friend)
         user.save()
         return Response({'message': f'{username} added as a friend'}, status=status.HTTP_201_CREATED)
-    
+
     def delete(self, request):
         '''
         Removes a user from the authenticated user's friends list.
@@ -446,15 +456,16 @@ class LoginView(APIView):
 
         # Check if the serializer is valid and return errors if not
         if not serializer.is_valid():
-            print(serializer.errors)
+            # print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Authenticate using email and password
         try:
             user = User.objects.get(email__iexact=serializer.validated_data['email'])
             if user.check_password(serializer.data['password']):
-                if(user.is_active == False):
-                    return Response({'error': ['Email must be verified before logging in.']}, status=status.HTTP_401_UNAUTHORIZED)
+                if (user.is_active == False):
+                    return Response({'error': ['Email must be verified before logging in.']},
+                                    status=status.HTTP_401_UNAUTHORIZED)
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     'access': str(refresh.access_token),
@@ -483,6 +494,119 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+class StoreItemSuggestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Returns a list of store items matching the search query for dropdown suggestions.
+        """
+        search_query = request.query_params.get('query', '').strip()
+
+        if not search_query:
+            return Response({'error': 'Query parameter is required.'}, status=400)
+
+        vector = SearchVector('name', weight='A') + \
+                 SearchVector('store', weight='B') + \
+                 SearchVector('description', weight='C')
+
+        query = SearchQuery(search_query)
+        results = StoreItem.objects.annotate(
+            rank=SearchRank(vector, query)
+        ).filter(rank__gte=0.1).order_by('-rank')
+        print(results)
+        valid_results = []
+        user = request.user
+        user_diet_restrictions = user.diet_restrictions.values_list('id', flat=True)
+        for result in results:
+            item_violations = result.violations.values_list('id', flat=True)
+            if not set(item_violations).intersection(user_diet_restrictions):
+                valid_results.append(result)
+        serializer = StoreItemSerializer(valid_results, many=True)
+        return Response(serializer.data, status=200)
+
+class OptimizeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        '''
+        When a user optimize, the unoptimized AND optimized grocery list is sent to them. The frontend will parse both items
+        After optimizing, the optimized grocery list should have all items in it.
+        During optimization, the old optimized list items are deleted.
+        '''
+        grocery_id = request.query_params.get('id')
+        print("HEYy")
+        print(grocery_id)
+        grocery = get_object_or_404(Grocery, id=grocery_id)
+        unoptimized_items = GroceryItemUnoptimized.objects.all().filter(subheading__grocery=grocery_id)
+        subheading_dict = collections.defaultdict(list)
+
+        optimized_subheadings = grocery.subheadings.filter(optimized=True)
+
+        for subheading in optimized_subheadings:
+            if subheading.name == "Unoptimized":
+                continue
+            print(subheading)
+
+            subheading.optimized_items.all().delete()
+            subheading.delete()
+
+        user = request.user
+        user_diet_restrictions = user.diet_restrictions.values_list('id', flat=True)
+
+        for item in unoptimized_items:
+            name_query = SearchQuery(item.name)
+            store_query = SearchQuery(item.store)
+            units_query = SearchQuery(item.units)
+
+            combined_query = name_query & store_query
+
+            results = StoreItem.objects.annotate(
+                search=SearchVector("name", "store", "units", weight='A'),
+                rank=SearchRank(
+                    SearchVector("name", "store", "units"),
+                    combined_query
+                ),
+            ).filter(search=combined_query).order_by("price", "-rank")
+
+            valid_results = []
+            for result in results:
+                item_violations = result.violations.values_list('id', flat=True)
+                if not set(item_violations).intersection(user_diet_restrictions):
+                    valid_results.append(result)
+
+            if valid_results:
+                first_valid_result = valid_results[0]
+                subheading_name = f"{first_valid_result.store};{first_valid_result.store_location}"
+
+                if subheading_name not in subheading_dict:
+                    subheading_dict[subheading_name] = []
+
+                subheading_dict[subheading_name].append(first_valid_result)
+            else:
+                subheading_dict['Unoptimized'].append(item)
+
+        print(subheading_dict)
+        for key, value in subheading_dict.items():
+            subheading, created = Subheading.objects.get_or_create(
+                name=key,
+                grocery=grocery,
+                optimized=True,
+            )
+            if created:
+                subheading.order = grocery.subheadings.count() - 1
+                subheading.save()
+            for item in value:
+                optimized_item = None
+                order = subheading.optimized_items.count()
+                if key == 'Unoptimized':
+                    optimized_item = GroceryItemOptimized.from_unoptimized_item(item, subheading, order)
+                else:
+                    optimized_item = GroceryItemOptimized.from_store_item(item, subheading, order)
+                optimized_item.save()
+        serializer = GrocerySerializer(grocery)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        # return Response("NO", status=status.HTTP_400_BAD_REQUEST)
+
 
 class SettingsView(APIView):
     '''
@@ -490,6 +614,7 @@ class SettingsView(APIView):
     Allows updating and retrieving the settings for the authenticated user.
     permission_classes = [IsAuthenticated]
     '''
+
     def post(self, request):
         '''
         Updates the settings for the authenticated user, including dietary restrictions, max distance, and max stores.
@@ -583,7 +708,7 @@ class SettingsView(APIView):
             },
             status=status.HTTP_200_OK
         )
-    
+
 
 class ProfileView(APIView):
     '''
@@ -591,6 +716,7 @@ class ProfileView(APIView):
     Allows updating and retrieving the settings for the authenticated user.
     permission_classes = [IsAuthenticated]
     '''
+
     def post(self, request):
         '''
         Updates the settings for the authenticated user, including dietary restrictions, max distance, and max stores.
@@ -743,7 +869,7 @@ class UpdateInfoView(APIView):
             return Response({'message': 'Information Changed successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     def get(self, request):
         user = request.user
 
@@ -755,7 +881,8 @@ class UpdateInfoView(APIView):
             },
             status=status.HTTP_200_OK
         )
-        
+
+
 class GetCoordinatesView(APIView):
     def get_address_location(self, address):
         """
@@ -770,7 +897,7 @@ class GetCoordinatesView(APIView):
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("API key not found. Please set the GOOGLE_API_KEY environment variable.")
-        
+
         # URL encode the address to make it safe for the API call
         encoded_address = requests.utils.quote(address)
         url = f"https://maps.googleapis.com/maps/api/geocode/json?address={encoded_address}&key={api_key}"
@@ -781,7 +908,7 @@ class GetCoordinatesView(APIView):
             response.raise_for_status()  # Raise an error for HTTP errors
 
             data = response.json()
-            
+
             # Check if results were found and extract location data
             if data.get("results"):
                 location = data["results"][0]["geometry"]["location"]
@@ -790,20 +917,20 @@ class GetCoordinatesView(APIView):
                     "longitude": location["lng"]
                 }
             else:
-                print("No results found for the provided address.")
+                # print("No results found for the provided address.")
                 return None
         except requests.exceptions.RequestException as e:
-            print(f"Request error: {e}")
+            # print(f"Request error: {e}")
             return None
-        
+
     def get(self, request, *args, **kwargs):
         address = request.GET.get('address', None)
 
-        print(address)
-        
+        # print(address)
+
         if not address:
             return Response({"error": "Address parameter is required"}, status=400)
-        
+
         # Call your function to get coordinates for the address
         coordinates = self.get_address_location(address=address)  # Replace with your actual function
 
@@ -812,8 +939,7 @@ class GetCoordinatesView(APIView):
         else:
             return Response({"error": "Could not find coordinates for the given address"}, status=404)
 
-        
-        
+
 class AddressViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -898,7 +1024,7 @@ class AddressViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Selected address updated successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
     # GET /api/user/addresses/selected/
     # Gets the selected address
     @action(detail=False, methods=['get'])
@@ -912,7 +1038,7 @@ class AddressViewSet(viewsets.ModelViewSet):
             return Response({'address': selected_address}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Selected address not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
     @action(detail=False, methods=['get'])
     def id(self, request):
         user = request.user
@@ -942,7 +1068,7 @@ class AutocompleteView(APIView):
             "input": search_text,
             "key": google_api_key,
             "types": "address",  # Restrict to address types only
-            "language": "en"     # Optional: specify the language for the predictions
+            "language": "en"  # Optional: specify the language for the predictions
         }
 
         try:
@@ -965,6 +1091,7 @@ class AutocompleteView(APIView):
                 {"error": "An error occurred with the Google API request", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class GroceryListViewSet(viewsets.ModelViewSet):
     queryset = Grocery.objects.all()
@@ -1195,10 +1322,11 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         last_subheading = grocery.subheadings.order_by('-order').first()
         return last_subheading.order + 1 if last_subheading else 1
 
+
 class StoreView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # Get method for stores. Latitude and longitude can be passed in if desired but, 
+    # Get method for stores. Latitude and longitude can be passed in if desired but,
     # if omitted, will use the latitude and longitude corresponding to the user's geocoded address.
     def get(self, request):
         # GET LATITUDE AND LONGITUDE QUERY PARAMS
@@ -1238,11 +1366,11 @@ class StoreView(APIView):
         for place in data.get("results", []):
             place_id = place.get("place_id")
             name = place.get("name", "").lower()  # Convert name to lowercase for consistent comparison
-            
+
             # Include only places with allowed names
             if (
-                place_id not in unique_place_ids
-                and name in allowed_names
+                    place_id not in unique_place_ids
+                    and name in allowed_names
             ):
                 filtered_results.append(place)
                 unique_place_ids.add(place_id)
@@ -1257,10 +1385,11 @@ class StoreView(APIView):
         # USE KROGER API TO GET KROGER STORES
         access_token = get_kroger_oauth2_token()
         if not access_token:
-            return Response({'error': 'Failed to authenticate with Kroger API'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to authenticate with Kroger API'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Set up headers and parameters for Kroger API request
-        print(f"{latitude}, {longitude}, {radius_miles}")
+        # print(f"{latitude}, {longitude}, {radius_miles}")
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/json',
@@ -1275,16 +1404,17 @@ class StoreView(APIView):
             response = requests.get(f"{settings.KROGER_API_BASE_URL}/v1/locations", headers=headers, params=params)
             response.raise_for_status()
             response_data = response.json()  # Extract JSON data
-            
+
             kroger_stores = format_kroger_response(response_data=response_data)  # Ensure correct parameter name
         except requests.RequestException as e:
-            print("Error fetching Kroger stores:", e)
-            print("Response content:", response.content)  # Log the exact response content for debugging
+            # print("Error fetching Kroger stores:", e)
+            # print("Response content:", response.content)  # Log the exact response content for debugging
             return Response({'error': 'Failed to retrieve stores'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         # Combine Walmart and Kroger store data
         all_stores = walmart_stores["stores"] + kroger_stores["stores"]
         return Response({'stores': all_stores}, status=status.HTTP_200_OK)
+
 
 class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemOptimized.objects.all()
@@ -1300,18 +1430,67 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def destroy(self, request, *args, **kwargs):
+        grocery_id = request.query_params.get('list')
+        item_id = kwargs.get('pk')
+
+        # Ensure both recipe_id and item_id are provided
+        if not grocery_id or not item_id:
+            return Response(
+                {'error': 'Recipe ID and Item ID must be provided.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        print(grocery_id)
+        print(item_id)
+        # Check if item exists and belongs to the specified recipe
+        item = get_object_or_404(GroceryItemOptimized, id=item_id, subheading__grocery=grocery_id)
+
+        subheading = item.subheading
+        item.delete()
+        if subheading.optimized_items.count() == 0 and subheading.name != "Unoptimized":
+            subheading.delete()
+
+        return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
     def create(self, request, *args, **kwargs):
-        data = request.data
-        grocery_list_id = data.get('list')
+        '''
+        Creates a new unoptimized grocery item associated with a specific grocery list.
 
-        grocery_list = Grocery.objects.get(pk=grocery_list_id)
+        :param:
+            request (Request): The incoming request, expected to contain 'list' as part of the data.
 
-        serializer = self.get_serializer(grocery_list)
-        if serializer.is_valid():
-            serializer.save(list=grocery_list)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        :return:
+            Response: Contains the serialized data of the newly created grocery item with status 201 on success,
+                      or error details with status 400 if validation fails.
+
+        creation details:
+            - Retrieves the 'list' from request data, which is the grocery list to associate the item with.
+            - Validates the data using the serializer.
+            - If valid, saves the grocery item with the specified grocery list and returns the created item data.
+            - If invalid, returns error messages.
+
+        usage:
+            - POST {URL}/
+                - data (dict):
+                    {
+                        name: name of the item
+                        store (optional): the store where the grocery item is stored
+                        description (optional): description of the item
+                        quantity: the number of items
+                        units: unit
+                        list: the id of the grocery list
+                    }
+        '''
+
+        # Retrieve the grocery list from request data
+        grocery_list_id = request.data.get('list')
+        grocery = get_object_or_404(Grocery, id=grocery_list_id)
+
+        # Pass the grocery instance in the context
+        serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
@@ -1337,10 +1516,33 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
+    @action(detail=True, methods=['post'])
+    def check(self, request, pk=None):
+        '''
+        Toggles the 'checked' status of a grocery item, ensuring it belongs to the specified grocery list.
 
+        :param:
+            request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
+            pk (UUID): The primary key of the grocery item to toggle favorite status.
+
+        :return:
+            Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
+                      or an error if the item does not belong to the specified grocery list.
+
+        usage:
+            - POST {URL}/{item_id}/favorite - toggles the checked status of items within the specified grocery list
+        '''
+        try:
+            item = GroceryItemUnoptimized.objects.get(pk=pk)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "Item not found in the specified grocery list."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the 'favorited' status
+        item.checked = not item.checked
+        item.save()
 
 class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
-
     queryset = GroceryItemUnoptimized.objects.all()
     serializer_class = GroceryItemUnoptimizedSerializer
     permission_classes = [IsAuthenticated]
@@ -1388,10 +1590,13 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             )
 
         # Check if item exists and belongs to the specified recipe
-        item = get_object_or_404(GroceryItemUnoptimized, id=item_id, list=grocery_id)
+        item = get_object_or_404(GroceryItemUnoptimized, id=item_id, subheading__grocery=grocery_id)
 
-        # Proceed with deletion
+        subheading = item.subheading
         item.delete()
+        if subheading.items.count() == 0 and subheading.name != "Default":
+            subheading.delete()
+
         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
@@ -1466,6 +1671,32 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         item.save()
         return Response(self.get_serializer(item).data)
 
+    @action(detail=True, methods=['post'])
+    def check(self, request, pk=None):
+        '''
+        Toggles the 'checked' status of a grocery item, ensuring it belongs to the specified grocery list.
+
+        :param:
+            request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
+            pk (UUID): The primary key of the grocery item to toggle favorite status.
+
+        :return:
+            Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
+                      or an error if the item does not belong to the specified grocery list.
+
+        usage:
+            - POST {URL}/{item_id}/checked - toggles the checked status of items within the specified grocery list
+        '''
+        try:
+            item = GroceryItemUnoptimized.objects.get(pk=pk)
+        except GroceryItemUnoptimized.DoesNotExist:
+            return Response({"error": "Item not found in the specified grocery list."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the 'checked' status
+        item.checked = not item.checked
+        item.save()
+
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -1529,6 +1760,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RecipeItemViewSet(viewsets.ModelViewSet):
     queryset = RecipeItem.objects.all()
@@ -1620,6 +1852,7 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
+
 
 class FavoritedItemViewSet(mixins.RetrieveModelMixin,
                            mixins.UpdateModelMixin,

@@ -13,7 +13,7 @@ import {
     Modal,
     Button,
     TouchableWithoutFeedback,
-    PanResponder,
+    PanResponder, Keyboard,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -29,8 +29,9 @@ import {ItemGroup} from '@/components/ItemGroup';
 import {CheckItem, FavoriteItem, InputItem, SpacerItem} from '@/components/Item';
 import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
 import GestureDetector from 'react-native-gesture-handler';
+import {setCurrentListJson, setLastAccessedList, setSearchQuery} from "@/store/shoppingListSlice";
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -38,7 +39,7 @@ export default function ShoppingListScreen() {
     const router = useRouter();
     const dispatch = useDispatch();
     const local = useLocalSearchParams();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
     const [newItem, setNewItem] = useState({id: -1, label: "EYES!", favorited: false, checked: false});
@@ -61,11 +62,13 @@ export default function ShoppingListScreen() {
         {id: 2, label: 'Porked Lemons'},
     ]);
 
+    const curActiveList = useSelector((state) => state.shoppingList.currentListJson);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedButton, setSelectedButton] = useState('Favorite');
     const [notSelectedButton, setNotSelectedButton] = useState(false);
     const [contentVisable, setContentVisable] = useState('Favorite');
+    let isOptimized = false;
 
     const [itemGroups, setItemGroups] = useState([
         /*{
@@ -76,39 +79,22 @@ export default function ShoppingListScreen() {
         },
         {
             id: "1001",
-            label: "Bigitte",
-            items: [{id: 998, label: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
-                {id: 999, label: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
-        },*/
-        /*{
-            id: 1111,
-            label: "GROUP",
-            items: [{
-                id: 2222,
-                label: "ITEM",
-                items: "ITEM",
-                description: "ITEM",
-                store: "ITEM",
-                quantity: 1,
-                units: "ITEM",
-                favorited: false,
-                order: "ITEM",
-            }],
-            description: "GROUP",
-            store: "GROUP",
-            quantity: "GROUP",
-            units: "GROUP",
-            favorited: "GROUP",
-            order: "GROUP",
-        },*/
+            title: "Bigitte",
+            items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
+                {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
+        },
+         */
     ]);
-
     const [allRecipes, setAllRecipes] = useState([]);
 
 
     const handlePress = (button) => {
         setSelectedButton(button);
         setContentVisable(button);
+    };
+    const checkIfListIsOptimized = (subheadings) => {
+        // Iterate over subheadings to see if any have optimized items
+        return subheadings.some(subheading => subheading.optimized_items && subheading.optimized_items.length > 0);
     };
 
     const handleRename = async () => {
@@ -136,13 +122,10 @@ export default function ShoppingListScreen() {
         }
     };
 
-
-    //const [baseItems, setBaseItems] = useState([]);
     const fetchShoppingList = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const listId = local.id;
-
             const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
@@ -153,53 +136,107 @@ export default function ShoppingListScreen() {
             const {name, subheadings} = response.data;
             setShoppingListName(name);
 
-            // Parse subheadings into ItemGroups
-            const parsedItemGroups = subheadings.map((subheading) => ({
-                id: subheading.id,
-                label: subheading.name,
-                items: [
-                    ...subheading.items.map((item) => ({
-                        id: item.id,
-                        label: item.name,
-                        description: item.description,
-                        store: item.store,
-                        quantity: item.quantity,
-                        units: item.units,
-                        favorited: item.favorited,
-                        order: item.order,
-                    })),
-                    // Add 'Add Item' only if the subheading name is 'Default'
-                    ...(subheading.name === 'Default'
-                        ? [{
-                            id: -1,
-                            label: 'Add Item',
-                            favorited: false,
-                            quantity: 0,
-                        },
-                        {
-                            id: -2,
-                            label: '',
-                            favorited: false,
-                            quantity: 0,
-                        },
-                        {
-                            id: -3,
-                            label: '',
-                            favorited: false,
-                            quantity: 0,
-                        },]
-                        : []),
-                ],
-            }));
+            isOptimized = checkIfListIsOptimized(subheadings);
 
+            const filteredSubheadings = subheadings.filter(subheading => {
+                return subheading.optimized === isOptimized;
+            });
+
+            const parsedItemGroups = filteredSubheadings.map((subheading) => {
+                let storeName = subheading.name;
+                let location = "";
+
+                if (isOptimized && subheading.name.includes(";")) {
+                    // Split the subheading name into store name and location
+                    [storeName, location] = subheading.name.split(";", 2);
+                }
+
+                return {
+                    id: subheading.id,
+                    title: storeName,
+                    location: isOptimized ? location.trim() : null,
+                    items: [
+                        ...(isOptimized
+                            ? subheading.optimized_items.map((item) => ({
+                                id: item.id,
+                                title: item.name,
+                                description: item.description,
+                                store: item.store,
+                                notes: item.notes,
+                                quantity: item.quantity,
+                                units: item.units,
+                                favorited: item.favorited,
+                                order: item.order,
+                                price: item.price,
+                            }))
+                            : subheading.items.map((item) => ({
+                                id: item.id,
+                                title: item.name,
+                                description: item.description,
+                                store: item.store,
+                                notes: item.notes,
+                                quantity: item.quantity,
+                                units: item.units,
+                                favorited: item.favorited,
+                                order: item.order,
+                            }))),
+                        // Add 'Add Item' only if the subheading name is 'Default' and the list is not optimized
+                        ...(subheading.name === "Default" && !isOptimized
+                            ? [{
+                                id: -1,
+                                title: "Add Item",
+                                favorited: false,
+                                quantity: 0,
+                            },
+                                {
+                                    id: -2,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                },
+                                {
+                                    id: -3,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                }
+                            ]
+                            : []),
+                        ...(subheading.name === "Unoptimized" && isOptimized
+                            ? [{
+                                id: -1,
+                                title: "Add Item",
+                                favorited: false,
+                                quantity: 0,
+                            },
+                                {
+                                    id: -2,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                },
+                                {
+                                    id: -3,
+                                    title: '',
+                                    favorited: false,
+                                    quantity: 0,
+                                }
+                            ]
+                            : [])
+                    ],
+                };
+            });
+
+            console.log("parsedItemGroups");
             //Format list of default items
             var defaultItems = [];
             parsedItemGroups.forEach((group) => {
-                if (group.label === 'Default') {
+                if (group.title === 'Default' || group.title === 'Unoptimized') {
                     defaultItems = group.items.map((item) => ({
                         id: item.id,
                         label: item.label,
                         description: item.description,
+                        notes: item.notes,
                         store: item.store,
                         quantity: item.quantity,
                         units: item.units,
@@ -214,7 +251,7 @@ export default function ShoppingListScreen() {
 
             // Update state with parsed ItemGroups
             setItemGroups(finalItemList);
-            
+
             // Flatten items if you need a flat list for any other purpose
             const allItems = parsedItemGroups.reduce((acc, group) => [...acc, ...group.items], []);
             setShoppingItems(allItems);
@@ -224,267 +261,37 @@ export default function ShoppingListScreen() {
         }
     };
 
-    //
-    // const [nextRecipeID, setNextRecipeID] = useState("");
-    // const [nextRecipeItems, setNextRecipeItems] = useState([]);
-    // const fetchShoppingItems = async () => {
-    //     try {
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });
-    //
-    //         const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             label: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));
-    //
-    //         const filteredItems = items.filter(item => item.list === local.id)
-    //         //console.log(filteredItems);
-    //         console.log("Correctly fetched shopping items!");
-    //
-    //
-    //         //setItemGroups
-    //         /*var recipes = [];
-    //         filteredItems.forEach((item) => {
-    //             if (item.quantity === -1) {
-    //                 recipes = [...recipes, item.label];
-    //                 console.log("-$- " + item.label);
-    //             }
-    //         });*/
-    //
-    //
-    //         /*recipes.forEach((id) => {
-    //             setNextRecipeID(id);
-    //             fetchNextRecipeItems();
-    //         });*/
-    //
-    //
-    //
-    //
-    //
-    //         //console.log("recipe fetch id: " + id);
-    //         /*const jwtToken2 = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response2 = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken2}`
-    //             }
-    //         });
-    //
-    //         const recipeItems = response2.data.map(item => ({
-    //             id: item.id.toString(),
-    //             label: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));*/
-    //
-    //
-    //
-    //
-    //         setShoppingItems([...itemGroups, ...filteredItems, {
-    //             id: -1,
-    //             label: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }, {
-    //             id: -2,
-    //             label: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         },
-    //         {
-    //             id: -3,
-    //             label: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);
-    //
-    //         /*shoppingItems.forEach(
-    //             (item) => {console.log(item.label + ": " + item.id)}
-    //         );*/
-    //
-    //     } catch (error) {
-    //         console.error('Error fetching shopping items:', error);
-    //     }
-    // };
-
-
     const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    
+
             const response = await axios.get(`${API_BASE_URL}/api/recipe/`, {
                 headers: {
                     'Authorization': `Bearer ${jwtToken}`
                 }
             });
-    
+
             const lists = response.data.map(item => ({
                 id: item.id.toString(),
                 label: item.name,
             }));
-    
+
             setAllRecipes(lists);
-    
+
             /*let listName = "Unnamed List";
             lists.forEach(list => {
                 if (list.id === local.id) {
                     listName = list.label;
                 }
-            });*/
-    
+            });
+
             console.log("Correctly fetched recipes!");
             //setRecipeName(listName);
+             */
         } catch (error) {
             console.error('Error fetching recipes:', error);
         }
     };
-
-
-    // const [recipeItems, setRecipeItems] = useState([]);
-    // const fetchRecipeItems = async (id) => {
-    //     try {
-    //         console.log("recipe fetch id: " + id);
-    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/recipe_items/?list=${id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });
-    //
-    //         const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             label: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));
-    //
-    //
-    //         items.forEach(
-    //             (item) => {console.log("   |   " + item.label + ": " + item.id)}
-    //         );
-    //
-    //
-    //         const filteredItems = items.filter(item => item.list === id)
-    //
-    //
-    //         filteredItems.forEach(
-    //             (item) => {console.log("      |   " + item.label + ": " + item.id)}
-    //         );
-    //         //const filteredItems = items;
-    //         //console.log(filteredItems);
-    //         console.log("Correctly fetched recipe items!");
-    //         setRecipeItems([...filteredItems, {
-    //             id: -1,
-    //             label: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }])
-    //         /*setRecipeItems([...filteredItems, {
-    //             id: -1,
-    //             label: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }, {
-    //             id: -2,
-    //             label: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         },
-    //         {
-    //             id: -3,
-    //             label: '',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);*/
-    //
-    //         console.log("items:");
-    //         recipeItems.forEach(
-    //             (item) => {console.log(item.label + ": " + item.id)}
-    //         );
-    //
-    //     } catch (error) {
-    //         console.error('Error fetching recipe items:', error);
-    //     }
-    // };
-
-
-    // const fetchItemGroups = async () => {
-    //     try {
-    //         /*const jwtToken = await SecureStore.getItemAsync('jwtToken');
-    //
-    //         const response = await axios.get(`${API_BASE_URL}/api/grocery_items/unoptimized/?list=${local.id}`, {
-    //             headers: {
-    //                 'Authorization': `Bearer ${jwtToken}`
-    //             }
-    //         });*/
-    //
-    //         /*const items = response.data.map(item => ({
-    //             id: item.id.toString(),
-    //             label: item.name,
-    //             price: 0,
-    //             favorited: item.favorited,
-    //             checked: false,
-    //             list: item.list.toString(),
-    //             quantity: item.quantity,
-    //         }));*/
-    //
-    //         //const filteredItems = items.filter(item => item.list === local.id)
-    //
-    //         const filteredItems = itemGroups
-    //
-    //         console.log("Correctly fetched item groups!");
-    //         /*setShoppingItems([...filteredItems, {
-    //             id: -1,
-    //             label: 'Add Item',
-    //             price: 0,
-    //             favorited: false,
-    //             checked: false,
-    //             list: local.id,
-    //             quantity: 0,
-    //         }]);*/
-    //         setShoppingItems([...shoppingItems, ...filteredItems])
-    //     } catch (error) {
-    //         console.error('Error fetching item groups:', error);
-    //     }
-    // };
 
     const fetchFavorites = async () => {
 
@@ -524,8 +331,6 @@ export default function ShoppingListScreen() {
 
 
     useEffect(() => {
-        //fetchItemGroups();
-        //fetchShoppingItems();
         fetchProfileInfo();
         fetchRecipes();
         fetchShoppingList();
@@ -557,29 +362,67 @@ export default function ShoppingListScreen() {
     const handleAddItem = async () => {
         console.log("Adding this: " + newItemName);
         if (newItemName === "-1") return;
+
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
-                name: newItemName,
-                quantity: 1,
-                units: "units",
-                list: local.id
-            }, {
-                headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+            const listId = local.id;
+
+            const unoptimizedResponse = await axios.post(
+                `${API_BASE_URL}/api/grocery_items/unoptimized/`,
+                {
+                    name: newItemName,
+                    quantity: 1,
+                    units: "units",
+                    list: listId,
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
                 }
+            );
+
+            console.log('Unoptimized item added:', unoptimizedResponse.data);
+
+            // Check if the list is optimized
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
             });
 
-            // Refresh the shopping lists after adding a new one
+            const isOptimized = checkIfListIsOptimized(response.data.subheadings);
+
+            // If optimized, add an optimized item with the same details
+            if (isOptimized) {
+                const optimizedResponse = await axios.post(
+                    `${API_BASE_URL}/api/grocery_items/optimized/`,
+                    {
+                        name: newItemName,
+                        quantity: 1,
+                        units: "units",
+                        list: listId,
+                        price: 0, // Placeholder for price, adjust as needed
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                        }
+                    }
+                );
+
+                console.log('Optimized item added:', optimizedResponse.data);
+            }
+
+            // Clear the input field
             setNewItemName("");
         } catch (error) {
-            console.error('Error adding new shopping item:', error);
+            console.error('Error adding shopping item:', error);
         } finally {
+            // Refresh the shopping list
             await fetchShoppingList();
         }
     };
-
-
 
     const handleReorderItems = async (items) => {
         const groceryListId = local.id;
@@ -619,16 +462,37 @@ export default function ShoppingListScreen() {
     };
 
 
-
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.delete(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`, {
-                headers: {
-                    'Authorization': 'Bearer ' + jwtToken,
+            try {
+                const unoptimizedResponse = await axios.delete(
+                    `${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/?list=${local.id}`,
+                    {
+                        headers: {
+                            'Authorization': 'Bearer ' + jwtToken,
+                        }
+                    }
+                );
+                console.log("Successfully removed item from unoptimized list:", unoptimizedResponse.data);
+            } catch (unoptimizedError) {
+                console.warn("Failed to remove from unoptimized. Trying optimized endpoint...");
+                try {
+                    const optimizedResponse = await axios.delete(
+                        `${API_BASE_URL}/api/grocery_items/optimized/${item.id}/?list=${local.id}`,
+                        {
+                            headers: {
+                                'Authorization': 'Bearer ' + jwtToken,
+                            }
+                        }
+                    );
+                    console.log("Successfully removed item from optimized list:", optimizedResponse.data);
+                } catch (optimizedError) {
+                    console.error("Failed to remove from both unoptimized and optimized lists.");
+                    throw optimizedError;
                 }
-            });
+            }
 
             // Refresh the shopping lists after adding a new one
             setNewItemName('');
@@ -660,7 +524,7 @@ export default function ShoppingListScreen() {
         const isSpacer = (item.id < -1);
         const isItem = (!item.items);
         //console.log("item rendered! label: " + item.label + "   isItem: "  + isItem + "   isInput: " + isInput);
-
+        console.log("Item passed to CheckItem:", item);
         if (isDefault) {
             return (
                 <View/>
@@ -687,10 +551,14 @@ export default function ShoppingListScreen() {
         if (isItem) {
             return (
                 <ScaleDecorator>
-                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
-                                      onLongPress={drag}>
-                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
-                                   handleRemoveItem={handleRemove}></CheckItem>
+                    <TouchableOpacity
+                        style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                        onLongPress={drag}>
+                        <CheckItem item={item}
+                                   handleFavoriteItem={handleFavorite}
+                                   handleRemoveItem={handleRemove}
+                                   handleModifyItem={handleModifyItem}
+                        ></CheckItem>
                     </TouchableOpacity>
                 </ScaleDecorator>
             );
@@ -698,9 +566,9 @@ export default function ShoppingListScreen() {
 
         return (
             <View>
-                <ItemGroup name={item.label} items={item.items} handleFavoriteItem={handleFavorite}
+                <ItemGroup name={item.title} items={item.items} handleFavoriteItem={handleFavorite}
                            handleRemoveItem={handleRemove} onChangeText={setNewItemName}
-                           handleAddItem={handleAddItem}></ItemGroup>
+                           handleAddItem={handleAddItem} handleModifyItem={handleModifyItem}></ItemGroup>
             </View>
         );
     };
@@ -730,7 +598,6 @@ export default function ShoppingListScreen() {
         setItemGroups(data)
         handleReorderItems(data);
     };
-
 
 
     const handleAddRecipe = async (recipe) => {
@@ -771,7 +638,6 @@ export default function ShoppingListScreen() {
         <FavoriteItem item={item} addFavoriteItem={setFavoriteItems}
                       removeFromFavorite={handleAddFavorite}></FavoriteItem>
     );
-
 
 
     const handleAddFavorite = async (item) => {
@@ -866,6 +732,174 @@ export default function ShoppingListScreen() {
         setIsRenameModalVisible(false);
     }
 
+    const handleOptimizeSubheadings = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const listId = local.id;
+            const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${listId}`, {}, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+            console.log(response.data);
+            const {name, subheadings} = response.data;
+
+        } catch (error) {
+            console.error('Error optimizing:', error);
+        }
+    };
+
+    const handleModifyItem = async (item) => {
+        console.log("handleModifyItem called with item:", item);
+        const jwtToken = await SecureStore.getItemAsync('jwtToken');
+        console.log("modifying");
+
+        try {
+
+            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`, {
+                name: item.name,
+                store: item.store,
+                description: item.description,
+                quantity: item.quantity,
+                units: item.units,
+                notes: item.notes,
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+            console.log("Unoptimized item patched:", response.data);
+        } catch (error) {
+            console.log("Unoptimized patch failed, trying optimized:", error);
+
+            try {
+                const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/optimized/${item.id}/`, {
+                    name: item.name,
+                    store: item.store,
+                    description: item.description,
+                    quantity: item.quantity,
+                    units: item.units,
+                    notes: item.notes, // Ensure this matches the backend field
+                }, {
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                    }
+                });
+                console.log("Optimized item patched:", response.data);
+            } catch (optimizedError) {
+                console.error("Could not update item in optimized patch:", optimizedError);
+            }
+        } finally {
+            fetchShoppingList();
+        }
+
+    }
+
+    const [searchResults, setSearchResults] = useState([]);
+    const [dropdownVisible, setDropdownVisible] = useState(false);
+
+    const fetchStoreItems = async (query) => {
+        if (!query) {
+            setSearchResults([]);
+            return;
+        }
+
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.get(`${API_BASE_URL}/api/suggest_stores?query=${query}`, {
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                },
+            });
+            setSearchResults(response.data);
+            setDropdownVisible(true);
+        } catch (error) {
+            console.error('Error fetching store items:', error.message);
+        }
+    };
+
+    const handleSearchChange = (text) => {
+        setSearchTerm(text);
+        fetchStoreItems(text);
+    };
+
+    const handleSelectItem = async (item) => {
+        console.log('Selected Item:', item);
+
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const listId = local.id;
+
+            const unoptimizedResponse = await axios.post(
+                `${API_BASE_URL}/api/grocery_items/unoptimized/`,
+                {
+                    name: item.name,
+                    quantity: 1,
+                    price: item.price,
+                    units: item.units,
+                    store: item.store,
+                    description: item.description,
+                    list: listId,
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                }
+            );
+
+            console.log('Unoptimized item added:', unoptimizedResponse.data);
+
+            // Check if the list is optimized
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
+            });
+
+            const isOptimized = checkIfListIsOptimized(response.data.subheadings);
+
+            // If optimized, add an optimized item with the same details
+            if (isOptimized) {
+                const optimizedResponse = await axios.post(
+                    `${API_BASE_URL}/api/grocery_items/optimized/`,
+                    {
+                        name: item.name,
+                        quantity: 1,
+                        price: item.price,
+                        units: item.units,
+                        store: item.store,
+                        description: item.description,
+                        list: listId,
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                        }
+                    }
+                );
+
+                console.log('Optimized item added:', optimizedResponse.data);
+            }
+            setSearchTerm("");
+            setSearchResults([]);
+        } catch (error) {
+            console.error('Error adding shopping item:', error);
+        } finally {
+            // Refresh the shopping list
+            await fetchShoppingList();
+        }
+
+
+        setDropdownVisible(false);
+    };
+
+    const handleOutsidePress = () => {
+        if (dropdownVisible) {
+            setDropdownVisible(false);
+            Keyboard.dismiss(); // Hide the keyboard if visible
+        }
+    };
 
 
     return (
@@ -874,7 +908,8 @@ export default function ShoppingListScreen() {
                 {/*HEADER*/}
                 <View style={styles.header}>
                     <View style={styles.left}>
-                        <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
+                        <Pressable onPress={() => router.replace('/shopping')}
+                                   style={{paddingRight: 10, marginLeft: -10}}>
                             <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
                         </Pressable>
                         <Text style={styles.headerlabel}>{`${shoppingListName}`}</Text>
@@ -887,6 +922,41 @@ export default function ShoppingListScreen() {
                             <Icon name={selectedIcon} size={30} color={selectedColor}/>
                         </TouchableOpacity>
                     </View>
+                </View>
+                <View style={styles.searchContainer}>
+                    <View style={globalStyles.searchBar}>
+                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
+                              style={styles.searchIcon}/>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search"
+                            placeholderTextColor={Colors.light.secondaryText}
+                            value={searchTerm}
+                            onChangeText={(text) => {
+                                setSearchTerm(text);
+                                handleSearchChange(text);
+                            }}
+                        />
+                    </View>
+                    {dropdownVisible && searchResults.length > 0 || searchTerm.length === 0 ? (
+                        <View style={styles.dropdown}>
+                            <FlatList
+                                data={searchResults}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({item}) => (
+                                    <TouchableOpacity
+                                        style={styles.dropdownItem}
+                                        onPress={() => handleSelectItem(item)}
+                                    >
+                                        <Text>{item.name}</Text>
+                                        <Text>${item.price}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+                    ) : (
+                        <Text style={styles.noItemsMessage}>No matching items!</Text>
+                    )}
                 </View>
 
                 {/*ITEM LIST*/}
@@ -907,7 +977,7 @@ export default function ShoppingListScreen() {
                 </TouchableOpacity>
 
                 {/*OPTIMIZE*/}
-                <TouchableOpacity style={styles.optimizeButton}>
+                <TouchableOpacity style={styles.optimizeButton} onPress={() => handleOptimizeSubheadings()}>
                     <Icon
                         name="hammer-outline"
                         size={24}
@@ -1272,5 +1342,32 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
     },
-
+    searchContainer: {
+        position: 'relative',
+        zIndex: 2,
+    },
+    dropdown: {
+        position: 'absolute',
+        top: 50,
+        width: 300,
+        left: '50%',
+        transform: [{translateX: -150}],
+        backgroundColor: 'white',
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 1,
+        borderRadius: 4,
+        maxHeight: 150,
+        zIndex: 2,
+    },
+    dropdownItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.primaryColor,
+    },
+    noItemsMessage: {
+        textAlign: 'center',
+        color: Colors.light.secondaryText,
+        padding: 10,
+        fontSize: 16,
+    },
 });
