@@ -78,7 +78,7 @@ export default function ShoppingListScreen() {
                 {id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
         },
         {
-            id: 1001,
+            id: "1001",
             title: "Bigitte",
             items: [{id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1},
                 {id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1},]
@@ -460,6 +460,47 @@ export default function ShoppingListScreen() {
     };
 
 
+
+    const handleReorderItems = async (items) => {
+        const groceryListId = local.id;
+        var itemsOrderList = [];
+        items.forEach((item) => {
+            if (item.order) {
+                //console.log("item.id: " + item.id + "   item.title: " + item.title + "   item.quantity: " + item.quantity + "   item.favorited: " + item.favorited);
+                itemsOrderList.push(
+                    {
+                        item_id: item.id,
+                        order: item.order
+                    }
+                );
+            }
+        });
+        /*
+        itemsOrderList.forEach((item) => {
+            console.log("item_id: " + item.item_id + "   order: " + item.order)
+        });
+        */
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/grocery/${groceryListId}/reorder-items/`, {
+                items_order: itemsOrderList
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + jwtToken,
+                }
+            });
+
+            console.log("Reordered Items successfully!");
+        } catch (error) {
+            console.error('Error reordering items:', error);
+        } finally {
+            await fetchShoppingList();
+        }
+    };
+
+
+
+
     const handleRemove = async (item) => {
         console.log(`Removing item with ID: ${item.id}`);
         try {
@@ -554,6 +595,18 @@ export default function ShoppingListScreen() {
                         onLongPress={drag}>
                         <CheckItem item={item} handleFavoriteItem={handleFavorite}
                                    handleRemoveItem={handleRemove} handleModifyItem={() => handleModifyItem(item)}></CheckItem>
+                    </TouchableOpacity>
+                </ScaleDecorator>
+            );
+        }
+
+        if (isItem) {
+            return (
+                <ScaleDecorator>
+                    <TouchableOpacity style={{backgroundColor: isActive ? Colors.light.primaryColor : Colors.light.background}}
+                                      onLongPress={drag}>
+                        <CheckItem item={item} handleFavoriteItem={handleFavorite}
+                                   handleRemoveItem={handleRemove}></CheckItem>
                     </TouchableOpacity>
                 </ScaleDecorator>
             );
@@ -673,6 +726,56 @@ export default function ShoppingListScreen() {
         </View>
     );
 
+
+    // const handleAddRecipe = async (item) => {
+    //
+    //     console.log("Adding this: " + item.id);
+    //     //if (newItemName === "-1") return;
+    //     try {
+    //         const jwtToken = await SecureStore.getItemAsync('jwtToken');
+    //         const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`, {
+    //             name: item.id,
+    //             quantity: -1,
+    //             units: "units",
+    //             list: local.id,
+    //         }, {
+    //             headers: {
+    //                 'Authorization': 'Bearer ' + jwtToken,
+    //             }
+    //         });
+    //
+    //         // Refresh the shopping lists after adding a new one
+    //         setNewItemName('');
+    //         fetchShoppingItems();
+    //     } catch (error) {
+    //         console.error('Error adding new shopping item:', error);
+    //     }
+    //
+    //     console.log("Recipe: " + item.title);
+    //
+    //     await fetchRecipeItems(item.id);
+    //
+    //     console.log("Recipe Items: ");
+    //     recipeItems.forEach((item) => console.log(" + " + item.title));
+    //
+    //
+    //     const newId = 1000 + itemGroups.length;
+    //     let newRecipe = {id: newId, title: item.title, items: recipeItems};
+    //
+    //     setItemGroups([...itemGroups, newRecipe]);
+    //     itemGroups.forEach((item) => console.log(item.title));
+    //     await fetchShoppingItems();
+    //     itemGroups.forEach((item) => console.log("--" + item.title));
+    // };
+
+
+    /*
+    const renderItemGroup = ({item}) => (
+        <ItemGroup name={item.name} items={shoppingItems} handleFavoriteItem={handleFavorite}
+                   handleRemoveItem={handleRemove} onChangeText={setNewItemName}
+                   handleAddItem={handleAddItem}></ItemGroup>
+    );
+    */
     const dismissModal = () => {
         setIsRenameModalVisible(false);
     }
@@ -844,6 +947,8 @@ export default function ShoppingListScreen() {
             Keyboard.dismiss(); // Hide the keyboard if visible
         }
     };
+
+
 
 
     return (
