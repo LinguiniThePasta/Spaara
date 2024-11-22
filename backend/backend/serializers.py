@@ -3,7 +3,7 @@ import re
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
-    DietRestriction, Subheading, FriendRequest
+    DietRestriction, Subheading, FriendRequest, FriendRecipe
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
@@ -86,7 +86,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']
+        fields = ['id', 'username', 'profile_icon', 'profile_color']
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()
@@ -95,6 +95,8 @@ class FriendRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
         fields = ['id', 'from_user', 'to_user', 'timestamp']
+
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -376,3 +378,12 @@ class DietRestrictionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DietRestriction
         fields = '__all__'
+
+class FriendRecipeSerializer(serializers.ModelSerializer):
+    from_user = UserSerializer()
+    to_user = UserSerializer()
+    recipe = RecipeSerializer()
+
+    class Meta:
+        model = FriendRecipe
+        fields = ['id', 'from_user', 'to_user', 'timestamp', 'recipe']

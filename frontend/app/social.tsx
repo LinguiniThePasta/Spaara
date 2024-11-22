@@ -28,14 +28,9 @@ import {router} from "expo-router";
 interface User {
   id: number;
   name: string;
+  profile_icon: string;
+  profile_color: string;
 }
-
-const mockUsers: User[] = [
-  { id: 1, name: 'John Doe' },
-  { id: 2, name: 'Jane Smith' },
-  { id: 3, name: 'Alice Johnson' },
-  // Add more mock users as needed
-];
 
 const SocialPage = () => {
   // Search term for what friend user is looking for
@@ -46,11 +41,12 @@ const SocialPage = () => {
   const [outgoingRequests, setOutgoingRequests] = useState<User[]>([]);
   // Incoming requests list
   const [incomingRequests, setIncomingRequests] = useState<User[]>([]);
+  const [incomingRecipes, setIncomingRecipes] = useState([])
   // Friends list
   const [friends, setFriends] = useState<User[]>([]);
   // Friend request count
   const [friendRequestCount, setFriendRequestCount] = useState(0);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
   //API CALLS
@@ -107,7 +103,7 @@ const SocialPage = () => {
                     onPress: () => console.log("Cancel Pressed"),
                     style: "cancel"
                 },
-                {text: "Delete", onPress: () => removeFriend(username)}
+                {text: "Delete", style: "destructive", onPress: () => removeFriend(username)}
             ],
             {cancelable: false}
         );
@@ -124,7 +120,7 @@ const SocialPage = () => {
                   onPress: () => console.log("Cancel Pressed"),
                   style: "cancel"
               },
-              {text: "Delete", onPress: () => revokeFriendRequest(username)}
+              {text: "Delete", style: "destructive", onPress: () => revokeFriendRequest(username)}
           ],
           {cancelable: false}
       );
@@ -144,6 +140,8 @@ const SocialPage = () => {
       const users = response.data.map((item) => ({
         id: item.id.toString(),
         name: item.username,
+        profile_icon: item.profile_icon,
+        profile_color: item.profile_color
       }));
 
       setFriends(users);
@@ -169,6 +167,26 @@ const SocialPage = () => {
       console.error('Error fetching friend requests:', error.message);
     }
   };
+  
+  const fetchRecipe = async () => {
+    try {
+      const jwtToken = await SecureStore.getItemAsync('jwtToken');
+
+      const response = await axios.get(`${API_BASE_URL}/api/friend_recipe/incoming/`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      const recipes = response.data.map((item) => ({
+        recipe: item
+      }));
+
+      setIncomingRecipes(recipes);
+    } catch (error) {
+      console.error('Error fetching friend requests:', error.message);
+    }
+  }
 
   // Fetch incoming friend requests
   const fetchIncomingRequests = async () => {
@@ -184,6 +202,8 @@ const SocialPage = () => {
       const users = response.data.map((item) => ({
         id: item.from_user.id.toString(),
         name: item.from_user.username,
+        profile_icon: item.from_user.profile_icon,
+        profile_color: item.from_user.profile_color,
       }));
 
       setIncomingRequests(users);
@@ -205,8 +225,12 @@ const SocialPage = () => {
 
       const users = response.data.map((item) => ({
         id: item.to_user.id.toString(),
-        name: item.to_user.username, 
+        name: item.to_user.username,
+        profile_icon: item.to_user.profile_icon,
+        profile_color: item.to_user.profile_color,
       }));
+
+      console.log(users);
 
       setOutgoingRequests(users);
 
@@ -377,9 +401,6 @@ const SocialPage = () => {
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
             <View style={styles.left}>
-                <Pressable onPress={() => router.replace('/shopping')} style={{paddingRight: 10, marginLeft: -10}}>
-                    <Icon name="chevron-back-outline" size={40} color={Colors.light.primaryText}/>
-                </Pressable>
                 <Text style={styles.headerTitle}>{"Social"}</Text>
             </View>
             <View style={styles.iconContainer}>
@@ -447,10 +468,18 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
+                  <View style={styles.listItemLeft}>
+                    <View style={[styles.friendProfileIconContainer, , {borderColor: item.profile_color}]}>
+                      <Icon
+                        name={item.profile_icon}
+                        style={[styles.friendProfileIcon, {color: item.profile_color}]}
+                      />
+                    </View>
                     <TouchableOpacity onLongPress={() => handleRevokeRequest(item.name)}>
                       <Text style={styles.listItemTitle}>{item.name}</Text>
                     </TouchableOpacity>
-                    <MatIcon style={styles.listItemIcon} name="outgoing-mail"/>
+                  </View>
+                  <MatIcon style={styles.listItemIcon} name="outgoing-mail" />
                 </View>
               )}
             />
@@ -460,10 +489,18 @@ const SocialPage = () => {
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => (
                 <View style={styles.listItem}>
+                <View style={styles.listItemLeft}>
+                  <View style={[styles.friendProfileIconContainer, {borderColor: item.profile_color}]}>
+                    <Icon
+                      name={item.profile_icon}
+                      style={[styles.friendProfileIcon, {color: item.profile_color}]}
+                    />
+                  </View>
                   <TouchableOpacity onLongPress={() => handleRemoveFriend(item.name)}>
                     <Text style={styles.listItemTitle}>{item.name}</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
               )}
             />
           </View>
@@ -485,6 +522,32 @@ const SocialPage = () => {
               {incomingRequests.length > 0 ? (
                 <FlatList
                   data={incomingRequests}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.friendRequestItem}>
+                      <Text style={styles.friendRequestName}>{item.name}</Text>
+                      <View style={styles.friendRequestButtons}>
+                        <TouchableOpacity
+                          onPress={() => approveFriendRequest(item.name)}
+                        >
+                          <Icon style={styles.buttonText} name="checkmark"/>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => rejectFriendRequest(item.name)}
+                        >
+                         <Icon style={styles.buttonText} name="close-outline"/>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                />
+              ) : (
+                <Text>No friend requests</Text>
+              )}
+              <Text style={styles.modalTitle}>Recipes</Text>
+              {incomingRecipes.length > 0 ? (
+                <FlatList
+                  data={incomingRecipess}
                   keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => (
                     <View style={styles.friendRequestItem}>
@@ -588,6 +651,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 15,
+    paddingLeft: 10,
     height: 70,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.secondaryText,
@@ -697,5 +761,22 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  listItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  friendProfileIconContainer: {
+    width: 44, // Fixed width for consistent alignment
+    height: 44, // Fixed height for consistent alignment
+    borderRadius: 22, // Half of width/height for a perfect circle
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10, // Spacing between icon and username
+  },
+  friendProfileIcon: {
+    fontSize: 28, // Size of the icon
   },
 });
