@@ -9,11 +9,12 @@ from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
-    DietRestriction, Subheading, FriendRequest
+    DietRestriction, Subheading, FriendRequest, FriendRecipe
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
-    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer
+    FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer, \
+    FriendRecipeSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -259,7 +260,93 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         friend_request.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
         
+class FriendRecipeViewSet:
+    permission_classes = [IsAuthenticated]
+
+    # GET METHODS 
+    # GET /api/friend_recipe/count
+    # Returns the number of pending sent recipes for the authenticated user. 
+    @action(detail=False, methods=['get'])
+    def count(self, request):
+        count = FriendRecipe.objects.filter(to_user=request.user).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+
+    # GET /api/friend_recipe/incoming
+    # Returns a list of incoming sent recipies for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def incoming(self, request):
+        incoming_recipe = FriendRecipe.objects.filter(to_user=request.user)
+        serializer = FriendRecipeSerializer(incoming_recipe, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # GET /api/friend_recipe/outgoing
+    # Returns a list of outgoing sent recipiess for the authenticated user.
+    @action(detail=False, methods=['get'])
+    def outgoing(self, request):
+        outgoing_recipe = FriendRecipe.objects.filter(from_user=request.user)
+        serializer = FriendRecipeSerializer(outgoing_recipe, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # POST METHODS
+    # POST /api/friend_recipe/send
+    # Sends a recipie to another user.
+    @action(detail=False, methods=['post'])
+    def send(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        FriendRecipe.objects.create(from_user=user, to_user=friend)
+        return Response({'message': 'Friend request sent'}, status=status.HTTP_201_CREATED)
     
+    # POST /api/friend_recipe/accept
+    # Accepts a recipie from another user.
+    @action(detail=False, methods=['post'])
+    def approve(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
+        if friend_recipe is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe.delete()
+        user.friends.add(friend)
+        user.save()
+        return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
+
+    # DELETE /api/friend_recipe/reject
+    # Rejects an incoming recipie
+    @action(detail=False, methods=['delete'])
+    def reject(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe = FriendRecipe.objects.filter(from_user=friend, to_user=user).first()
+        if friend_recipe is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_recipe.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+    
+    # DELETE /api/friend_recipe/revoke
+    # Revokes an outgoing sent recipie
+    @action(detail=False, methods=['delete'])
+    def revoke(self, request):
+        user = request.user
+        username = request.data.get('username', None)
+        friend = User.objects.filter(username=username).first()
+        if friend is None:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request = FriendRecipe.objects.filter(from_user=user, to_user=friend).first()
+        if friend_request is None:
+            return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
+        friend_request.delete()
+        return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
+
 
 class FriendsView(APIView):
     permission_classes = [IsAuthenticated]

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef, Children} from 'react';
 import {
     Keyboard,
     Animated,
@@ -12,7 +12,9 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Modal
+    Modal,
+    PanResponder,
+    TouchableOpacity
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -29,21 +31,28 @@ import shortenTime from "@/scripts/shortenTime";
 export default function Recipe() {
     const [searchQuery, setSearchQuery] = useState('');
     const [recipes, setRecipes] = useState([]);
+    const [selectedRecipe, setSelectedRecipe] = useState('');
+    const [friends, setFriends] = useState([]);
     const [newItem, setNewItem] = useState({title: ''});
     const [modalVisible, setModalVisible] = useState(false);
+    const [friendVisable, setFriendVisable] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
     const [showDeleteOptions, setShowDeleteOptions] = useState(false);
     const [editedTitle, setEditedTitle] = useState('');
     const [animations, setAnimations] = useState({});
 
+
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
         fetchRecipes();
+        fetchFriends();
     }, []);
+
     const dismissModal = () => {
         Keyboard.dismiss(); // Dismiss keyboard if open
         setModalVisible(false); // Close the modal
     };
+
     const fetchRecipes = async () => {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
@@ -214,41 +223,141 @@ export default function Recipe() {
         Keyboard.dismiss();
     };
 
+    const handleShare = async (item) => {
+        setSelectedRecipe(item)
+    }
+
     const renderItem = ({item}) => (
-        <Pressable
-            onPress={() => router.replace(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
-            onLongPress={() => handleLongPress(item)}
-        >
-            <View style={styles.listItem}>
-                {selectedList?.id === item.id && showDeleteOptions && (
-                    <Animated.View
-                        style={[
-                            styles.deleteBlock,
-                            {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}
-                        ]}
-                    >
-                        <Pressable
-                            onPress={handleDeleteButtonPress}
-                            style={StyleSheet.absoluteFill} // Fills the entire red area
+        <SwipeableItem handleShare={handleShare(item)}>
+            <Pressable
+                onPress={() => router.replace(`/modifyrecipe?id=${item.id}&title=${encodeURIComponent(item.title)}&date=${item.date}`)}
+                onLongPress={() => handleLongPress(item)}
+            >
+                <View style={styles.listItem}>
+                    {selectedList?.id === item.id && showDeleteOptions && (
+                        <Animated.View
+                            style={[
+                                styles.deleteBlock,
+                                {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}
+                            ]}
                         >
-                            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                                <Icon
-                                    name="close-outline"
-                                    size={24}
-                                    color={Colors.light.background}
-                                />
-                            </View>
-                        </Pressable>
+                            <Pressable
+                                onPress={handleDeleteButtonPress}
+                                style={StyleSheet.absoluteFill} // Fills the entire red area
+                            >
+                                <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                                    <Icon
+                                        name="close-outline"
+                                        size={24}
+                                        color={Colors.light.background}
+                                    />
+                                </View>
+                            </Pressable>
+                        </Animated.View>
+                    )}
+                    <Animated.View
+                        style={[styles.listItemLeft, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
+                        <Text style={styles.listItemTitle}>{item.title}</Text>
+                        <Text style={styles.listItemDate}>{item.date}</Text>
                     </Animated.View>
-                )}
+                </View>
+            </Pressable>
+        </SwipeableItem>
+    );
+
+    const renderFriends = ({item}) => {
+        return (
+            <View style={styles.container} >
+                <TouchableOpacity style={styles.listItem} onPress={() => sendRecipe(item)}>
+                    <Text style={styles.listItemTitle}>{item.name}</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    const fetchFriends = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+    
+            const response = await axios.get(`${API_BASE_URL}/api/user/friends`, {
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                },
+            });
+    
+            const users = response.data.map((item) => ({
+                id: item.id.toString(),
+                name: item.username,
+            }));
+    
+            setFriends(users);
+            console.log('Correctly fetched friends!');
+        } catch (error) {
+            console.error('Error fetching friends:', error.message);
+        }
+    };
+
+    const SwipeableItem = ({children, handleShare}) => {
+        const translateX = useRef(new Animated.Value(0)).current;
+        
+        const panResponder = useRef(
+            PanResponder.create({
+                onMoveShouldSetPanResponder: (_, gestureState) =>
+                    Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+                onPanResponderMove: (_, gestureState) => {
+                    if (gestureState.dx < 0) {
+                    translateX.setValue(gestureState.dx);
+                    }
+                },
+                onPanResponderRelease: (_, gestureState) => {
+                    if (gestureState.dx > 100) {
+                    // Fully reveal the button if swiped far enough
+                    Animated.timing(translateX, {
+                        toValue: 100,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
+                    } else {
+                    // Snap back to original position
+                    Animated.timing(translateX, {
+                        toValue: 0,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
+                    }
+                },
+            })
+        ).current;
+        
+        return (
+            <View style={styles.container}>
+                <View style={styles.hiddenButton}>
+                    <TouchableOpacity style={styles.shareButton} onPress={() => {
+                        setFriendVisable(true);
+                        handleShare;
+                        }}>
+                        <Icon name="arrow-redo-outline" size={20}></Icon>
+                    </TouchableOpacity>
+                </View>
                 <Animated.View
-                    style={[styles.listItemLeft, {transform: [{translateX: animations[item.id] || new Animated.Value(0)}]}]}>
-                    <Text style={styles.listItemTitle}>{item.title}</Text>
-                    <Text style={styles.listItemDate}>{item.date}</Text>
+                    {...panResponder.panHandlers}
+                    style={[
+                    styles.container,
+                    {
+                        transform: [{ translateX }],
+                    },
+                    ]}
+                >
+                    {children}
                 </Animated.View>
             </View>
-        </Pressable>
-    );
+        );
+    };
+
+    const sendRecipe = async (item) => {
+
+    };
+
 
     const insets = useSafeAreaInsets();
 
@@ -309,6 +418,29 @@ export default function Recipe() {
                     </Modal>
                 </View>
                 <Footer/>
+                <Modal
+                    animationType="slide"
+                    transparent={false}
+                    visible={friendVisable}
+                    onRequestClose={() => setFriendVisable(false)}
+                >
+                    <View style={styles.friendContainer}>
+                        <View style={styles.friendContent}>
+                            <Pressable style={styles.closeButton} onPress={() => setFriendVisable(false)}>
+                                <Icon name="close-outline" size={40} color={Colors.light.primaryText}/>
+                            </Pressable>
+
+                            {/* Remove text inputs */}
+                            <FlatList
+                                data={friends}
+                                keyExtractor={(item) => item.id.toString()}
+                                contentContainerStyle={styles.listContainer}
+                                renderItem={renderFriends}
+                            />
+
+                        </View>
+                    </View>
+                </Modal>
             </View>
         </TouchableWithoutFeedback>
     );
@@ -360,6 +492,12 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         padding: 15,
     },
+    shareButton: {
+        position: 'absolute',
+        bottom: 30,
+        right: 30,
+        
+    },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -384,6 +522,16 @@ const styles = StyleSheet.create({
         marginRight: 30,
         marginBottom: 20
     },
+    hiddenButton: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        right: 0,
+        left: 0,
+        backgroundColor: Colors.light.primaryColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
     modalTitle: {
         fontSize: 18,
         marginBottom: 20,
@@ -463,4 +611,26 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
+    item: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderColor: '#ddd',
+        zIndex: 1,
+    },
+    friendContainer: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    friendContent: {
+        backgroundColor: Colors.light.background,
+        padding: 20,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        minHeight: '50%',
+        flexDirection: 'column',
+        justifyContent: 'flex-start'
+    }
+
 });
