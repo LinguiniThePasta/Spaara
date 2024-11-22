@@ -9,32 +9,40 @@ from django.dispatch import receiver
 import uuid
 from django.shortcuts import get_object_or_404
 
+
 def default_addresses():
-    return [{"id": 1, "name": "Current Location", "address": "Current Location", "icon": "location-arrow", "icontype":"fontawesome", "latitude": None, "longitude": None}]
+    return [{"id": 1, "name": "Current Location", "address": "Current Location", "icon": "location-arrow",
+             "icontype": "fontawesome", "latitude": None, "longitude": None}]
+
 
 class User(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(unique=True)
     email = models.EmailField(unique=True)
-    email_pending = models.EmailField(unique=True, null=True, default=None)     # Email pending is used to store the email that the user wants to change to until verification
+    email_pending = models.EmailField(unique=True, null=True,
+                                      default=None)  # Email pending is used to store the email that the user wants to change to until verification
     password = models.CharField(max_length=100)
     addresses = models.JSONField(default=default_addresses)
     selected_address_id = models.IntegerField(default=1)
     max_distance = models.DecimalField(max_digits=4, decimal_places=2, default=5.00)
     max_stores = models.IntegerField(default=3)
-    is_active = models.BooleanField(default=True)     # This is used to determine if the user has verified their email. Set true for testing.
+    is_active = models.BooleanField(
+        default=True)  # This is used to determine if the user has verified their email. Set true for testing.
     # longitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     # latitude = models.DecimalField(max_digits=50, decimal_places=20, default=0.0)
     diet_restrictions = models.ManyToManyField("DietRestriction", blank=True, related_name='users')
     friends = models.ManyToManyField('self', symmetrical=True, blank=True)
     profile_icon = models.CharField(max_length=100, default="person")
     profile_color = models.CharField(max_length=100, default="#F6AA1C")
+    theme_background = models.CharField(max_length=100, default="lightMode")
+    theme_primary = models.CharField(max_length=100, default="lightMode")
 
     def __str__(self):
         return self.email
 
-'''    
-# A grocery item
+
+'''   
+# A grocery item 
 class GroceryItem(models.Model):
     name = models.CharField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -101,6 +109,7 @@ class DietRestriction(models.Model):
     def __str__(self):
         return self.name
 
+
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='friend_requests_sent', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='friend_requests_received', on_delete=models.CASCADE)
@@ -111,7 +120,7 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.from_user} to {self.to_user} ({self.status})"
-    
+
 
 
 class ListBase(models.Model):
@@ -131,16 +140,18 @@ class Grocery(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="groceries", default=None)
 
 
-
 class Recipe(ListBase):
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="recipes", default=None)
+
 
 class Subheading(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     grocery = models.ForeignKey(Grocery, on_delete=models.CASCADE, related_name='subheadings')
     order = models.PositiveIntegerField(default=0)
-    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, related_name='subheadings', null=True, blank=True, default=None)
+    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, related_name='subheadings', null=True, blank=True,
+                               default=None)
+    optimized = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order']
@@ -154,11 +165,19 @@ class Subheading(models.Model):
 def create_default_subheading(sender, instance, created, **kwargs):
     if created:
         Subheading.objects.create(
-            name='Default',  # You can choose a different default name if desired
+            name='Default',
             grocery=instance,
-            order=1  # Initial order
+            order=0
             # recipe is null by default, supporting user-defined subheadings
         )
+        Subheading.objects.create(
+            name='Unoptimized',
+            grocery=instance,
+            order=1,
+            optimized=1
+            # recipe is null by default, supporting user-defined subheadings
+        )
+
 
 class ItemBase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -175,12 +194,46 @@ class GroceryItemOptimized(ItemBase):
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.BooleanField(default=False)
-    list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='optimized_items', default=None)
+    checked = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+    notes = models.CharField(max_length=200, blank=True, null=True)
+    subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='optimized_items')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
 
+    @classmethod
+    def from_store_item(cls, store_item, subheading, order):
+        """
+        Converts a StoreItem instance to a GroceryItemOptimized instance.
+        """
+        return cls(
+            name=store_item.name,
+            description=store_item.description,
+            store=store_item.store,
+            quantity=store_item.quantity,
+            units=store_item.units,
+            price=store_item.price,
+            subheading=subheading,
+            order=order
+        )
+
+    @classmethod
+    def from_unoptimized_item(cls, unoptimized_item, subheading, order):
+        """
+        Converts a StoreItem instance to a GroceryItemOptimized instance.
+        """
+        return cls(
+            name=unoptimized_item.name,
+            description=unoptimized_item.description,
+            store="",
+            quantity=unoptimized_item.quantity,
+            units=unoptimized_item.units,
+            price=0.0,
+            subheading=subheading,
+            order=order
+        )
 
 # class GroceryItemUnoptimized(ItemBase):
 #     quantity = models.IntegerField()
@@ -197,9 +250,10 @@ class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     favorited = models.BooleanField(default=False)
+    checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    notes = models.CharField(max_length=200, blank=True, null=True)
     subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
-
 
     def __str__(self):
         return self.name
@@ -207,6 +261,18 @@ class GroceryItemUnoptimized(ItemBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
+
+
+class StoreItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    store = models.CharField(max_length=255)
+    store_location = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.IntegerField()
+    units = models.CharField(max_length=20)
+    violations = models.ManyToManyField(DietRestriction, blank=True, related_name="store_items")
 
 
 class RecipeItem(ItemBase):
@@ -222,9 +288,11 @@ class RecipeItem(ItemBase):
 
 class FavoritedItem(ItemBase):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
+
 
 @receiver(pre_save, sender=GroceryItemUnoptimized)
 @receiver(pre_save, sender=RecipeItem)
@@ -284,8 +352,7 @@ class FriendRecipe (models.Model):
     recipe = models.ForeignKey(Recipe, related_name="recipe", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('from_user', 'to_user')
 
     def __str__(self):
-        return f"{self.from_user} to {self.to_user} ({self.status})"
+        return f"{self.from_user} to {self.to_user} ()"
+
