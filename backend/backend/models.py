@@ -34,6 +34,8 @@ class User(AbstractUser):
     friends = models.ManyToManyField('self', symmetrical=True, blank=True)
     profile_icon = models.CharField(max_length=100, default="person")
     profile_color = models.CharField(max_length=100, default="#F6AA1C")
+    theme_background = models.CharField(max_length=100, default="lightMode")
+    theme_primary = models.CharField(max_length=100, default="lightMode")
 
     def __str__(self):
         return self.email

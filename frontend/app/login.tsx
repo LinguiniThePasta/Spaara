@@ -12,6 +12,7 @@ import {globalStyles} from "@/styles/globalStyles";
 import parseErrors from "@/scripts/parseErrors";
 import {setRole} from "@/store/roleSlice";
 import {useDispatch} from "react-redux";
+import { setBackground, setColorScheme, setPrimaryColor } from "@/store/colorScheme";
 
 const {width, height} = Dimensions.get('window');
 
@@ -22,6 +23,39 @@ export default function Login() {
     const [password, onPasswordChange] = React.useState('');
     const [isDisabled, setIsDisabled] = useState(false);
     const dispatch = useDispatch();
+
+    const [selectedBackground, setSelectedBackground] = useState("lightMode");
+    const [selectedPrimaryColor, setSelectedPrimaryColor] = useState("lightMode");
+
+    const fetchThemeInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/theme_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            setSelectedBackground(response.data.background);
+            setSelectedPrimaryColor(response.data.primaryColor);
+            console.log("Fetched Background: " + selectedBackground);
+            console.log("Fetched Primary Color: " + selectedPrimaryColor);
+            dispatch(setBackground(selectedBackground));
+            dispatch(setPrimaryColor(selectedPrimaryColor));
+            /*
+            const newThemeList = themeList.map((currentTheme) => ({
+                ...currentTheme,
+                selected: (currentTheme.name === response.data.background),
+            }));
+            setThemeList(newThemeList);
+            */
+            console.log("Fetched theme info! background: " + response.data.background + "   primaryColor: " + response.data.primaryColor);
+
+        } catch (error) {
+            console.error('Error fetching theme info:', error);
+        }
+    };
 
     const handleLogin = async () => {
         if (isDisabled) return;
@@ -44,6 +78,13 @@ export default function Login() {
             await SecureStore.setItemAsync('refreshToken', response.data.refresh);
 
             dispatch(setRole("User"));
+
+            await fetchThemeInfo();
+            //dispatch(setColorScheme(Colors[]))
+            console.log(selectedBackground);
+            console.log(selectedPrimaryColor);
+            dispatch(setBackground(selectedBackground));
+            dispatch(setPrimaryColor(selectedPrimaryColor));
 
             router.replace('/shopping');
         } catch (error) {

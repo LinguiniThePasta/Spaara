@@ -19,7 +19,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {API_BASE_URL} from '@/scripts/config';
 import {Link, router} from 'expo-router';
-import {Colors} from '@/styles/Colors';
+import {ColorThemes} from '@/styles/Colors';
 import Footer from "@/components/Footer";
 import {globalStyles} from "@/styles/globalStyles";
 import Header from "@/components/Header";
@@ -28,8 +28,193 @@ import * as SecureStore from 'expo-secure-store';
 import shortenTime from "@/scripts/shortenTime";
 import { useDispatch, useSelector } from 'react-redux';
 import { setLastAccessedList, setShoppingLists, setSearchQuery } from '../store/shoppingListSlice';
+import { setBackground, setPrimaryColor } from '@/store/colorScheme';
+
+/*var Colors = {
+    light: ColorThemes.darkMode
+};*/
+//const Colors = useSelector((state) => state.colorScheme);
 
 export default function Shopping() {
+    const dispatch = useDispatch();
+
+    const fetchThemeInfo = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync("jwtToken");
+            const response = await axios.get(
+                `${API_BASE_URL}/api/user/theme_info`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+            dispatch(setBackground(response.data.background));
+            dispatch(setPrimaryColor(response.data.primaryColor));
+
+            console.log("Fetched theme info! background: " + response.data.background + "   primaryColor: " + response.data.primaryColor);
+
+        } catch (error) {
+            console.error('Error fetching theme info:', error);
+        }
+    };
+
+    const Colors = useSelector((state) => state.colorScheme);
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: Colors.light.background,
+        },
+        searchIcon: {
+            marginRight: 10,
+        },
+        searchInput: {
+            flex: 1,
+            fontSize: 16,
+            color: Colors.light.primaryText,
+        },
+        listContainer: {
+            paddingHorizontal: 20,
+        },
+        listItem: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 15,
+            height: 70,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+            position: 'relative',
+        },
+        listItemLeft: {
+            flexDirection: 'column',
+        },
+        listItemTitle: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: Colors.light.primaryText,
+        },
+        listItemDate: {
+            fontSize: 14,
+            color: Colors.light.secondaryText,
+        },
+        addButton: {
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            backgroundColor: Colors.light.primaryColor,
+            borderRadius: 50,
+            padding: 15,
+        },
+        modalContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        modalContent: {
+            width: 300,
+            padding: 20,
+            backgroundColor: 'white',
+            borderRadius: 10,
+            alignItems: 'center',
+        },
+        modalHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            marginBottom: 10,
+        },
+        closeButton: {
+            marginRight: 30,
+            marginBottom: 20
+        },
+        modalTitle: {
+            fontSize: 18,
+            marginBottom: 20,
+            color: 'black', // Ensure the text color contrasts with the background
+        },
+        input: {
+            width: '100%',
+            padding: 10,
+            borderWidth: 1,
+            borderColor: Colors.light.primaryColor,
+            borderRadius: 5,
+            marginBottom: 10,
+    
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginHorizontal: 20,
+            paddingHorizontal: 10,
+    
+    
+        },
+        renameInput: {
+            fontSize: 16, // Smaller font size
+            paddingVertical: 5, // Smaller vertical padding
+            paddingHorizontal: 10,
+            color: Colors.light.primaryText,
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.light.secondaryText,
+        },
+        submitButton: {
+            ...globalStyles.primaryButton,
+        },
+        submitButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        modalButton: {
+            backgroundColor: '#FF6347',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginTop: 10,
+        },
+        modalButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        modalButtonContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            marginTop: 20,
+        },
+        buttonRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            width: '100%',
+        },
+        deleteBlock: {
+            position: 'absolute',
+            left: -120,
+            top: 0,
+            bottom: 0,
+            width: 75,
+            backgroundColor: '#FF6347',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        deleteBlockText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        deleteButton: {
+            backgroundColor: '#FF6347',
+            padding: 10,
+            borderRadius: 5,
+        },
+        deleteButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+    });
+
+
+
+
+
     const [newItem, setNewItem] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedList, setSelectedList] = useState(null);
@@ -37,12 +222,14 @@ export default function Shopping() {
     const [animations, setAnimations] = useState({});
     const [isDisabled, setIsDisabled] = useState(false);
 
-    const dispatch = useDispatch();
+    //const dispatch = useDispatch();
     const shoppingLists = useSelector((state) => state.shoppingList.lists);
     const searchQuery = useSelector((state) => state.shoppingList.searchQuery);
+    //const Colors = useSelector((state) => state.colorScheme);
 
     // Tested code actually pulls lists correctly from backend, but is commented out for now until we fix login
     useEffect(() => {
+        fetchThemeInfo();
         fetchShoppingLists();
         dispatch(setLastAccessedList(null));
     }, []);
@@ -291,9 +478,9 @@ export default function Shopping() {
             </View>
         </TouchableWithoutFeedback>
     );
-}
 
-const styles = StyleSheet.create({
+
+/*const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.light.background,
@@ -442,4 +629,5 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
-});
+});*/
+}
