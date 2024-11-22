@@ -111,6 +111,8 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.from_user} to {self.to_user} ({self.status})"
+    
+
 
 class ListBase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -275,3 +277,15 @@ class FavoriteManager:
         else:
             # Delete the FavoritedItem if it exists
             FavoritedItem.objects.filter(id=instance.id).delete()
+
+class FriendRecipe (models.Model):
+    from_user = models.ForeignKey(User, related_name='recipe_sent', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(User, related_name='recipe_received', on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, related_name="recipe", on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+
+    def __str__(self):
+        return f"{self.from_user} to {self.to_user} ({self.status})"
