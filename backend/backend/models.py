@@ -352,8 +352,7 @@ class FriendRecipe (models.Model):
     recipe = models.ForeignKey(Recipe, related_name="recipe", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('from_user', 'to_user')
 
-    def str(self):
-        return f"{self.from_user} to {self.to_user} ({self.status})"
+    def __str__(self):
+        return f"{self.from_user} to {self.to_user} ()"
+
