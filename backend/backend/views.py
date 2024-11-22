@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer, \
-    SubheadingSerializer
+    SubheadingSerializer, StoreItemSerializer
 from .utils import *
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -405,9 +405,39 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+class StoreItemSuggestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Returns a list of store items matching the search query for dropdown suggestions.
+        """
+        search_query = request.query_params.get('query', '').strip()
+
+        if not search_query:
+            return Response({'error': 'Query parameter is required.'}, status=400)
+
+        vector = SearchVector('name', weight='A') + \
+                 SearchVector('store', weight='B') + \
+                 SearchVector('description', weight='C')
+
+        query = SearchQuery(search_query)
+        results = StoreItem.objects.annotate(
+            rank=SearchRank(vector, query)
+        ).filter(rank__gte=0.1).order_by('-rank')
+        print(results)
+        valid_results = []
+        user = request.user
+        user_diet_restrictions = user.diet_restrictions.values_list('id', flat=True)
+        for result in results:
+            item_violations = result.violations.values_list('id', flat=True)
+            if not set(item_violations).intersection(user_diet_restrictions):
+                valid_results.append(result)
+        serializer = StoreItemSerializer(valid_results, many=True)
+        return Response(serializer.data, status=200)
 
 class OptimizeView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         '''
         When a user optimize, the unoptimized AND optimized grocery list is sent to them. The frontend will parse both items
@@ -415,9 +445,25 @@ class OptimizeView(APIView):
         During optimization, the old optimized list items are deleted.
         '''
         grocery_id = request.query_params.get('id')
+        print("HEYy")
+        print(grocery_id)
         grocery = get_object_or_404(Grocery, id=grocery_id)
         unoptimized_items = GroceryItemUnoptimized.objects.all().filter(subheading__grocery=grocery_id)
         subheading_dict = collections.defaultdict(list)
+
+        optimized_subheadings = grocery.subheadings.filter(optimized=True)
+
+        for subheading in optimized_subheadings:
+            if subheading.name == "Unoptimized":
+                continue
+            print(subheading)
+
+            subheading.optimized_items.all().delete()
+            subheading.delete()
+
+        user = request.user
+        user_diet_restrictions = user.diet_restrictions.values_list('id', flat=True)
+
         for item in unoptimized_items:
             name_query = SearchQuery(item.name)
             store_query = SearchQuery(item.store)
@@ -433,19 +479,24 @@ class OptimizeView(APIView):
                 ),
             ).filter(search=combined_query).order_by("price", "-rank")
 
-            if len(results) >= 1:
-                result = results.values()[0]
-                subheading_name = f"{result['store']};{result['store_location']}"
+            valid_results = []
+            for result in results:
+                item_violations = result.violations.values_list('id', flat=True)
+                if not set(item_violations).intersection(user_diet_restrictions):
+                    valid_results.append(result)
 
-                # Check if the subheading exists in the dictionary, create if not
+            if valid_results:
+                first_valid_result = valid_results[0]
+                subheading_name = f"{first_valid_result.store};{first_valid_result.store_location}"
+
                 if subheading_name not in subheading_dict:
                     subheading_dict[subheading_name] = []
 
-                subheading_dict[subheading_name].append(result)
+                subheading_dict[subheading_name].append(first_valid_result)
             else:
-                pass
                 subheading_dict['Unoptimized'].append(item)
-                # optimized_item.save()
+
+        print(subheading_dict)
         for key, value in subheading_dict.items():
             subheading, created = Subheading.objects.get_or_create(
                 name=key,
@@ -455,8 +506,6 @@ class OptimizeView(APIView):
             if created:
                 subheading.order = grocery.subheadings.count() - 1
                 subheading.save()
-            else:
-                subheading.optimized_items.all().delete()
             for item in value:
                 optimized_item = None
                 order = subheading.optimized_items.count()

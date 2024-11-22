@@ -57,6 +57,7 @@ urlpatterns = [
     path('api/maps/locations/stores', StoreView.as_view(), name='stores'),
     path('api/forgot-password', ForgotPasswordView.as_view(), name='forgot-password'),
     path('api/optimize', OptimizeView.as_view(), name='optimize'),
+    path('api/suggest_stores', StoreItemSuggestionsView.as_view(), name='optimize'),
     # path('api/shopping/create', ShoppingListView.as_view(), name='save_shopping_list'),
     # path('api/shopping/get', ShoppingListView.as_view(), name='get_shopping_list'),
     # path('api/shopping/delete', ShoppingListView.as_view(), name='delete_shopping_list'),

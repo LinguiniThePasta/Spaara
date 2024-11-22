@@ -13,7 +13,7 @@ import {
     Modal,
     Button,
     TouchableWithoutFeedback,
-    PanResponder,
+    PanResponder, Keyboard,
 } from 'react-native';
 import {useRouter, useLocalSearchParams} from 'expo-router';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -31,7 +31,7 @@ import Recipe from './recipe';
 import {getQualifiedRouteComponent} from 'expo-router/build/useScreens';
 import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
 import GestureDetector from 'react-native-gesture-handler';
-import {setCurrentListJson, setLastAccessedList} from "@/store/shoppingListSlice";
+import {setCurrentListJson, setLastAccessedList, setSearchQuery} from "@/store/shoppingListSlice";
 //import { setSearchQuery } from '../store/shoppingListSlice';
 
 
@@ -39,7 +39,7 @@ export default function ShoppingListScreen() {
     const router = useRouter();
     const dispatch = useDispatch();
     const local = useLocalSearchParams();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const [shoppingLists, setShoppingLists] = useState([]);
     const [shoppingListName, setShoppingListName] = useState("");
     const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
@@ -681,9 +681,9 @@ export default function ShoppingListScreen() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const listId = local.id;
-            const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${listId}`, {
+            const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${listId}`, {}, {
                 headers: {
-                    'Authorization': `Bearer ${jwtToken}`
+                    'Authorization': 'Bearer ' + jwtToken,
                 }
             });
             console.log(response.data);
@@ -691,6 +691,112 @@ export default function ShoppingListScreen() {
 
         } catch (error) {
             console.error('Error optimizing:', error);
+        }
+    };
+
+    const [searchResults, setSearchResults] = useState([]);
+    const [dropdownVisible, setDropdownVisible] = useState(false);
+
+    const fetchStoreItems = async (query) => {
+        if (!query) {
+            setSearchResults([]);
+            return;
+        }
+
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.get(`${API_BASE_URL}/api/suggest_stores?query=${query}`, {
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                },
+            });
+            setSearchResults(response.data);
+            setDropdownVisible(true);
+        } catch (error) {
+            console.error('Error fetching store items:', error.message);
+        }
+    };
+
+    const handleSearchChange = (text) => {
+        setSearchTerm(text);
+        fetchStoreItems(text);
+    };
+
+    const handleSelectItem = async (item) => {
+        console.log('Selected Item:', item);
+
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const listId = local.id;
+
+            const unoptimizedResponse = await axios.post(
+                `${API_BASE_URL}/api/grocery_items/unoptimized/`,
+                {
+                    name: item.name,
+                    quantity: 1,
+                    price: item.price,
+                    units: item.units,
+                    store: item.store,
+                    description: item.description,
+                    list: listId,
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                    }
+                }
+            );
+
+            console.log('Unoptimized item added:', unoptimizedResponse.data);
+
+            // Check if the list is optimized
+            const response = await axios.get(`${API_BASE_URL}/api/grocery/${listId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                },
+            });
+
+            const isOptimized = checkIfListIsOptimized(response.data.subheadings);
+
+            // If optimized, add an optimized item with the same details
+            if (isOptimized) {
+                const optimizedResponse = await axios.post(
+                    `${API_BASE_URL}/api/grocery_items/optimized/`,
+                    {
+                        name: item.name,
+                        quantity: 1,
+                        price: item.price,
+                        units: item.units,
+                        store: item.store,
+                        description: item.description,
+                        list: listId,
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`,
+                        }
+                    }
+                );
+
+                console.log('Optimized item added:', optimizedResponse.data);
+            }
+            setSearchTerm("");
+            setSearchResults([]);
+        } catch (error) {
+            console.error('Error adding shopping item:', error);
+        } finally {
+            // Refresh the shopping list
+            await fetchShoppingList();
+        }
+
+
+        setDropdownVisible(false);
+    };
+
+    const handleOutsidePress = () => {
+        if (dropdownVisible) {
+            setDropdownVisible(false);
+            Keyboard.dismiss(); // Hide the keyboard if visible
         }
     };
 
@@ -715,6 +821,41 @@ export default function ShoppingListScreen() {
                             <Icon name={selectedIcon} size={30} color={selectedColor}/>
                         </TouchableOpacity>
                     </View>
+                </View>
+                <View style={styles.searchContainer}>
+                    <View style={globalStyles.searchBar}>
+                        <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
+                              style={styles.searchIcon}/>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search"
+                            placeholderTextColor={Colors.light.secondaryText}
+                            value={searchTerm}
+                            onChangeText={(text) => {
+                                setSearchTerm(text);
+                                handleSearchChange(text);
+                            }}
+                        />
+                    </View>
+                    {dropdownVisible && searchResults.length > 0  || searchTerm.length === 0 ? (
+                        <View style={styles.dropdown}>
+                            <FlatList
+                                data={searchResults}
+                                keyExtractor={(item) => item.id.toString()}
+                                renderItem={({item}) => (
+                                    <TouchableOpacity
+                                        style={styles.dropdownItem}
+                                        onPress={() => handleSelectItem(item)}
+                                    >
+                                        <Text>{item.name}</Text>
+                                        <Text>${item.price}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+                    ) : (
+                        <Text style={styles.noItemsMessage}>No matching items!</Text>
+                    )}
                 </View>
 
                 {/*ITEM LIST*/}
@@ -1100,5 +1241,32 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 10,
     },
-
+    searchContainer: {
+        position: 'relative',
+        zIndex: 2,
+    },
+    dropdown: {
+        position: 'absolute',
+        top: 50,
+        width: 300,
+        left: '50%',
+        transform: [{translateX: -150}],
+        backgroundColor: 'white',
+        borderColor: Colors.light.primaryColor,
+        borderWidth: 1,
+        borderRadius: 4,
+        maxHeight: 150,
+        zIndex: 2,
+    },
+    dropdownItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.primaryColor,
+    },
+    noItemsMessage: {
+        textAlign: 'center',
+        color: Colors.light.secondaryText,
+        padding: 10,
+        fontSize: 16,
+    },
 });

@@ -206,12 +206,12 @@ class GroceryItemOptimized(ItemBase):
         Converts a StoreItem instance to a GroceryItemOptimized instance.
         """
         return cls(
-            name=store_item['name'],
-            description=store_item['description'],
-            store=store_item['store'],
-            quantity=store_item['quantity'],
-            units=store_item['units'],
-            price=store_item['price'],
+            name=store_item.name,
+            description=store_item.description,
+            store=store_item.store,
+            quantity=store_item.quantity,
+            units=store_item.units,
+            price=store_item.price,
             subheading=subheading,
             order=order
         )
@@ -269,7 +269,7 @@ class StoreItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    allergens = models.CharField(max_length=255)
+    violations = models.ManyToManyField(DietRestriction, blank=True, related_name="store_items")
 
 
 class RecipeItem(ItemBase):
@@ -342,3 +342,15 @@ class FavoriteManager:
         else:
             # Delete the FavoritedItem if it exists
             FavoritedItem.objects.filter(id=instance.id).delete()
+
+class FriendRecipe (models.Model):
+    from_user = models.ForeignKey(User, related_name='recipe_sent', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(User, related_name='recipe_received', on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, related_name="recipe", on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+
+    def str(self):
+        return f"{self.from_user} to {self.to_user} ({self.status})"

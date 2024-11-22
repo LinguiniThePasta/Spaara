@@ -3,7 +3,7 @@ import re
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
-    DietRestriction, Subheading, FriendRequest
+    DietRestriction, Subheading, FriendRequest, StoreItem
 from django.core.validators import validate_email
 import uuid
 from .utils import send_verification_email, send_password_reset_confirmation, send_account_recovery_email
@@ -276,7 +276,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
 
-
 class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
     subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
 
@@ -410,6 +409,12 @@ class RecipeItemSerializer(serializers.ModelSerializer):
 class FavoritedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritedItem
+        fields = '__all__'
+
+
+class StoreItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreItem
         fields = '__all__'
 
 
