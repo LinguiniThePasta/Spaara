@@ -11,9 +11,9 @@ import * as SecureStore from 'expo-secure-store';
 import {useSelector} from "react-redux";
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function ColorSchemesItem({colorTheme, handleThemeSelected}) {
+export default function ColorSchemesItem({colorTheme, isBackground, handleThemeSelected}) {
     //console.log("color name: " + iconColor.name + "   selected: " + iconColor.selected);
-    const style = styles(ColorThemes[colorTheme.name].background, ColorThemes[colorTheme.name].primaryColor);
+    const style = (isBackground) ? styles(ColorThemes[colorTheme.name].background) : styles(ColorThemes[colorTheme.name].primaryColor);
 
     if (colorTheme.selected) {
         return(
@@ -21,7 +21,7 @@ export default function ColorSchemesItem({colorTheme, handleThemeSelected}) {
                 <Pressable style={style.selectedItem} onPress={() => handleThemeSelected(colorTheme)}>
                     {/*<Icon name={"ellipse"} size={40} color={Colors[colorTheme.name].primaryColor}/>*/}
                     <View style={style.leftColor}/>
-                    <View style={style.rigthColor}/>
+                    {/*<View style={style.rigthColor}/>*/}
                 </Pressable>
             </View>
         );
@@ -32,17 +32,17 @@ export default function ColorSchemesItem({colorTheme, handleThemeSelected}) {
             <Pressable style={style.item} onPress={() => handleThemeSelected(colorTheme)}>
                 {/*<Icon name={"ellipse"} size={40} color={Colors[colorTheme.name].primaryColor}/>*/}
                 <View style={style.leftColor}/>
-                <View style={style.rigthColor}/>
+                {/*<View style={style.rigthColor}/>*/}
             </Pressable>
         </View>
     );
 }
 
-const styles = (background, primaryColor) => StyleSheet.create({
+const styles = (color) => StyleSheet.create({
     container: {
         flex: 1,
         //backgroundColor: Colors.light.background,
-        backgroundColor: background,
+        backgroundColor: color,
         justifyContent: 'space-between',
     },
     listContainer: {
@@ -78,15 +78,16 @@ const styles = (background, primaryColor) => StyleSheet.create({
     },
     leftColor: {
         height: 50,
-        width: 25,
-        backgroundColor: background,
-        borderColor: primaryColor,
+        width: 50,
+        backgroundColor: color,
+        borderColor: color,
         borderWidth: 3,
-        borderTopLeftRadius: 100,
-        borderBottomLeftRadius: 100,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-    },
+        borderRadius: 100,
+        //borderTopLeftRadius: 100,
+        //borderBottomLeftRadius: 100,
+        //borderTopRightRadius: 0,
+        //borderBottomRightRadius: 0,
+    },/*
     rigthColor: {
         height: 50,
         width: 25,
@@ -97,7 +98,7 @@ const styles = (background, primaryColor) => StyleSheet.create({
         borderBottomLeftRadius: 0,
         borderTopRightRadius: 100,
         borderBottomRightRadius: 100,
-    },
+    },*/
     dummyItem: {
         height: 70,
         width: 70,
