@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import SET_NULL
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 import uuid
@@ -130,7 +131,7 @@ class ListBase(models.Model):
     update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
-        abstract = True  # This makes the model abstract and not create a table for it
+        abstract = True
 
     def __str__(self):
         return self.name
@@ -155,7 +156,7 @@ class Subheading(models.Model):
 
     class Meta:
         ordering = ['order']
-        unique_together = ('grocery', 'recipe')  # Ensures a recipe is added only once per grocery list
+        unique_together = ('grocery', 'recipe')
 
     def __str__(self):
         return self.name
@@ -188,12 +189,18 @@ class ItemBase(models.Model):
     class Meta:
         abstract = True
 
+class FavoritedItem(ItemBase):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # FavoriteManager.register(self.__class__)
 
 class GroceryItemOptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    favorited = models.BooleanField(default=False)
+    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="optimized_items")
     checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     notes = models.CharField(max_length=200, blank=True, null=True)
@@ -201,7 +208,7 @@ class GroceryItemOptimized(ItemBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        FavoriteManager.register(self.__class__)
+        # FavoriteManager.register(self.__class__)
 
     @classmethod
     def from_store_item(cls, store_item, subheading, order):
@@ -235,21 +242,10 @@ class GroceryItemOptimized(ItemBase):
             order=order
         )
 
-# class GroceryItemUnoptimized(ItemBase):
-#     quantity = models.IntegerField()
-#     units = models.CharField(max_length=20)
-#     favorited = models.BooleanField(default=False)
-#     list = models.ForeignKey('Grocery', on_delete=models.CASCADE, related_name='unoptimized_items', default=None)
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         FavoriteManager.register(self.__class__)
-#
-
 class GroceryItemUnoptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    favorited = models.BooleanField(default=False)
+    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="unoptimized_items")
     checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     notes = models.CharField(max_length=200, blank=True, null=True)
@@ -260,7 +256,7 @@ class GroceryItemUnoptimized(ItemBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        FavoriteManager.register(self.__class__)
+        # FavoriteManager.register(self.__class__)
 
 
 class StoreItem(models.Model):
@@ -273,78 +269,71 @@ class StoreItem(models.Model):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     violations = models.ManyToManyField(DietRestriction, blank=True, related_name="store_items")
+    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="store_items")
+
 
 
 class RecipeItem(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    favorited = models.BooleanField(default=False)
+    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="recipe_items")
     recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        FavoriteManager.register(self.__class__)
+        # FavoriteManager.register(self.__class__)
 
-
-class FavoritedItem(ItemBase):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorited_items', default=None)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        FavoriteManager.register(self.__class__)
-
-
-@receiver(pre_save, sender=GroceryItemUnoptimized)
-@receiver(pre_save, sender=RecipeItem)
-def update_favorite(sender, instance, **kwargs):
-    try:
-        if (sender not in FavoriteManager.receivers):
-            return
-        old_instance = sender.objects.get(pk=instance.pk)
-        if old_instance.favorited != instance.favorited:
-            FavoriteManager.sync(instance)
-    except sender.DoesNotExist:
-        # Handle the case where the old instance does not exist
-        pass
-
-
-class FavoriteManager:
-    receivers = []
-
-    @classmethod
-    def register(cls, model):
-        cls.receivers.append(model)
-
-    @classmethod
-    def sync(self, instance):
-        for receiver in self.receivers:
-            if receiver == FavoritedItem:
-                continue
-            if isinstance(instance, receiver) or receiver == FavoritedItem:
-                continue
-            # Update 'favorited' status in other receiver models
-            receiver.objects.filter(id=instance.id).update(favorited=instance.favorited)
-
-        if instance.favorited:
-            # Retrieve the user through subheading and grocery
-            try:
-                user = instance.subheading.grocery.user
-            except AttributeError:
-                raise ValueError("The instance is not properly linked to a grocery and user.")
-
-            # Create or get the FavoritedItem
-            FavoritedItem.objects.get_or_create(
-                id=instance.id,
-                defaults={
-                    'name': instance.name,
-                    'description': instance.description,
-                    'store': instance.store,
-                    'user': user
-                }
-            )
-        else:
-            # Delete the FavoritedItem if it exists
-            FavoritedItem.objects.filter(id=instance.id).delete()
+# @receiver(pre_save, sender=GroceryItemUnoptimized)
+# @receiver(pre_save, sender=RecipeItem)
+# def update_favorite(sender, instance, **kwargs):
+#     try:
+#         if (sender not in FavoriteManager.receivers):
+#             return
+#         old_instance = sender.objects.get(pk=instance.pk)
+#         if old_instance.favorited != instance.favorited:
+#             FavoriteManager.sync(instance)
+#     except sender.DoesNotExist:
+#         # Handle the case where the old instance does not exist
+#         pass
+#
+#
+# class FavoriteManager:
+#     receivers = []
+#
+#     @classmethod
+#     def register(cls, model):
+#         cls.receivers.append(model)
+#
+#     @classmethod
+#     def sync(self, instance):
+#         for receiver in self.receivers:
+#             if receiver == FavoritedItem:
+#                 continue
+#             if isinstance(instance, receiver) or receiver == FavoritedItem:
+#                 continue
+#             # Update 'favorited' status in other receiver models
+#             receiver.objects.filter(id=instance.id).update(favorited=instance.favorited)
+#
+#         if instance.favorited:
+#             # Retrieve the user through subheading and grocery
+#             try:
+#                 user = instance.subheading.grocery.user
+#             except AttributeError:
+#                 raise ValueError("The instance is not properly linked to a grocery and user.")
+#
+#             # Create or get the FavoritedItem
+#             FavoritedItem.objects.get_or_create(
+#                 id=instance.id,
+#                 defaults={
+#                     'name': instance.name,
+#                     'description': instance.description,
+#                     'store': instance.store,
+#                     'user': user
+#                 }
+#             )
+#         else:
+#             # Delete the FavoritedItem if it exists
+#             FavoritedItem.objects.filter(id=instance.id).delete()
 
 class FriendRecipe (models.Model):
     from_user = models.ForeignKey(User, related_name='recipe_sent', on_delete=models.CASCADE)
