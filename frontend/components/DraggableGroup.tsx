@@ -5,7 +5,7 @@ import DraggableItem from "@/components/DraggableItem";
 import { InputItem } from "@/components/Item";
 import { useSelector } from "react-redux";
 
-const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd }) => {
+const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd, handleRemoveItem}) => {
 
   const Colors = useSelector((state) => state.colorScheme);
   const styles = StyleSheet.create({
@@ -54,7 +54,7 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd
   };
 
   const handleAddItem = (item) => {
-    const newItem =  {id: items.length + 1, label: item, quantity: 1, favorited: false, index: items.length, group: groupId};
+    const newItem =  {id: items.length + 1, name: item, quantity: 1, units: "cnt", favorited: false, index: items.length, group: groupId};
     onAdd(newItem);
   };
 
@@ -66,7 +66,7 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd
           {/* Draggable Item unless isInput, in which case it is an input item with no drag capability*/}
           {item.isInput ? (
             <View ref={(el) => (itemRefs.current[index] = el)} style={{borderLeftWidth: 2, borderColor: Colors.light.primaryColor}}>
-              <InputItem initialText="Add Item" onChangeText={setNewItemName} handleAddItem={handleAddItem}/>
+              <InputItem initialText="Add Item" handleAddItem={handleAddItem}/>
             </View>
           ) : (
           <DraggableItem
@@ -75,6 +75,7 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd
             indent={header !== "Ungrouped"}
             onStateChange={(isDragging) => handleItemStateChange(item.id, isDragging)}
             onDrop={(position) => handleDrop(position, index)}
+            handleRemoveItem={() => handleRemoveItem(item)}
           />
           )}
         </View>

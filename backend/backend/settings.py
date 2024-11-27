@@ -16,8 +16,8 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-#MEDIA_URL = '/lists/'          # URL for accessing media files
-#MEDIA_ROOT = BASE_DIR / 'lists' # Path where files will be stored
+# MEDIA_URL = '/lists/'          # URL for accessing media files
+# MEDIA_ROOT = BASE_DIR / 'lists' # Path where files will be stored
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -83,6 +83,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 SIMPLE_JWT = {
@@ -111,22 +114,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':'dev',
-        'USER':'dev',
-        'PASSWORD':'Team33Admin',
-        'HOST':'spaara-dev.cd2e4qwko0n0.us-east-2.rds.amazonaws.com',
-        'PORT':'5432',
+        'NAME': 'dev',
+        'USER': 'dev',
+        'PASSWORD': 'Team33Admin',
+        'HOST': 'spaara-dev.cd2e4qwko0n0.us-east-2.rds.amazonaws.com',
+        'PORT': '5432',
         'CONN_MAX_AGE': 3600
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -146,7 +147,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -157,7 +157,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

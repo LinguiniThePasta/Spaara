@@ -1579,25 +1579,17 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         deletion details:
             - Retrieves the item based on both recipe_id and item_id to ensure ownership.
         '''
-        grocery_id = request.query_params.get('list')
         item_id = kwargs.get('pk')
 
-        # Ensure both recipe_id and item_id are provided
-        if not grocery_id or not item_id:
-            return Response(
-                {'error': 'Recipe ID and Item ID must be provided.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         # Check if item exists and belongs to the specified recipe
-        item = get_object_or_404(GroceryItemUnoptimized, id=item_id, subheading__grocery=grocery_id)
+        item = get_object_or_404(GroceryItemUnoptimized, id=item_id)
 
         subheading = item.subheading
         item.delete()
-        if subheading.items.count() == 0 and subheading.name != "Default":
+        if subheading.items.count() == 0 and (subheading.name != "Default" and subheading.name != "Unoptimized"):
             subheading.delete()
 
-        return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'grocery item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):
         '''
@@ -1625,6 +1617,7 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
                         description (optional): description of the item
                         quantity: the number of items
                         units: unit
+                        subheading: the id of the sublist
                         list: the id of the grocery list
                     }
         '''
@@ -1635,7 +1628,11 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         # Pass the grocery instance in the context
         serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
-        serializer.is_valid(raise_exception=True)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except:
+            print(serializer.errors)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

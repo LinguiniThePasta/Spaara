@@ -14,12 +14,13 @@ interface DraggableItemProps {
   indent: boolean;
   onStateChange: (isDragging: boolean) => void;
   onDrop: (position: { x: number; y: number }) => void;
+  handleRemoveItem: ({ item }) => void;
 }
 
 const HOLD_THRESHOLD = 100; // 1 second
 
 const DraggableItem = forwardRef<Animated.View, DraggableItemProps>(
-  ({ item, indent, onStateChange, onDrop }, ref) => {
+  ({ item, indent, onStateChange, onDrop, handleRemoveItem }, ref) => {
 
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
@@ -50,11 +51,6 @@ const DraggableItem = forwardRef<Animated.View, DraggableItemProps>(
     const handleFavorite = (item: any) => {
       console.log("Favorite item", item);
     };
-
-    const handleRemove = (item: any) => {
-      console.log("Remove item", item);
-    };
-
     const onGestureEvent = Animated.event(
       [
         {
@@ -127,7 +123,7 @@ const DraggableItem = forwardRef<Animated.View, DraggableItemProps>(
             },
           ]}
         >
-          <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemove}/>
+          <CheckItem item={item} handleFavoriteItem={handleFavorite} handleRemoveItem={handleRemoveItem}/>
         </Animated.View>
       </PanGestureHandler>
     );

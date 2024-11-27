@@ -5,6 +5,9 @@ import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {router} from "expo-router";
 import {useSelector} from "react-redux";
+import axios from "axios";
+import {API_BASE_URL} from "@/scripts/config";
+import * as SecureStore from "expo-secure-store";
 
 /**
  * CheckItem Component
@@ -24,7 +27,7 @@ import {useSelector} from "react-redux";
  * @returns None
  */
 
-export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem, handleModifyItem}) {
+export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem}) {
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
         item: {
@@ -51,7 +54,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
             backgroundColor: Colors.light.secondaryText,
             borderColor: Colors.light.secondaryText,
             color: Colors.light.secondaryText,
-    
+
         },
         itemText: {
             color: Colors.light.primaryText,
@@ -74,7 +77,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
             alignSelf: 'flex-end',
             alignItems: 'center',
             flexDirection: 'row',
-    
+
         },
         leftContainer: {
             alignSelf: 'flex-start',
@@ -100,7 +103,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
         notesContainer: {
             marginTop: 5,
         },
-    
+
     });
 
     const [number, setNumber] = useState(item.quantity);
@@ -110,20 +113,48 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
     const [isEditing, setIsEditing] = useState(false);
     const price = item.price !== undefined && item.price !== null ? item.price : 0.00; // Default price if not provided
 
-    function increaseItem() {
-        setNumber(number + 1);
-        item.quantity = number + 1;
-        handleModifyItem(item);
-        if (number === 0) {
-            handleRemoveItem(item);
+
+    const increaseItem = async () => {
+        const newNumber = number + 1;
+        setNumber(newNumber);
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`,
+                {
+                    quantity: item.quantity,
+                }, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                });
+        } catch (error) {
+            setNumber(newNumber - 1);
+            item.quantity = newNumber - 1;
         }
     }
 
-    function decreaseItem() {
-        setNumber(number - 1);
-        item.quantity = number - 1;
-        handleModifyItem(item);
-        if (number === 0) {
+    const decreaseItem = async () => {
+        const newNumber = number - 1;
+        setNumber(newNumber);
+        item.quantity = newNumber;
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`,
+                {
+                    quantity: item.quantity,
+                }, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                });
+        } catch (error) {
+            setNumber(newNumber + 1);
+            item.quantity = newNumber + 1;
+        }
+
+        if (newNumber === 0) {
             handleRemoveItem(item);
         }
     }
@@ -142,7 +173,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
         setNote(note);
         item.notes = note;
         try {
-            await handleModifyItem(item);
+            // await handleModifyItem(item);
             console.log("handleModifyItem successfully called");
         } catch (error) {
             console.error("Error in handleModifyItem:", error);
@@ -152,7 +183,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
     function handleDeleteNote() {
         setNote("");
         item.notes = "";
-        handleModifyItem(item);
+        // handleModifyItem(item);
     }
 
     return (
@@ -166,7 +197,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
                         style={styles.checkboxIcon}
                     />
                 </Pressable>
-                <Text style={styles.itemText}>{item.label}</Text>
+                <Text style={styles.itemText}>{item.name}</Text>
             </View>
 
             <View style={styles.rightContainer}>
@@ -233,7 +264,7 @@ export function SpacerItem() {
             backgroundColor: Colors.light.secondaryText,
             borderColor: Colors.light.secondaryText,
             color: Colors.light.secondaryText,
-    
+
         },
         itemText: {
             color: Colors.light.primaryText,
@@ -256,7 +287,7 @@ export function SpacerItem() {
             alignSelf: 'flex-end',
             alignItems: 'center',
             flexDirection: 'row',
-    
+
         },
         leftContainer: {
             alignSelf: 'flex-start',
@@ -282,7 +313,7 @@ export function SpacerItem() {
         notesContainer: {
             marginTop: 5,
         },
-    
+
     });
 
     return (
@@ -325,7 +356,7 @@ export function RecipeItem({item}) {
             backgroundColor: Colors.light.secondaryText,
             borderColor: Colors.light.secondaryText,
             color: Colors.light.secondaryText,
-    
+
         },
         itemText: {
             color: Colors.light.primaryText,
@@ -348,7 +379,7 @@ export function RecipeItem({item}) {
             alignSelf: 'flex-end',
             alignItems: 'center',
             flexDirection: 'row',
-    
+
         },
         leftContainer: {
             alignSelf: 'flex-start',
@@ -374,7 +405,7 @@ export function RecipeItem({item}) {
         notesContainer: {
             marginTop: 5,
         },
-    
+
     });
 
     return (
@@ -408,7 +439,7 @@ export function RecipeItem({item}) {
  * @returns None
  */
 
-export function InputItem({initialText, onChangeText, handleAddItem}) {
+export function InputItem({initialText, handleAddItem}) {
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
         item: {
@@ -435,11 +466,12 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
             backgroundColor: Colors.light.secondaryText,
             borderColor: Colors.light.secondaryText,
             color: Colors.light.secondaryText,
-    
+
         },
         itemText: {
             color: Colors.light.primaryText,
             fontSize: 21,
+            width: "100%"
         },
         addItemText: {
             //color: 'gray',
@@ -458,7 +490,7 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
             alignSelf: 'flex-end',
             alignItems: 'center',
             flexDirection: 'row',
-    
+
         },
         leftContainer: {
             alignSelf: 'flex-start',
@@ -484,50 +516,41 @@ export function InputItem({initialText, onChangeText, handleAddItem}) {
         notesContainer: {
             marginTop: 5,
         },
-    
+
     });
 
-    const [number, setNumber] = useState(0);
-    //const [initialText, setInitialText] = useState("");
     const [text, setText] = useState(''); // State for the input value
-    const [placeholder, setPlaceholder] = useState(initialText); // State for the placeholder
-    
+
     const handleSubmit = () => {
-        if (text.trim() !== '') { // Only handle non-empty input
-        handleAddItem(text); // Call the parent-provided add item function
-        setText(''); // Reset the input field
-        setPlaceholder(initialText); // Reset the placeholder text
+        if (text.trim() !== '') {
+            handleAddItem(text);
+            setText('');
         }
     };
-    
+
     return (
         <View style={styles.item}>
-        <View style={styles.leftContainer}>
-            <Pressable>
-            <Icon
-                name="ellipse-outline"
-                size={30}
-                color={Colors.light.background}
-                style={styles.checkboxText}
-            />
-            </Pressable>
-            <TextInput
-            style={styles.itemText}
-            placeholder={placeholder} // Bind placeholder to state
-            placeholderTextColor={Colors.light.secondaryText}
-            value={text} // Bind value to state
-            onChangeText={(inputText) => {
-                setText(inputText); // Update input value
-                onChangeText(inputText); // Trigger the parent callback
-            }}
-            onFocus={() => setPlaceholder('')} // Clear placeholder when focused
-            onBlur={() => !text && setPlaceholder(initialText)} // Reset placeholder if empty
-            onSubmitEditing={handleSubmit} // Handle submission
-            />
+            <View style={styles.leftContainer}>
+                <Pressable>
+                    <Icon
+                        name="ellipse-outline"
+                        size={30}
+                        color={Colors.light.background}
+                        style={styles.checkboxText}
+                    />
+                </Pressable>
+                <TextInput
+                    style={styles.itemText}
+                    placeholder={"Add Item"}
+                    placeholderTextColor={Colors.light.secondaryText}
+                    value={text}
+                    onChangeText={(inputText) => setText(inputText)}
+                    onSubmitEditing={handleSubmit}
+                />
+            </View>
         </View>
-        </View>
-        );
-    };
+    );
+};
 
 
 /**
@@ -567,7 +590,7 @@ export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
             backgroundColor: Colors.light.secondaryText,
             borderColor: Colors.light.secondaryText,
             color: Colors.light.secondaryText,
-    
+
         },
         itemText: {
             color: Colors.light.primaryText,
@@ -590,7 +613,7 @@ export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
             alignSelf: 'flex-end',
             alignItems: 'center',
             flexDirection: 'row',
-    
+
         },
         leftContainer: {
             alignSelf: 'flex-start',
@@ -616,7 +639,7 @@ export const FavoriteItem = ({item, addFavoriteItem, removeFromFavorite}) => {
         notesContainer: {
             marginTop: 5,
         },
-    
+
     });
 
     return (
