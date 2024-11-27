@@ -1150,13 +1150,13 @@ class GroceryListViewSet(viewsets.ModelViewSet):
               and adds all items from the recipe to the grocery list under the new subheading.
 
         usage:
-            - POST {URL}/{grocery_list_id}/add_recipe/
+            - POST {URL}/?list={grocery_list_id}/add_recipe/
                 - data (dict):
                     {
                         "recipe_id": <UUID>  # The ID of the recipe to be added
                     }
         """
-        grocery = self.get_object()
+        grocery = pk
         recipe_id = request.data.get('recipe_id')
 
         if not recipe_id:
@@ -1306,9 +1306,9 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                 # Create Subheading
                 subheading = Subheading.objects.create(
                     name=recipe.name,
-                    grocery=grocery,
+                    grocery=Grocery.objects.get(id=grocery),
                     recipe=recipe,
-                    order=self.calculate_next_subheading_order(grocery)
+                    order=Grocery.objects.get(id=grocery).subheadings.count()
                 )
 
                 # Add RecipeItems to the Grocery list under the new Subheading
@@ -1710,6 +1710,7 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         # Toggle the 'checked' status
         item.checked = not item.checked
         item.save()
+        return Response(self.get_serializer(item).data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -1912,27 +1913,37 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
                         list: id of the grocery list
                     }
         '''
-
         grocery_id = request.data["list"]
         favorited_item = self.get_object()
         grocery = Grocery.objects.all().filter(id=grocery_id).get()
         default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name="Default")
 
+        existing_item = GroceryItemUnoptimized.objects.filter(
+            favorited=favorited_item.id,
+            subheading__grocery=grocery
+        ).exists()
+
+        if existing_item:
+            return Response(
+                {"error": "This item is already in the grocery list."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         data = {
-            'id': favorited_item.id,
             'name': favorited_item.name,
             'quantity': 1,
             'units': 'units',
-            'favorited': True,
+            'favorited': favorited_item.id,
             'description': favorited_item.description,
             'store': favorited_item.store,
             'list': grocery.id,
             'subheading': default_subheading.id
         }
 
-        serializer = GroceryItemUnoptimizedSerializer(data=data)
+        serializer = GroceryItemUnoptimizedSerializer(data=data, context={"grocery": grocery})
+
         if serializer.is_valid():
-            grocery_item = serializer.save()
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -27,7 +27,7 @@ import * as SecureStore from "expo-secure-store";
  * @returns None
  */
 
-export function CheckItem({item, handleCheckItem, handleRemoveItem, callingFrom}) {
+export function CheckItem({item, handleRemoveItem, callingFrom}) {
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
         item: {
@@ -117,6 +117,7 @@ export function CheckItem({item, handleCheckItem, handleRemoveItem, callingFrom}
     const increaseItem = async () => {
         const newNumber = number + 1;
         setNumber(newNumber);
+        item.quantity = newNumber;
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.patch(`${API_BASE_URL}/api/${callingFrom}/${item.id}/`,
@@ -159,9 +160,25 @@ export function CheckItem({item, handleCheckItem, handleRemoveItem, callingFrom}
         }
     }
 
-    function toggleCheck() {
+    const toggleCheck = async () => {
+        console.log("HEYYYYY");
+        console.log(checked);
         setChecked(!checked);
-        handleCheckItem(item);
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            console.log(callingFrom);
+            const response = await axios.post(`${API_BASE_URL}/api/${callingFrom}/${item.id}/check/`,
+                {},
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                });
+        } catch (error) {
+            console.log("Could not set check status, rolling back... Error:", error);
+            setChecked(!checked);
+        }
     }
 
     const toggleFavorite = async () => {
@@ -204,6 +221,7 @@ export function CheckItem({item, handleCheckItem, handleRemoveItem, callingFrom}
         <View style={styles.item}>
             <View style={styles.leftContainer}>
                 <Pressable onPress={toggleCheck}>
+
                     <Icon
                         name={checked ? "checkmark-circle" : "ellipse-outline"}
                         size={24}
