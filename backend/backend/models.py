@@ -185,6 +185,7 @@ class ItemBase(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     store = models.CharField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     class Meta:
         abstract = True
@@ -194,12 +195,12 @@ class FavoritedItem(ItemBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # FavoriteManager.register(self.__class__)
+        FavoriteManager.register(self.__class__)
+
 
 class GroceryItemOptimized(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="optimized_items")
     checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
@@ -256,7 +257,7 @@ class GroceryItemUnoptimized(ItemBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # FavoriteManager.register(self.__class__)
+        FavoriteManager.register(self.__class__)
 
 
 class StoreItem(models.Model):
@@ -281,59 +282,41 @@ class RecipeItem(ItemBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # FavoriteManager.register(self.__class__)
+        FavoriteManager.register(self.__class__)
 
-# @receiver(pre_save, sender=GroceryItemUnoptimized)
-# @receiver(pre_save, sender=RecipeItem)
-# def update_favorite(sender, instance, **kwargs):
-#     try:
-#         if (sender not in FavoriteManager.receivers):
-#             return
-#         old_instance = sender.objects.get(pk=instance.pk)
-#         if old_instance.favorited != instance.favorited:
-#             FavoriteManager.sync(instance)
-#     except sender.DoesNotExist:
-#         # Handle the case where the old instance does not exist
-#         pass
-#
-#
-# class FavoriteManager:
-#     receivers = []
-#
-#     @classmethod
-#     def register(cls, model):
-#         cls.receivers.append(model)
-#
-#     @classmethod
-#     def sync(self, instance):
-#         for receiver in self.receivers:
-#             if receiver == FavoritedItem:
-#                 continue
-#             if isinstance(instance, receiver) or receiver == FavoritedItem:
-#                 continue
-#             # Update 'favorited' status in other receiver models
-#             receiver.objects.filter(id=instance.id).update(favorited=instance.favorited)
-#
-#         if instance.favorited:
-#             # Retrieve the user through subheading and grocery
-#             try:
-#                 user = instance.subheading.grocery.user
-#             except AttributeError:
-#                 raise ValueError("The instance is not properly linked to a grocery and user.")
-#
-#             # Create or get the FavoritedItem
-#             FavoritedItem.objects.get_or_create(
-#                 id=instance.id,
-#                 defaults={
-#                     'name': instance.name,
-#                     'description': instance.description,
-#                     'store': instance.store,
-#                     'user': user
-#                 }
-#             )
-#         else:
-#             # Delete the FavoritedItem if it exists
-#             FavoritedItem.objects.filter(id=instance.id).delete()
+@receiver(pre_save, sender=GroceryItemUnoptimized)
+@receiver(pre_save, sender=RecipeItem)
+def update_favorite(sender, instance, **kwargs):
+    try:
+        if sender not in FavoriteManager.receivers:
+            return
+        old_instance = sender.objects.get(pk=instance.pk)
+        if old_instance.favorited != instance.favorited and old_instance.favorited:
+            FavoriteManager.sync(old_instance, instance)
+    except sender.DoesNotExist:
+        # Handle the case where the old instance does not exist
+        pass
+
+
+class FavoriteManager:
+    receivers = []
+
+    @classmethod
+    def register(cls, model):
+        cls.receivers.append(model)
+
+    @classmethod
+    def sync(self, old_instance, instance):
+        for receiver in self.receivers:
+            if receiver == FavoritedItem:
+                continue
+            if isinstance(instance, receiver):
+                continue
+            # Update 'favorited' status in other receiver models
+            receiver.objects.filter(favorited=old_instance.favorited.id).update(favorited=None)
+
+        old_instance.favorited.delete()
+
 
 class FriendRecipe (models.Model):
     from_user = models.ForeignKey(User, related_name='recipe_sent', on_delete=models.CASCADE)

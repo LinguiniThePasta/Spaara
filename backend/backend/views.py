@@ -32,7 +32,10 @@ from django.conf import settings
 
 load_dotenv()
 
+
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         '''
         Registers a new user with the provided data and sends a verification email.
@@ -270,7 +273,8 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         friend_request.delete()
         return Response({'message': 'Friend request removed'}, status=status.HTTP_200_OK)
-        
+
+
 class FriendRecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -323,11 +327,11 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
         print(recipe['id'])
         friend_recipe = FriendRecipe.objects.filter(recipe_id=recipe['id']).first()
         copy_recipe = copy(friend_recipe)
-        
+
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
         copy_recipe.recipe.user = user
-        
+
         copy_recipe.save()
         friend_recipe.delete()
         return Response({'message': 'Friend request accepted'}, status=status.HTTP_201_CREATED)
@@ -338,7 +342,7 @@ class FriendRecipeViewSet(viewsets.ModelViewSet):
     def reject(self, request):
         user = request.user
         recipe = request.data.get('recipe', None)
-        
+
         friend_recipe = FriendRecipe.objects.filter(recipe_id=recipe).first()
         if friend_recipe is None:
             return Response({'error': 'Friend request not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -376,7 +380,8 @@ class FriendsView(APIView):
         '''
         user = request.user
         friends = user.friends.all()
-        data = [{'id': friend.id, 'username': friend.username, 'profile_icon': friend.profile_icon, 'profile_color': friend.profile_color} for friend in friends]
+        data = [{'id': friend.id, 'username': friend.username, 'profile_icon': friend.profile_icon,
+                 'profile_color': friend.profile_color} for friend in friends]
         return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -494,6 +499,7 @@ class LoginView(APIView):
             'username': guest_user.username,
         }, status=status.HTTP_201_CREATED)
 
+
 class StoreItemSuggestionsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -525,8 +531,10 @@ class StoreItemSuggestionsView(APIView):
         serializer = StoreItemSerializer(valid_results, many=True)
         return Response(serializer.data, status=200)
 
+
 class OptimizeView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         '''
         When a user optimize, the unoptimized AND optimized grocery list is sent to them. The frontend will parse both items
@@ -782,7 +790,7 @@ class ProfileView(APIView):
             },
             status=status.HTTP_200_OK
         )
-    
+
 
 class ThemeView(APIView):
     '''
@@ -790,6 +798,7 @@ class ThemeView(APIView):
     Allows updating and retrieving the settings for the authenticated user.
     permission_classes = [IsAuthenticated]
     '''
+
     def post(self, request):
         '''
         Updates the settings for the authenticated user, including dietary restrictions, max distance, and max stores.
@@ -1262,7 +1271,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
         if not isinstance(items_order, list):
             return Response({"error": "items_order must be a list of item order mappings."},
                             status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             with transaction.atomic():
                 for item_data in items_order:
@@ -1347,7 +1356,7 @@ class StoreView(APIView):
                 latitude = address['latitude']
                 longitude = address['longitude']
             else:
-                return Response({'error' : 'Valid coordinates not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': 'Valid coordinates not found'}, status=status.HTTP_404_NOT_FOUND)
 
         response = requests.get(
             f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?keyword=walmart&location={latitude},{longitude}&radius={radius}&key={os.getenv('GOOGLE_API_KEY')}"
@@ -1516,6 +1525,7 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
         item.favorited = not item.favorited
         item.save()
         return Response(self.get_serializer(item).data)
+
     @action(detail=True, methods=['post'])
     def check(self, request, pk=None):
         '''
@@ -1541,6 +1551,7 @@ class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
         # Toggle the 'favorited' status
         item.checked = not item.checked
         item.save()
+
 
 class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
     queryset = GroceryItemUnoptimized.objects.all()
@@ -1652,19 +1663,25 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         usage:
             - POST {URL}/{item_id}/favorite?list={grocery_list_id} - toggles the favorite status of items within the specified grocery list
         '''
-        grocery_id = request.query_params.get('list')
-        if not grocery_id:
-            return Response({"error": "'list' parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Attempt to retrieve the item within the specified grocery list
         try:
-            item = GroceryItemUnoptimized.objects.get(pk=pk, subheading__grocery__id=grocery_id)
+            item = GroceryItemUnoptimized.objects.get(pk=pk)
         except GroceryItemUnoptimized.DoesNotExist:
             return Response({"error": "Item not found in the specified grocery list."},
                             status=status.HTTP_404_NOT_FOUND)
 
         # Toggle the 'favorited' status
-        item.favorited = not item.favorited
+        if not item.favorited:
+            item.favorited = FavoritedItem.objects.get_or_create(
+                name=item.name,
+                description=item.description,
+                store=item.store,
+                price=item.price,
+                user=request.user,
+            )[0]
+        else:
+            item.favorited = None
         item.save()
         return Response(self.get_serializer(item).data)
 

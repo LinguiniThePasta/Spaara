@@ -5,7 +5,7 @@ import DraggableItem from "@/components/DraggableItem";
 import { InputItem } from "@/components/Item";
 import { useSelector } from "react-redux";
 
-const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd, handleRemoveItem}) => {
+const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd, handleRemoveItem, callingFrom}) => {
 
   const Colors = useSelector((state) => state.colorScheme);
   const styles = StyleSheet.create({
@@ -76,6 +76,7 @@ const DraggableGroup = ({ header, items, groupId, onRegisterItems, onDrop, onAdd
             onStateChange={(isDragging) => handleItemStateChange(item.id, isDragging)}
             onDrop={(position) => handleDrop(position, index)}
             handleRemoveItem={() => handleRemoveItem(item)}
+            callingFrom={callingFrom}
           />
           )}
         </View>

@@ -309,6 +309,7 @@ export default function ModifyShopping() {
                 onDrop={(position, groupId, index) => handleDrop(position, groupId, index)}
                 onAdd={(newItem) => handleAdd(newItem)}
                 handleRemoveItem={handleRemoveItem}
+                callingFrom={"grocery_items/unoptimized"}
             />
         );
     };
@@ -352,7 +353,6 @@ export default function ModifyShopping() {
                     quantity: newItem.quantity,
                     units: newItem.units,
                     store: newItem.store,
-                    favorited: newItem.favorited,
                     subheading: newItem.group,
                 }, {
                     headers: {

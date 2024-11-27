@@ -45,8 +45,8 @@ urlpatterns = [
 
     path('accounts', include('allauth.urls')),
     path('admin', admin.site.urls),
-    path('api/user/login', LoginView.as_view(), name='login'),
     path('api/user/register', RegisterView.as_view(), name='register'),
+    path('api/user/login', LoginView.as_view(), name='login'),
     path('api/user/delete', DeleteUserView.as_view(), name='delete_user'),
     path('api/user/save_settings', SettingsView.as_view(), name='save_dietary_restrictions'),
     path('api/user/update_info', UpdateInfoView.as_view(), name='update_info'),

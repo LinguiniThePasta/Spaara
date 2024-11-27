@@ -298,7 +298,7 @@ export default function RecipeScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [recipes, setRecipes] = useState([]);
     const [recipeName, setRecipeName] = useState("");
-    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: false, checked: false});
+    const [newItem, setNewItem] = useState({id: -1, title: "EYES!", favorited: null, checked: false});
     const [newItemName, setNewItemName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [recipeItems, setRecipeItems] = useState([
@@ -325,10 +325,10 @@ export default function RecipeScreen() {
     const [contentVisable, setContentVisable] = useState('Favorite');
 
     const [itemGroups, setItemGroups] = useState([
-        {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
-                                         { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
-        {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
-                                         { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        // {id: 1001, title: "Smallga", items: [{ id: 998, title: 'Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+        //                                  { id: 999, title: 'Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
+        // {id: 1002, title: "Bigitte", items: [{ id: 998, title: 'Big Ham', price: 3.99, favorited: false, checked: false, quantity: 1 },
+        //                                  { id: 999, title: 'Biggy Cheese', price: 4.99, favorited: false, checked: false, quantity: 1 },]},
     ]);
 
     const handlePress = (button) => {
@@ -533,6 +533,7 @@ export default function RecipeScreen() {
                 item.id === id ? {...item, favorited: !item.favorited} : item
             )
         );
+        //TODO: Fix this
         setFavoriteItems(prevFavorites =>
             prevFavorites.map(item =>
                 item.id === id ? {...item, favorited: !item.favorited} : item

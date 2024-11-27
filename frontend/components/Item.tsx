@@ -27,7 +27,7 @@ import * as SecureStore from "expo-secure-store";
  * @returns None
  */
 
-export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemoveItem}) {
+export function CheckItem({item, handleCheckItem, handleRemoveItem, callingFrom}) {
     const Colors = useSelector((state) => state.colorScheme);
     const styles = StyleSheet.create({
         item: {
@@ -107,7 +107,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
     });
 
     const [number, setNumber] = useState(item.quantity);
-    const [favorite, setFavorite] = useState(item.favorited);
+    const [favorite, setFavorite] = useState(!!item.favorited);
     const [checked, setChecked] = useState(item.checked);
     const [note, setNote] = useState(item.notes || "");
     const [isEditing, setIsEditing] = useState(false);
@@ -119,7 +119,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
         setNumber(newNumber);
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`,
+            const response = await axios.patch(`${API_BASE_URL}/api/${callingFrom}/${item.id}/`,
                 {
                     quantity: item.quantity,
                 }, {
@@ -140,7 +140,7 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
         item.quantity = newNumber;
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.patch(`${API_BASE_URL}/api/grocery_items/unoptimized/${item.id}/`,
+            const response = await axios.patch(`${API_BASE_URL}/api/${callingFrom}/${item.id}/`,
                 {
                     quantity: item.quantity,
                 }, {
@@ -164,9 +164,23 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
         handleCheckItem(item);
     }
 
-    function toggleFavorite() {
+    const toggleFavorite = async () => {
         setFavorite(!favorite);
-        handleFavoriteItem(item);
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            console.log(callingFrom);
+            const response = await axios.post(`${API_BASE_URL}/api/${callingFrom}/${item.id}/favorite/`,
+                {},
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                });
+        } catch (error) {
+            console.log("Could not set favorites, rolling back... Error:", error);
+            setFavorite(!favorite);
+        }
     }
 
     async function onNoteChange(note) {
@@ -204,9 +218,9 @@ export function CheckItem({item, handleCheckItem, handleFavoriteItem, handleRemo
                 <Text style={styles.priceText}>${price}</Text>
                 <Pressable onPress={toggleFavorite}>
                     <Icon
-                        name={favorite ? "star" : "star-outline"}
+                        name={!!favorite ? "star" : "star-outline"}
                         size={20}
-                        color={favorite ? Colors.light.primaryColor : Colors.light.secondaryText}
+                        color={!!favorite ? Colors.light.primaryColor : Colors.light.secondaryText}
                         style={styles.checkboxText}
                     />
                 </Pressable>
