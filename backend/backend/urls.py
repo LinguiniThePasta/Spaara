@@ -24,8 +24,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'api/grocery', GroceryListViewSet, basename='grocery')
-router.register(r'api/grocery_items/optimized', GroceryItemOptimizedViewSet, basename='optimized-item')
-router.register(r'api/grocery_items/unoptimized', GroceryItemUnoptimizedViewSet, basename='unoptimized-item')
+router.register(r'api/grocery_items', GroceryItemViewSet, basename='grocery-item')
 router.register(r'api/recipe', RecipeViewSet, basename='recipe')
 router.register(r'api/recipe_items', RecipeItemViewSet, basename='recipe-item')
 router.register(r'api/favorited', FavoritedItemViewSet, basename='favorited-item')

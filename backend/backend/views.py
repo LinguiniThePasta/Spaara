@@ -11,11 +11,11 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from . import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, GroceryItemUnoptimized, GroceryItemOptimized, RecipeItem, \
+from .models import User, Grocery, Recipe, FavoritedItem, GroceryItem, RecipeItem, \
     DietRestriction, Subheading, FriendRequest, StoreItem, FriendRecipe
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .serializers import GroceryItemUnoptimizedSerializer, GroceryItemOptimizedSerializer, RecipeItemSerializer, \
+from .serializers import GroceryItemSerializer, RecipeItemSerializer, \
     FavoritedItemSerializer, RecipeSerializer, GrocerySerializer, DietRestrictionSerializer, FriendRequestSerializer, \
     FriendRecipeSerializer, SubheadingSerializer, StoreItemSerializer
 from .utils import *
@@ -545,7 +545,7 @@ class OptimizeView(APIView):
         print("HEYy")
         print(grocery_id)
         grocery = get_object_or_404(Grocery, id=grocery_id)
-        unoptimized_items = GroceryItemUnoptimized.objects.all().filter(subheading__grocery=grocery_id)
+        unoptimized_items = GroceryItem.objects.all().filter(subheading__grocery=grocery_id)
         subheading_dict = collections.defaultdict(list)
 
         optimized_subheadings = grocery.subheadings.filter(optimized=True)
@@ -1279,11 +1279,11 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                     order = item_data.get('order')
                     if not item_id or not isinstance(order, int):
                         raise ValidationError("Each item must have an 'item_id' and an integer 'order'.")
-                    item = GroceryItemUnoptimized.objects.get(id=item_id)
+                    item = GroceryItem.objects.get(id=item_id)
                     item.order = order
                     item.save()
             return Response({"success": "Items reordered successfully."}, status=status.HTTP_200_OK)
-        except GroceryItemUnoptimized.DoesNotExist:
+        except GroceryItem.DoesNotExist:
             return Response({"error": "One or more items do not exist in this grocery list."},
                             status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as ve:
@@ -1314,7 +1314,7 @@ class GroceryListViewSet(viewsets.ModelViewSet):
                 # Add RecipeItems to the Grocery list under the new Subheading
                 recipe_items = recipe.items.all()
                 for index, item in enumerate(recipe_items, start=1):
-                    GroceryItemUnoptimized.objects.create(
+                    GroceryItem.objects.create(
                         name=item.name,
                         description=item.description,
                         store=item.store,
@@ -1425,137 +1425,137 @@ class StoreView(APIView):
         return Response({'stores': all_stores}, status=status.HTTP_200_OK)
 
 
-class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
-    queryset = GroceryItemOptimized.objects.all()
-    serializer_class = GroceryItemOptimizedSerializer
-    permission_classes = [IsAuthenticated]
+# class GroceryItemOptimizedViewSet(viewsets.ModelViewSet):
+#     queryset = GroceryItemOptimized.objects.all()
+#     serializer_class = GroceryItemOptimizedSerializer
+#     permission_classes = [IsAuthenticated]
+#
+#     def get_queryset(self):
+#         queryset = super().get_queryset()
+#         grocery_id = self.request.query_params.get('list')
+#
+#         if grocery_id:
+#             queryset = queryset.filter(list=grocery_id)
+#
+#         return queryset
+#
+#     def destroy(self, request, *args, **kwargs):
+#         grocery_id = request.query_params.get('list')
+#         item_id = kwargs.get('pk')
+#
+#         # Ensure both recipe_id and item_id are provided
+#         if not grocery_id or not item_id:
+#             return Response(
+#                 {'error': 'Recipe ID and Item ID must be provided.'},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+#         print(grocery_id)
+#         print(item_id)
+#         # Check if item exists and belongs to the specified recipe
+#         item = get_object_or_404(GroceryItemOptimized, id=item_id, subheading__grocery=grocery_id)
+#
+#         subheading = item.subheading
+#         item.delete()
+#         if subheading.optimized_items.count() == 0 and subheading.name != "Unoptimized":
+#             subheading.delete()
+#
+#         return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+#
+#     def create(self, request, *args, **kwargs):
+#         '''
+#         Creates a new unoptimized grocery item associated with a specific grocery list.
+#
+#         :param:
+#             request (Request): The incoming request, expected to contain 'list' as part of the data.
+#
+#         :return:
+#             Response: Contains the serialized data of the newly created grocery item with status 201 on success,
+#                       or error details with status 400 if validation fails.
+#
+#         creation details:
+#             - Retrieves the 'list' from request data, which is the grocery list to associate the item with.
+#             - Validates the data using the serializer.
+#             - If valid, saves the grocery item with the specified grocery list and returns the created item data.
+#             - If invalid, returns error messages.
+#
+#         usage:
+#             - POST {URL}/
+#                 - data (dict):
+#                     {
+#                         name: name of the item
+#                         store (optional): the store where the grocery item is stored
+#                         description (optional): description of the item
+#                         quantity: the number of items
+#                         units: unit
+#                         list: the id of the grocery list
+#                     }
+#         '''
+#
+#         # Retrieve the grocery list from request data
+#         grocery_list_id = request.data.get('list')
+#         grocery = get_object_or_404(Grocery, id=grocery_list_id)
+#
+#         # Pass the grocery instance in the context
+#         serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
+#         serializer.is_valid(raise_exception=True)
+#         self.perform_create(serializer)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#
+#     @action(detail=True, methods=['post'])
+#     def favorite(self, request, pk=None):
+#         '''
+#         Toggles the 'favorited' status of a recipe item.
+#
+#         :param:
+#             request (Request): The incoming request; does not require any data parameters.
+#             pk (int): The primary key of the recipe item to toggle favorite status.
+#
+#         :return:
+#             Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
+#
+#         action details:
+#             - Retrieves the grocery item instance specified by the primary key.
+#             - Toggles its 'favorited' attribute.
+#             - Saves the updated instance and returns the updated data.
+#
+#         usage:
+#             - POST {URL}/{item_id}/favorite - toggles the favorite status of items
+#         '''
+#         item = self.get_object()
+#         item.favorited = not item.favorited
+#         item.save()
+#         return Response(self.get_serializer(item).data)
+#
+#     @action(detail=True, methods=['post'])
+#     def check(self, request, pk=None):
+#         '''
+#         Toggles the 'checked' status of a grocery item, ensuring it belongs to the specified grocery list.
+#
+#         :param:
+#             request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
+#             pk (UUID): The primary key of the grocery item to toggle favorite status.
+#
+#         :return:
+#             Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
+#                       or an error if the item does not belong to the specified grocery list.
+#
+#         usage:
+#             - POST {URL}/{item_id}/favorite - toggles the checked status of items within the specified grocery list
+#         '''
+#         try:
+#             item = GroceryItem.objects.get(pk=pk)
+#         except GroceryItem.DoesNotExist:
+#             return Response({"error": "Item not found in the specified grocery list."},
+#                             status=status.HTTP_404_NOT_FOUND)
+#
+#         # Toggle the 'favorited' status
+#         item.checked = not item.checked
+#         item.save()
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        grocery_id = self.request.query_params.get('list')
 
-        if grocery_id:
-            queryset = queryset.filter(list=grocery_id)
-
-        return queryset
-
-    def destroy(self, request, *args, **kwargs):
-        grocery_id = request.query_params.get('list')
-        item_id = kwargs.get('pk')
-
-        # Ensure both recipe_id and item_id are provided
-        if not grocery_id or not item_id:
-            return Response(
-                {'error': 'Recipe ID and Item ID must be provided.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        print(grocery_id)
-        print(item_id)
-        # Check if item exists and belongs to the specified recipe
-        item = get_object_or_404(GroceryItemOptimized, id=item_id, subheading__grocery=grocery_id)
-
-        subheading = item.subheading
-        item.delete()
-        if subheading.optimized_items.count() == 0 and subheading.name != "Unoptimized":
-            subheading.delete()
-
-        return Response({'message': 'Recipe item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
-
-    def create(self, request, *args, **kwargs):
-        '''
-        Creates a new unoptimized grocery item associated with a specific grocery list.
-
-        :param:
-            request (Request): The incoming request, expected to contain 'list' as part of the data.
-
-        :return:
-            Response: Contains the serialized data of the newly created grocery item with status 201 on success,
-                      or error details with status 400 if validation fails.
-
-        creation details:
-            - Retrieves the 'list' from request data, which is the grocery list to associate the item with.
-            - Validates the data using the serializer.
-            - If valid, saves the grocery item with the specified grocery list and returns the created item data.
-            - If invalid, returns error messages.
-
-        usage:
-            - POST {URL}/
-                - data (dict):
-                    {
-                        name: name of the item
-                        store (optional): the store where the grocery item is stored
-                        description (optional): description of the item
-                        quantity: the number of items
-                        units: unit
-                        list: the id of the grocery list
-                    }
-        '''
-
-        # Retrieve the grocery list from request data
-        grocery_list_id = request.data.get('list')
-        grocery = get_object_or_404(Grocery, id=grocery_list_id)
-
-        # Pass the grocery instance in the context
-        serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'])
-    def favorite(self, request, pk=None):
-        '''
-        Toggles the 'favorited' status of a recipe item.
-
-        :param:
-            request (Request): The incoming request; does not require any data parameters.
-            pk (int): The primary key of the recipe item to toggle favorite status.
-
-        :return:
-            Response: Contains the serialized data of the updated recipe item after toggling 'favorited' status.
-
-        action details:
-            - Retrieves the grocery item instance specified by the primary key.
-            - Toggles its 'favorited' attribute.
-            - Saves the updated instance and returns the updated data.
-
-        usage:
-            - POST {URL}/{item_id}/favorite - toggles the favorite status of items
-        '''
-        item = self.get_object()
-        item.favorited = not item.favorited
-        item.save()
-        return Response(self.get_serializer(item).data)
-
-    @action(detail=True, methods=['post'])
-    def check(self, request, pk=None):
-        '''
-        Toggles the 'checked' status of a grocery item, ensuring it belongs to the specified grocery list.
-
-        :param:
-            request (Request): The incoming request; expects 'list' parameter with the grocery list ID.
-            pk (UUID): The primary key of the grocery item to toggle favorite status.
-
-        :return:
-            Response: Contains the serialized data of the updated grocery item after toggling 'favorited' status,
-                      or an error if the item does not belong to the specified grocery list.
-
-        usage:
-            - POST {URL}/{item_id}/favorite - toggles the checked status of items within the specified grocery list
-        '''
-        try:
-            item = GroceryItemUnoptimized.objects.get(pk=pk)
-        except GroceryItemUnoptimized.DoesNotExist:
-            return Response({"error": "Item not found in the specified grocery list."},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        # Toggle the 'favorited' status
-        item.checked = not item.checked
-        item.save()
-
-
-class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
-    queryset = GroceryItemUnoptimized.objects.all()
-    serializer_class = GroceryItemUnoptimizedSerializer
+class GroceryItemViewSet(viewsets.ModelViewSet):
+    queryset = GroceryItem.objects.all()
+    serializer_class = GroceryItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -1571,10 +1571,10 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         grocery_id = self.request.query_params.get('list')
         if grocery_id:
             # Filter items by subheadings belonging to the specified grocery list
-            return GroceryItemUnoptimized.objects.filter(subheading__grocery__id=grocery_id)
+            return GroceryItem.objects.filter(subheading__grocery__id=grocery_id)
 
         # If no 'list' parameter is provided, retrieve all items
-        return GroceryItemUnoptimized.objects.all()
+        return GroceryItem.objects.all()
 
     def destroy(self, request, *args, **kwargs):
         '''
@@ -1593,11 +1593,11 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         item_id = kwargs.get('pk')
 
         # Check if item exists and belongs to the specified recipe
-        item = get_object_or_404(GroceryItemUnoptimized, id=item_id)
+        item = get_object_or_404(GroceryItem, id=item_id)
 
         subheading = item.subheading
         item.delete()
-        if subheading.items.count() == 0 and (subheading.name != "Default" and subheading.name != "Unoptimized"):
+        if subheading.items.count() == 0 and (subheading.name != "Default"):
             subheading.delete()
 
         return Response({'message': 'grocery item deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
@@ -1634,17 +1634,14 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
         '''
 
         # Retrieve the grocery list from request data
-        grocery_list_id = request.data.get('list')
-        grocery = get_object_or_404(Grocery, id=grocery_list_id)
+        grocery_id = request.data.get('list')
+        grocery = get_object_or_404(Grocery, id=grocery_id)
 
         # Pass the grocery instance in the context
         serializer = self.get_serializer(data=request.data, context={'grocery': grocery})
 
-        try:
-            serializer.is_valid(raise_exception=True)
-        except:
-            print(serializer.errors)
-        self.perform_create(serializer)
+        if serializer.is_valid():
+            self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
@@ -1666,8 +1663,8 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
 
         # Attempt to retrieve the item within the specified grocery list
         try:
-            item = GroceryItemUnoptimized.objects.get(pk=pk)
-        except GroceryItemUnoptimized.DoesNotExist:
+            item = GroceryItem.objects.get(pk=pk)
+        except GroceryItem.DoesNotExist:
             return Response({"error": "Item not found in the specified grocery list."},
                             status=status.HTTP_404_NOT_FOUND)
 
@@ -1702,8 +1699,8 @@ class GroceryItemUnoptimizedViewSet(viewsets.ModelViewSet):
             - POST {URL}/{item_id}/checked - toggles the checked status of items within the specified grocery list
         '''
         try:
-            item = GroceryItemUnoptimized.objects.get(pk=pk)
-        except GroceryItemUnoptimized.DoesNotExist:
+            item = GroceryItem.objects.get(pk=pk)
+        except GroceryItem.DoesNotExist:
             return Response({"error": "Item not found in the specified grocery list."},
                             status=status.HTTP_404_NOT_FOUND)
 
@@ -1803,7 +1800,6 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
 
         if recipe_id:
             queryset = queryset.filter(recipe__id=recipe_id)
-
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -1834,13 +1830,20 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
                         recipe_id: the id of the recipe this item belongs to
                     }
         '''
-        recipe_id = request.data.get('recipe_id')
+        recipe_id = request.data.get('recipe')
+        print(recipe_id)
+
         recipe = get_object_or_404(Recipe, id=recipe_id, user=request.user)
         serializer = self.get_serializer(data=request.data)
+        print("here2")
         if serializer.is_valid():
-            serializer.save(recipe=recipe)
+            print("here3")
+            print(serializer.validated_data)
+            self.perform_create(serializer)
+            # serializer.save(recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
+            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
@@ -1863,8 +1866,23 @@ class RecipeItemViewSet(viewsets.ModelViewSet):
         usage:
             - POST {URL}/{item_id}/favorite - toggles the favorite status of items
         '''
-        item = self.get_object()
-        item.favorited = not item.favorited
+        try:
+            item = RecipeItem.objects.get(pk=pk)
+        except RecipeItem.DoesNotExist:
+            return Response({"error": "Item not found in the specified recipe."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # Toggle the 'favorited' status
+        if not item.favorited:
+            item.favorited = FavoritedItem.objects.get_or_create(
+                name=item.name,
+                description=item.description,
+                store=item.store,
+                price=item.price,
+                user=request.user,
+            )[0]
+        else:
+            item.favorited = None
         item.save()
         return Response(self.get_serializer(item).data)
 
@@ -1918,7 +1936,7 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
         grocery = Grocery.objects.all().filter(id=grocery_id).get()
         default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name="Default")
 
-        existing_item = GroceryItemUnoptimized.objects.filter(
+        existing_item = GroceryItem.objects.filter(
             favorited=favorited_item.id,
             subheading__grocery=grocery
         ).exists()
@@ -1940,7 +1958,7 @@ class FavoritedItemViewSet(mixins.RetrieveModelMixin,
             'subheading': default_subheading.id
         }
 
-        serializer = GroceryItemUnoptimizedSerializer(data=data, context={"grocery": grocery})
+        serializer = GroceryItemSerializer(data=data, context={"grocery": grocery})
 
         if serializer.is_valid():
             serializer.save()

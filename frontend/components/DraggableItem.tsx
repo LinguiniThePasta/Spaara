@@ -8,7 +8,7 @@ import {useSelector} from "react-redux";
 interface DraggableItemProps {
     item: {
         id: string | number;
-        label: string;
+        name: string;
         isDummy?: boolean;
     };
     indent: boolean;

@@ -66,7 +66,7 @@ export default function RootLayout() {
                 <Stack.Screen name="unauthorized"/>
                 <Stack.Screen name="savedLists"/>
                 <Stack.Screen name="filterScreen"/>
-                <Stack.Screen name="savedRecipes"/>
+                {/*<Stack.Screen name="savedRecipes"/>*/}
                 <Stack.Screen name="social"/>
                 <Stack.Screen name="changeUsername"/>
                 <Stack.Screen name="forgotPassword"/>

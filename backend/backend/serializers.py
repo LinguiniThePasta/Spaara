@@ -2,7 +2,7 @@ import collections
 import re
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
-from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItemUnoptimized, GroceryItemOptimized, \
+from .models import User, Grocery, Recipe, FavoritedItem, RecipeItem, GroceryItem, \
     DietRestriction, Subheading, FriendRequest, StoreItem, FriendRecipe
 from django.core.validators import validate_email
 import uuid
@@ -272,64 +272,97 @@ class GrocerySerializer(serializers.ModelSerializer):
 
         return grocery
 
-
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Recipe
-        fields = '__all__'
-
-class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
-    subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
-
-    class Meta:
-        model = GroceryItemOptimized
-        fields = ['id', 'name', 'description', 'notes', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
+        model = RecipeItem
+        fields = ['id', 'name', 'description', 'store', 'quantity', 'units', 'favorited', 'recipe', 'order']
 
     def create(self, validated_data):
         # Check if 'subheading' is provided
-        subheading = validated_data.get('subheading')
-        grocery = self.context.get('grocery')
-        if not grocery:
-            raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
+        recipe = validated_data.get('recipe')
+
+        if not recipe:
+            raise serializers.ValidationError("Recipe is required to add a recipe.")
 
         item_id = validated_data.get('id')
 
-        existing_item = GroceryItemOptimized.objects.filter(
+        existing_item = RecipeItem.objects.filter(
             id=item_id,
-            subheading__grocery=grocery,
-            favorited=True
+            recipe=recipe,
+            favorited=False
         ).exists()
 
         if existing_item:
-            raise serializers.ValidationError("This favorited item already exists in the grocery list.")
-
-        if not subheading:
-            try:
-                default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Unoptimized')
-            except Exception as e:
-                raise serializers.ValidationError(
-                    f"An error occurred while retrieving or creating the default subheading: {str(e)}"
-                )
-
-            validated_data['subheading'] = default_subheading
+            raise serializers.ValidationError("This favorited item already exists in the recipe.")
         order = validated_data.get('order')
         if order is None:
             # Assign the next available order within the subheading
-            last_item = GroceryItemOptimized.objects.filter(subheading=validated_data['subheading']).order_by(
+            last_item = RecipeItem.objects.filter(recipe=validated_data['recipe']).order_by(
                 '-order').first()
             if last_item:
                 validated_data['order'] = last_item.order + 1
             else:
                 validated_data['order'] = 1
 
-        # Call the parent class's create method to save the instance with the default or provided subheading
         return super().create(validated_data)
+class RecipeSerializer(serializers.ModelSerializer):
+    items = RecipeItemSerializer(many=True, read_only=True)
+    class Meta:
+        model = Recipe
+        fields = ['id', 'name', 'creation_time', 'update_time', 'user', 'items']
 
-class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
+# class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
+#     subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
+#
+#     class Meta:
+#         model = GroceryItemOptimized
+#         fields = ['id', 'name', 'description', 'notes', 'store', 'price', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
+#
+#     def create(self, validated_data):
+#         # Check if 'subheading' is provided
+#         subheading = validated_data.get('subheading')
+#         grocery = self.context.get('grocery')
+#         if not grocery:
+#             raise serializers.ValidationError("Grocery context is required to assign a default subheading.")
+#
+#         item_id = validated_data.get('id')
+#
+#         existing_item = GroceryItemOptimized.objects.filter(
+#             id=item_id,
+#             subheading__grocery=grocery,
+#             favorited=True
+#         ).exists()
+#
+#         if existing_item:
+#             raise serializers.ValidationError("This favorited item already exists in the grocery list.")
+#
+#         if not subheading:
+#             try:
+#                 default_subheading, created = Subheading.objects.get_or_create(grocery=grocery, name='Unoptimized')
+#             except Exception as e:
+#                 raise serializers.ValidationError(
+#                     f"An error occurred while retrieving or creating the default subheading: {str(e)}"
+#                 )
+#
+#             validated_data['subheading'] = default_subheading
+#         order = validated_data.get('order')
+#         if order is None:
+#             # Assign the next available order within the subheading
+#             last_item = GroceryItemOptimized.objects.filter(subheading=validated_data['subheading']).order_by(
+#                 '-order').first()
+#             if last_item:
+#                 validated_data['order'] = last_item.order + 1
+#             else:
+#                 validated_data['order'] = 1
+#
+#         # Call the parent class's create method to save the instance with the default or provided subheading
+#         return super().create(validated_data)
+
+class GroceryItemSerializer(serializers.ModelSerializer):
     subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
 
     class Meta:
-        model = GroceryItemUnoptimized
+        model = GroceryItem
         fields = ['id', 'name', 'description', 'notes', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
 
 
@@ -343,7 +376,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
 
         item_id = validated_data.get('id')
 
-        existing_item = GroceryItemUnoptimized.objects.filter(
+        existing_item = GroceryItem.objects.filter(
             id=item_id,
             subheading__grocery=grocery,
             favorited=True
@@ -363,7 +396,7 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         order = validated_data.get('order')
         if order is None:
             # Assign the next available order within the subheading
-            last_item = GroceryItemUnoptimized.objects.filter(subheading=validated_data['subheading']).order_by(
+            last_item = GroceryItem.objects.filter(subheading=validated_data['subheading']).order_by(
                 '-order').first()
             if last_item:
                 validated_data['order'] = last_item.order + 1
@@ -374,13 +407,12 @@ class GroceryItemUnoptimizedSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class SubheadingSerializer(serializers.ModelSerializer):
-    items = GroceryItemUnoptimizedSerializer(many=True)
-    optimized_items = GroceryItemOptimizedSerializer(many=True)
+    items = GroceryItemSerializer(many=True)
     recipe = RecipeSerializer(read_only=True)
 
     class Meta:
         model = Subheading
-        fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized_items', 'optimized']
+        fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized']
 
 class GrocerySerializer(serializers.ModelSerializer):
     subheadings = SubheadingSerializer(many=True, required=False)
@@ -402,10 +434,6 @@ class GrocerySerializer(serializers.ModelSerializer):
         grocery = Grocery.objects.create(**validated_data)
         return grocery
 
-class RecipeItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RecipeItem
-        fields = '__all__'
 
 
 class FavoritedItemSerializer(serializers.ModelSerializer):

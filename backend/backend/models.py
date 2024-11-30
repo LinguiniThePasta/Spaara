@@ -171,13 +171,6 @@ def create_default_subheading(sender, instance, created, **kwargs):
             order=0
             # recipe is null by default, supporting user-defined subheadings
         )
-        Subheading.objects.create(
-            name='Unoptimized',
-            grocery=instance,
-            order=1,
-            optimized=1
-            # recipe is null by default, supporting user-defined subheadings
-        )
 
 
 class ItemBase(models.Model):
@@ -197,20 +190,22 @@ class FavoritedItem(ItemBase):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
 
-
-class GroceryItemOptimized(ItemBase):
+class GroceryItem(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
-    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="optimized_items")
+    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="unoptimized_items")
     checked = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
     notes = models.CharField(max_length=200, blank=True, null=True)
-    subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='optimized_items')
+    subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
+    optimized = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # FavoriteManager.register(self.__class__)
-
+        FavoriteManager.register(self.__class__)
     @classmethod
     def from_store_item(cls, store_item, subheading, order):
         """
@@ -226,39 +221,6 @@ class GroceryItemOptimized(ItemBase):
             subheading=subheading,
             order=order
         )
-
-    @classmethod
-    def from_unoptimized_item(cls, unoptimized_item, subheading, order):
-        """
-        Converts a StoreItem instance to a GroceryItemOptimized instance.
-        """
-        return cls(
-            name=unoptimized_item.name,
-            description=unoptimized_item.description,
-            store="",
-            quantity=unoptimized_item.quantity,
-            units=unoptimized_item.units,
-            price=0.0,
-            subheading=subheading,
-            order=order
-        )
-
-class GroceryItemUnoptimized(ItemBase):
-    quantity = models.IntegerField()
-    units = models.CharField(max_length=20)
-    favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="unoptimized_items")
-    checked = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
-    notes = models.CharField(max_length=200, blank=True, null=True)
-    subheading = models.ForeignKey(Subheading, on_delete=models.CASCADE, related_name='items')
-
-    def __str__(self):
-        return self.name
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        FavoriteManager.register(self.__class__)
-
 
 class StoreItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -278,13 +240,15 @@ class RecipeItem(ItemBase):
     quantity = models.IntegerField()
     units = models.CharField(max_length=20)
     favorited = models.ForeignKey(FavoritedItem, on_delete=SET_NULL, default=None, null=True, related_name="recipe_items")
-    recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE, related_name='items', default=None)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='items', default=None)
+    order = models.PositiveIntegerField(default=0)
+    optimized = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         FavoriteManager.register(self.__class__)
 
-@receiver(pre_save, sender=GroceryItemUnoptimized)
+@receiver(pre_save, sender=GroceryItem)
 @receiver(pre_save, sender=RecipeItem)
 def update_favorite(sender, instance, **kwargs):
     try:

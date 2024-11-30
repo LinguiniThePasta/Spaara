@@ -19,6 +19,10 @@ import {API_BASE_URL} from '@/scripts/config';
 import Footer from '@/components/Footer';
 import {useSelector} from 'react-redux';
 import {stringify} from "node:querystring";
+import DraggableFlatList from "react-native-draggable-flatlist/src/components/DraggableFlatList";
+import {RenderItemParams} from "react-native-draggable-flatlist";
+import {CheckItem, InputItem} from "@/components/Item";
+import GroceryModal from "@/components/GroceryModal";
 
 // Item data
 type Item = {
@@ -38,6 +42,7 @@ type Group = {
     id: string;
     label: string;
     items?: Item[];
+    expanded: boolean;
 };
 
 export default function ModifyShopping() {
@@ -101,11 +106,16 @@ export default function ModifyShopping() {
             borderRadius: 20,
         },
         groupHeader: {
-            fontSize: 18,
             fontWeight: 'bold',
             marginBottom: 10,
-            //color: '#333',
             color: Colors.light.primaryText,
+            flexDirection: "row",
+            alignItems: "center"
+        },
+        groupHeaderText: {
+            color: Colors.light.primaryText,
+            fontSize: 24,
+            fontWeight: "bold",
         },
         itemGroupContainer: {
             marginBottom: 20,
@@ -205,6 +215,8 @@ export default function ModifyShopping() {
         flatList: {
             marginLeft: 10,
         },
+
+
     });
 
     // Create input item, which is appended to the end of every group to allow for expansion
@@ -227,95 +239,9 @@ export default function ModifyShopping() {
         fetchShoppingList();
     }, []);
 
+
     // Flatlist data
-    const [items, setItems] = useState<Item[]>([
-        // {
-        //     id: '1',
-        //     label: 'Milk',
-        //     description: 'Whole Milk',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 0,
-        //     group: 'B'
-        // },
-        // {
-        //     id: '2',
-        //     label: 'Eggs',
-        //     description: 'Large Eggs',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 1,
-        //     group: 'B'
-        // },
-        // {
-        //     id: '3',
-        //     label: 'Bread',
-        //     description: 'Whole Wheat Bread',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 2,
-        //     group: 'A'
-        // },
-        // {
-        //     id: '4',
-        //     label: 'Butter',
-        //     description: 'Unsalted Butter',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 3
-        // },
-        // {
-        //     id: '5',
-        //     label: 'Cheese',
-        //     description: 'Cheddar Cheese',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 4,
-        //     group: 'A'
-        // },
-        // {
-        //     id: '6',
-        //     label: 'Apples',
-        //     description: 'Red Apples',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 5,
-        //     group: 'A'
-        // },
-        // {
-        //     id: '7',
-        //     label: 'Bananas',
-        //     description: 'Yellow Bananas',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 6
-        // },
-        // {
-        //     id: '8',
-        //     label: 'Oranges',
-        //     description: 'Navel Oranges',
-        //     store: 'Walmart',
-        //     quantity: 1,
-        //     units: 1,
-        //     favorited: false,
-        //     order: 7,
-        //     group: 'A'
-        // },
-    ]);
+    const [items, setItems] = useState<Item[]>([]);
 
     const [groups, setGroups] = useState<Group[]>([
         // {id: 'A', label: 'Group A', items: items.filter(item => item.group === 'A')},
@@ -337,6 +263,7 @@ export default function ModifyShopping() {
         return subheadings.map((subheading) => ({
             id: `${subheading.id}`,
             label: subheading.name,
+            expanded: true,
             items: subheading.items.map((item) => ({
                 id: `${item.id}`,
                 name: item.name,
@@ -347,7 +274,7 @@ export default function ModifyShopping() {
                 favorited: item.favorited || false,
                 order: item.order || 0,
                 checked: item.checked || false,
-                group: subheading.name,
+                group: subheading.id,
 
             })),
         }));
@@ -367,7 +294,7 @@ export default function ModifyShopping() {
                     units: 1,
                     favorited: false,
                     order: group.items.length + 1,
-                    group: group.label,
+                    group: group.id,
                     isInput: true,
                 },
             ],
@@ -391,28 +318,110 @@ export default function ModifyShopping() {
             console.error('Error fetching shopping items:', error);
         }
     };
-
-    const renderGroup = ({group}: { group: Group }) => {
-        return (
-            <DraggableGroup
-                key={group.id}
-                header={group.label}
-                items={group.items}
-                groupId={group.id}
-                onRegisterItems={registerItems}
-                onDrop={(position, groupId, index) => handleDrop(position, groupId, index)}
-                onAdd={(newItem) => handleAdd(newItem)}
-                handleRemoveItem={handleRemoveItem}
-                callingFrom={"grocery_items/unoptimized"}
-            />
+    const handleItemDragEnd = (groupId: string, updatedItems: Item[]) => {
+        setGroups((prevGroups) =>
+            prevGroups.map((group) =>
+                group.id === groupId ? {...group, items: updatedItems} : group
+            )
         );
     };
+
+    // Handle group reordering
+    const handleGroupDragEnd = ({data}: { data: Group[] }) => {
+        setGroups(data);
+    };
+
+    const toggleGroup = (groupId: string) => {
+        setGroups((prevGroups) =>
+            prevGroups.map((group) =>
+                group.id === groupId ? {...group, expanded: !group.expanded} : group
+            )
+        );
+    };
+
+    const renderItem = ({
+                            item,
+                            drag,
+                            isActive,
+                        }: RenderItemParams<Item & { group: string }>) => {
+        if (item.isInput) {
+            return (
+                <View
+                    style={{
+                        borderLeftWidth: 2,
+                        borderColor: Colors.light.primaryColor,
+                        marginVertical: 5,
+                    }}
+                >
+                    <InputItem
+                        initialText="Add Item"
+                        handleAddItem={(text) => handleAdd({...item, name: text})}
+                    />
+                </View>
+            );
+        }
+
+        return (
+            <TouchableOpacity
+                onLongPress={drag}
+                style={[
+                    styles.itemContainer,
+                    isActive && {backgroundColor: Colors.light.primaryColor},
+                ]}
+            >
+                <CheckItem
+                    item={item}
+                    handleRemoveItem={() => handleRemoveItem(item)}
+                    callingFrom={"grocery_items"}
+                />
+            </TouchableOpacity>
+        );
+    };
+
+    const renderGroup = ({
+                             item: group,
+                             drag,
+                             isActive,
+                         }: RenderItemParams<Group>) => (
+        <View
+            style={[
+                styles.groupContainer,
+                isActive && {backgroundColor: Colors.light.secondaryColor},
+            ]}
+        >
+            {/* Group Header */}
+            <TouchableOpacity
+                onLongPress={drag} // Allow dragging groups by long pressing on the header
+                onPress={() => toggleGroup(group.id)}
+                style={styles.groupHeader}
+            >
+                <Text style={styles.groupHeaderText}>{group.label}</Text>
+                <Icon
+                    name={group.expanded ? "chevron-down" : "chevron-forward"}
+                    size={18}
+                    color={Colors.light.primaryText}
+                />
+            </TouchableOpacity>
+
+            {/* Draggable Items (shown only if the group is expanded) */}
+            {group.expanded && (
+                <DraggableFlatList
+                    data={group.items}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    onDragEnd={({data}) => handleItemDragEnd(group.id, data)}
+                />
+            )}
+        </View>
+    );
+
     const addGroup = () => {
         setGroups([
             {
                 id: `group-${Date.now()}`,
                 label: `New Group`,
                 items: [],
+                expanded: true
             },
             ...groups,
         ]);
@@ -424,23 +433,29 @@ export default function ModifyShopping() {
     };
     const handleAdd = async (newItem) => {
         const tempId = `temp-${Date.now()}`;
-        const optimisticItem = {...newItem, id: tempId};
+        const optimisticItem = {...newItem, id: tempId, isInput: false, quantity: 1};
 
-        // Optimistically add the new item
         setGroups((prevGroups) => {
-            const updatedGroups = [...prevGroups];
-            const targetGroup = updatedGroups.find((g) => g.id === newItem.group);
-
-            if (targetGroup) {
-                targetGroup.items.splice(targetGroup.items.length - 1, 0, optimisticItem);
-            }
-
+            const updatedGroups = prevGroups.map((group) => {
+                if (group.id === newItem.group) {
+                    return {
+                        ...group,
+                        items: [
+                            ...group.items.slice(0, -1), // Exclude the input item
+                            optimisticItem,
+                            group.items[group.items.length - 1], // Re-append the input item
+                        ],
+                    };
+                }
+                return group;
+            });
             return updatedGroups;
         });
 
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
-            const response = await axios.post(`${API_BASE_URL}/api/grocery_items/unoptimized/`,
+            const response = await axios.post(
+                `${API_BASE_URL}/api/grocery_items/`,
                 {
                     list: local.id,
                     name: newItem.name,
@@ -448,41 +463,58 @@ export default function ModifyShopping() {
                     units: newItem.units,
                     store: newItem.store,
                     subheading: newItem.group,
-                }, {
+                },
+                {
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${jwtToken}`,
                     },
-                });
-            // Once you have the group, set the old item to the new item
-            setGroups((prevGroups) => {
-                const updatedGroups = [...prevGroups];
-                const targetGroup = updatedGroups.find((g) => g.id === newItem.group);
-
-                if (targetGroup) {
-                    const itemIndex = targetGroup.items.findIndex((item) => item.id === tempId);
-                    if (itemIndex !== -1) {
-                        // Update the item's ID with the API's response
-                        targetGroup.items[itemIndex] = {...response.data};
-                    }
                 }
+            );
+            // Once you have the group, set the old item to the new item
 
-                return updatedGroups;
-            });
+            setGroups((prevGroups) =>
+                prevGroups.map((group) => {
+                    if (group.id === newItem.group) {
+                        return {
+                            ...group,
+                            items: group.items.map((item) => {
+                                if (item.id === tempId) {
+                                    return {
+                                        id: response.data.id,
+                                        name: response.data.name,
+                                        description: response.data.description || '',
+                                        store: response.data.store || '',
+                                        quantity: response.data.quantity || 1,
+                                        units: response.data.units || 1,
+                                        favorited: response.data.favorited || false,
+                                        order: response.data.order || 0,
+                                        group: response.data.subheading || newItem.group,
+                                        isInput: false, // Ensure it's not marked as input
+                                    };
+                                }
+                                return item;
+                            }),
+                        };
+                    }
+                    return group;
+                })
+            );
         } catch (error) {
             console.log(`Could not add item to list! Error: ${error}`);
             // If there's an error, rollback the changes
             // TODO: Add an alert to the user
-            setGroups((prevGroups) => {
-                const updatedGroups = [...prevGroups];
-                const targetGroup = updatedGroups.find((g) => g.id === newItem.group);
-
-                if (targetGroup) {
-                    targetGroup.items = targetGroup.items.filter((item) => item.id !== tempId);
-                }
-
-                return updatedGroups;
-            });
+            setGroups((prevGroups) =>
+                prevGroups.map((group) => {
+                    if (group.id === newItem.group) {
+                        return {
+                            ...group,
+                            items: group.items.filter((item) => item.id !== tempId),
+                        };
+                    }
+                    return group;
+                })
+            );
         }
     };
 
@@ -500,7 +532,7 @@ export default function ModifyShopping() {
         try {
             const jwtToken = await SecureStore.getItemAsync('jwtToken');
             const response = await axios.delete(
-                `${API_BASE_URL}/api/grocery_items/unoptimized/${deletedItem.id}/`,
+                `${API_BASE_URL}/api/grocery_items/${deletedItem.id}/`,
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -516,276 +548,47 @@ export default function ModifyShopping() {
         }
     };
 
-    const handleDrop = (position, groupId, index) => {
-        const refsInAllGroups = allItemRefs.current;
-
-        // Variables to track the closest overlapping item
-        let closestItem = null;
-        let closestGroupId = null;
-        let minDistance = Infinity;
-
-        // Iterate through all groups and their items
-        Object.entries(refsInAllGroups).forEach(([group, refs]) => {
-            refs.forEach((ref, idx) => {
-                if (ref) {
-                    ref.measure((x, y, width, height, pageX, pageY) => {
-                        const centerX = pageX + width / 2;
-                        const centerY = pageY + height / 2;
-                        const distance = Math.sqrt(
-                            Math.pow(position.x - centerX, 2) + Math.pow(position.y - centerY, 2)
-                        );
-
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestItem = {group, idx};
-                            closestGroupId = group;
-                        }
-                    });
-                }
-            });
-        });
-
-        if (closestItem && closestGroupId !== null) {
-            setGroups((prevGroups) => {
-                const updatedGroups = [...prevGroups];
-
-                // Find the source and target groups
-                const sourceGroup = updatedGroups.find((g) => g.id === groupId);
-                const targetGroup = updatedGroups.find((g) => g.id === closestGroupId);
-
-                if (sourceGroup && targetGroup) {
-                    // Remove the dragged item from the source group
-                    const [draggedItem] = sourceGroup.items.splice(index, 1);
-
-                    targetGroup.items.splice(closestItem.idx, 0, draggedItem);
-                }
-
-                return updatedGroups;
-            });
-
-            console.log(`Switched items between group ${groupId} and group ${closestGroupId}`);
-        } else {
-            console.log("No overlapping item found");
-        }
-    };
-
-    const [selectedButton, setSelectedButton] = useState("Recipe")
-    const renderModal = () => {
-        const fetchFavoriteItems = async () => {
-            try {
-                const jwtToken = await SecureStore.getItemAsync('jwtToken');
-                const response = await fetch(`${API_BASE_URL}/api/favorited/`, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${jwtToken}`,
-                    },
-                });
-                const data = await response.json();
-                // Parse the API response
-                return data.map((item) => ({
-                    id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    store: item.store,
-                    price: parseFloat(item.price),
-                    user: item.user,
-                }));
-            } catch (error) {
-                console.error("Error fetching favorite items:", error);
-                return [];
-            }
-        };
-
-        // Helper function to fetch recipe items from the API
-        const fetchRecipeItems = async () => {
-            try {
-                const jwtToken = await SecureStore.getItemAsync('jwtToken');
-                const response = await fetch(`${API_BASE_URL}/api/recipe/`, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${jwtToken}`,
-                    },
-                });
-                const data = await response.json();
-                // Parse the API response
-                return data.map((recipe) => ({
-                    id: recipe.id,
-                    name: recipe.name,
-                    creationTime: new Date(recipe.creation_time),
-                    updateTime: new Date(recipe.update_time),
-                    user: recipe.user,
-                }));
-            } catch (error) {
-                console.error("Error fetching recipe items:", error);
-                return [];
-            }
-        };
-
-        // Function to load data dynamically based on selected tab
-        const loadData = async () => {
-            if (selectedButton === 'Favorite') {
-                return await fetchFavoriteItems();
-            } else if (selectedButton === 'Recipe') {
-                return await fetchRecipeItems();
-            }
-            return [];
-        };
-
-        // State to manage the dynamically loaded data
-        const [data, setData] = useState([]);
-
-        // Effect to load data when the selected tab changes
-        useEffect(() => {
-            const fetchData = async () => {
-                const result = await loadData();
-                setData(result);
-            };
-            fetchData();
-        }, [selectedButton]);
-
-        const renderFavoriteItem = ({item}) => {
-            const handleAddToList = async () => {
-                try {
-                    const jwtToken = await SecureStore.getItemAsync('jwtToken');
-                    const endpoint =
-                        selectedButton === 'Favorite'
-                            ? `${API_BASE_URL}/api/favorited/${item.id}/add_to_shopping_list/`
-                            : `${API_BASE_URL}/api/grocery/${local.id}/add_recipe/`;
-
-                    const payload =
-                        selectedButton === 'Favorite'
-                            ? {list: local.id}
-                            : {recipe_id: item.id};
-
-                    const response = await axios.post(endpoint, payload, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${jwtToken}`,
-                        },
-                    });
-
-                    // Axios automatically parses JSON, so use response.data directly
-                    console.log('Item added successfully:', response.data);
-                } catch (error) {
-                    if (error.response) {
-                        // Server responded with a status other than 2xx
-                        console.error('Failed to add item:', error.response.data);
-                    } else if (error.request) {
-                        // Request was made but no response was received
-                        console.error('No response from server:', error.request);
-                    } else {
-                        // Something else caused the error
-                        console.error('Error adding item to the list:', error.message);
-                    }
-                } finally {
-                    fetchShoppingList();
-                }
-            };
-
-            return (
-                <Pressable style={styles.itemContainer} onPress={handleAddToList}>
-                    <Text style={styles.itemTitle}>{item.name}</Text>
-                </Pressable>
-            );
-        };
-        return (
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        {/* Close Button */}
-                        <Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Icon name="close-outline" size={40} color={Colors.light.primaryText}/>
-                        </Pressable>
-
-                        {/* Favorite and Recipe Buttons */}
-                        <View style={styles.favoriteRecipeContainer}>
-                            <Pressable
-                                style={[
-                                    styles.favoriteRecipeButton,
-                                    selectedButton === 'Recipe' && styles.unselectedButton,
-                                    selectedButton === 'Favorite' && styles.selectedButton
-                                ]}
-                                onPress={() => setSelectedButton('Favorite')}
-                            >
-                                <Text style={styles.selectedText}>Favorite</Text>
-                            </Pressable>
-                            <Pressable
-                                style={[
-                                    styles.favoriteRecipeButton,
-                                    selectedButton === 'Recipe' && styles.selectedButton,
-                                    selectedButton === 'Favorite' && styles.unselectedButton
-                                ]}
-                                onPress={() => setSelectedButton('Recipe')}
-                            >
-                                <Text style={styles.selectedText}>Recipe</Text>
-                            </Pressable>
-                        </View>
-
-                        {/* Header Text */}
-                        {selectedButton === 'Favorite' && (
-                            <Text style={styles.favoriteHeaderText}>Add Favorites</Text>
-                        )}
-                        {selectedButton === 'Recipe' && (
-                            <Text style={styles.favoriteHeaderText}>Add Recipes</Text>
-                        )}
-
-                        {/* Favorite/Recipe List */}
-                        <FlatList
-                            data={data}
-                            renderItem={renderFavoriteItem}
-                            keyExtractor={(item) => item.id}
-                            style={styles.flatList}
-                        />
-                    </View>
-                </View>
-            </Modal>
-        );
-    };
-
-
     return (
-        <GestureHandlerRootView style={styles.gestureContainer}>
-            <View style={styles.container}>
-                <SafeAreaView style={styles.container}>
-                    <Header header={shoppingListName} backButton={true} backLink="/shopping" noProfile={false}/>
-                    <FlatList
-                        data={groups}
-                        renderItem={({item}) => renderGroup({group: item})}
-                        keyExtractor={group => group.id}
-                        style={styles.groupListContainer}
+        <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
+                <Header header={shoppingListName} backButton={true} backLink="/shopping" noProfile={false}/>
+                <DraggableFlatList
+                    data={groups}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderGroup}
+                    onDragEnd={handleGroupDragEnd}
+                />
+                {/*ADD FAVORITES*/}
+                <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
+                    <Icon name="star-outline" size={24} color={Colors.light.background}/>
+                </TouchableOpacity>
+
+
+                {/*OPTIMIZE*/}
+                <TouchableOpacity style={styles.optimizeButton}>
+                    <Icon
+                        name="hammer-outline"
+                        size={24}
+                        color={Colors.light.background}
                     />
-                    {/*ADD FAVORITES*/}
-                    <TouchableOpacity style={styles.starButton} onPress={() => setModalVisible(true)}>
-                        <Icon name="star-outline" size={24} color={Colors.light.background}/>
-                    </TouchableOpacity>
-
-
-                    {/*OPTIMIZE*/}
-                    <TouchableOpacity style={styles.optimizeButton}>
-                        <Icon
-                            name="hammer-outline"
-                            size={24}
-                            color={Colors.light.background}
-                        />
-                    </TouchableOpacity>
-                    {renderModal()}
-                    {/*ADD FOLDER*/}
-                    <TouchableOpacity style={styles.folderButton} onPress={() => addGroup()}>
-                        <Icon
-                            name="folder-outline"
-                            size={24}
-                            color={Colors.light.background}
-                        />
-                    </TouchableOpacity>
-                </SafeAreaView>
-                <Footer/>
-            </View>
-        </GestureHandlerRootView>
+                </TouchableOpacity>
+                <GroceryModal
+                    modalVisible={modalVisible}
+                    setModalVisible={setModalVisible}
+                    fetchShoppingList={fetchShoppingList}
+                    local={local}
+                />
+                {/*ADD FOLDER*/}
+                <TouchableOpacity style={styles.folderButton} onPress={() => addGroup()}>
+                    <Icon
+                        name="folder-outline"
+                        size={24}
+                        color={Colors.light.background}
+                    />
+                </TouchableOpacity>
+            </SafeAreaView>
+            <Footer/>
+        </View>
     );
 }
 

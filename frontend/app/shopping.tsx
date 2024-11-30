@@ -249,7 +249,7 @@ export default function Shopping() {
             });
 
             const lists = response.data.map(item => ({
-                id: item.id.toString(),
+                id: item.id,
                 title: item.name,
                 date: shortenTime(item.update_time)
             }));
