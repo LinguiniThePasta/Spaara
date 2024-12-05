@@ -285,6 +285,7 @@ const SetAddress: React.FC = () => {
                 { search_text: address },
                 {
                     headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
                         'Content-Type': 'application/json',
                     },
                 }
