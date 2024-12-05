@@ -1,5 +1,15 @@
 import React, {useState, useRef, useEffect} from 'react';
-import {Text, View, SafeAreaView, StyleSheet, FlatList, TouchableOpacity, Modal, Pressable} from 'react-native';
+import {
+    Text,
+    View,
+    SafeAreaView,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    Modal,
+    Pressable,
+    TextInput
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {GestureDetector, Gesture, GestureHandlerRootView} from 'react-native-gesture-handler';
 import Header from '@/components/Header';
@@ -23,6 +33,8 @@ import DraggableFlatList from "react-native-draggable-flatlist/src/components/Dr
 import {RenderItemParams} from "react-native-draggable-flatlist";
 import {CheckItem, InputItem} from "@/components/Item";
 import GroceryModal from "@/components/GroceryModal";
+import {globalStyles} from "@/styles/globalStyles";
+import {setSearchQuery} from "@/store/shoppingListSlice";
 
 // Item data
 type Item = {
@@ -104,6 +116,14 @@ export default function ModifyShopping() {
             //backgroundColor: '#b58df1',
             backgroundColor: Colors.light.background,
             borderRadius: 20,
+        },
+        searchIcon: {
+            marginRight: 10,
+        },
+        searchInput: {
+            flex: 1,
+            fontSize: 16,
+            color: Colors.light.primaryText,
         },
         groupHeader: {
             fontWeight: 'bold',
@@ -234,6 +254,7 @@ export default function ModifyShopping() {
     const [shoppingListName, setShoppingListName] = useState("Placeholder Name");
     const [modalVisible, setModalVisible] = useState(false);
     const local = useLocalSearchParams();
+    const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
         fetchShoppingList();
@@ -318,6 +339,27 @@ export default function ModifyShopping() {
             console.error('Error fetching shopping items:', error);
         }
     };
+
+    const handleOptimize = async () => {
+        try {
+            const jwtToken = await SecureStore.getItemAsync('jwtToken');
+            const response = await axios.post(`${API_BASE_URL}/api/optimize?id=${local.id}`, // Your backend API endpoint
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${jwtToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            fetchShoppingList();
+        } catch (error) {
+            console.error('Error optimizing grocery list:', error);
+            throw error;
+        }
+    };
+
     const handleItemDragEnd = (groupId: string, updatedItems: Item[]) => {
         setGroups((prevGroups) =>
             prevGroups.map((group) =>
@@ -552,6 +594,17 @@ export default function ModifyShopping() {
         <View style={styles.container}>
             <SafeAreaView style={styles.container}>
                 <Header header={shoppingListName} backButton={true} backLink="/shopping" noProfile={false}/>
+                <View style={{...globalStyles.searchBar, ...{borderColor: Colors.light.primaryColor}}}>
+                    <Icon name="search-outline" size={20} color={Colors.light.primaryColor}
+                          style={styles.searchIcon}/>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search"
+                        placeholderTextColor={Colors.light.secondaryText}
+                        value={searchQuery}
+                        onChangeText={(text) => setSearchQuery(text)}
+                    />
+                </View>
                 <DraggableFlatList
                     data={groups}
                     keyExtractor={(item) => item.id}
@@ -565,7 +618,7 @@ export default function ModifyShopping() {
 
 
                 {/*OPTIMIZE*/}
-                <TouchableOpacity style={styles.optimizeButton}>
+                <TouchableOpacity style={styles.optimizeButton} onPress={handleOptimize}>
                     <Icon
                         name="hammer-outline"
                         size={24}
@@ -579,13 +632,13 @@ export default function ModifyShopping() {
                     local={local}
                 />
                 {/*ADD FOLDER*/}
-                <TouchableOpacity style={styles.folderButton} onPress={() => addGroup()}>
-                    <Icon
-                        name="folder-outline"
-                        size={24}
-                        color={Colors.light.background}
-                    />
-                </TouchableOpacity>
+                {/*<TouchableOpacity style={styles.folderButton} onPress={() => addGroup()}>*/}
+                {/*    <Icon*/}
+                {/*        name="folder-outline"*/}
+                {/*        size={24}*/}
+                {/*        color={Colors.light.background}*/}
+                {/*    />*/}
+                {/*</TouchableOpacity>*/}
             </SafeAreaView>
             <Footer/>
         </View>

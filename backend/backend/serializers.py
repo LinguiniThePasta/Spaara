@@ -13,6 +13,7 @@ import requests
 
 load_dotenv()
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -83,10 +84,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'profile_icon', 'profile_color']
+
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()
@@ -97,7 +100,6 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'from_user', 'to_user', 'timestamp']
 
 
-
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
@@ -105,20 +107,21 @@ class LoginSerializer(serializers.Serializer):
     def validate_email(self, value):
         return value.lower()
 
+
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
         return value.lower()
-    
+
     def update(self, validated_data):
         send_account_recovery_email(validated_data)
 
-    
+
 class UpdateInfoSerializer(serializers.ModelSerializer):
     old_email = serializers.EmailField(required=False)
     old_password = serializers.CharField(write_only=True, required=False)
-    old_username = serializers.CharField(write_only= True, required=False)
+    old_username = serializers.CharField(write_only=True, required=False)
     email = serializers.EmailField(required=False)
     password = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(write_only=True, required=False)
@@ -150,7 +153,7 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
         # Verify old password if password is being changed
         if password and not instance.check_password(old_password):
             raise serializers.ValidationError({'old_password': 'Old password does not match'})
-        
+
         if username and instance.username != old_username:
             raise serializers.ValidationError({'old_username': "Old username does not match"})
 
@@ -163,11 +166,12 @@ class UpdateInfoSerializer(serializers.ModelSerializer):
             send_password_reset_confirmation(instance)
 
         if username:
-            #instance.set_username(username)
+            # instance.set_username(username)
             instance.username = username
 
         instance.save()
         return instance
+
 
 class AddressSerializer(serializers.Serializer):
     address = serializers.CharField(max_length=255)
@@ -175,7 +179,6 @@ class AddressSerializer(serializers.Serializer):
     class Meta:
         model = User
         fields = ['address']
-
 
 
 class AddressSerializer(serializers.Serializer):
@@ -194,18 +197,20 @@ class AddressSerializer(serializers.Serializer):
         Check if the provided address exists or suggest alternatives.
         """
         address = data.get('address')
-        
+
         valid_address, suggestions = self.get_address_suggestions(address)
-        
+
         if not valid_address:
             if suggestions:
                 data['suggestions'] = suggestions
                 raise serializers.ValidationError(
-                    {"address": "The provided address could not be confirmed. See suggestions.", "suggestions": suggestions}
+                    {"address": "The provided address could not be confirmed. See suggestions.",
+                     "suggestions": suggestions}
                 )
             else:
-                raise serializers.ValidationError("The provided address does not exist and no suggestions are available.")
-        
+                raise serializers.ValidationError(
+                    "The provided address does not exist and no suggestions are available.")
+
         return data
 
     def update(self, instance, validated_data):
@@ -235,7 +240,7 @@ class AddressSerializer(serializers.Serializer):
 
             # Check if the address is valid or if there are suggested addresses
             address_result = result.get("result", {}).get("verdict", {}).get("hasUnconfirmedComponents", False)
-            
+
             # If address is valid, return True with no suggestions
             if not address_result:
                 return True, []
@@ -245,7 +250,7 @@ class AddressSerializer(serializers.Serializer):
                 candidate.get("addressFormatted", "")
                 for candidate in result.get("result", {}).get("addressMatches", [])
             ]
-            
+
             # Return False (invalid address) and the list of suggestions
             return False, suggestions
 
@@ -271,6 +276,7 @@ class GrocerySerializer(serializers.ModelSerializer):
         grocery = Grocery.objects.create(**validated_data)
 
         return grocery
+
 
 class RecipeItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -305,11 +311,15 @@ class RecipeItemSerializer(serializers.ModelSerializer):
                 validated_data['order'] = 1
 
         return super().create(validated_data)
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     items = RecipeItemSerializer(many=True, read_only=True)
+
     class Meta:
         model = Recipe
         fields = ['id', 'name', 'creation_time', 'update_time', 'user', 'items']
+
 
 # class GroceryItemOptimizedSerializer(serializers.ModelSerializer):
 #     subheading = serializers.PrimaryKeyRelatedField(queryset=Subheading.objects.all(), required=False)
@@ -363,8 +373,8 @@ class GroceryItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroceryItem
-        fields = ['id', 'name', 'description', 'notes', 'store', 'quantity', 'units', 'favorited', 'subheading', 'order', 'checked']
-
+        fields = ['id', 'name', 'description', 'notes', 'store', 'quantity', 'units', 'favorited', 'subheading',
+                  'order', 'checked', 'optimized']
 
     def create(self, validated_data):
         # Check if 'subheading' is provided
@@ -406,6 +416,7 @@ class GroceryItemSerializer(serializers.ModelSerializer):
         # Call the parent class's create method to save the instance with the default or provided subheading
         return super().create(validated_data)
 
+
 class SubheadingSerializer(serializers.ModelSerializer):
     items = GroceryItemSerializer(many=True)
     recipe = RecipeSerializer(read_only=True)
@@ -413,6 +424,7 @@ class SubheadingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subheading
         fields = ['id', 'name', 'order', 'recipe', 'items', 'optimized']
+
 
 class GrocerySerializer(serializers.ModelSerializer):
     subheadings = SubheadingSerializer(many=True, required=False)
@@ -434,6 +446,42 @@ class GrocerySerializer(serializers.ModelSerializer):
         grocery = Grocery.objects.create(**validated_data)
         return grocery
 
+    def to_representation(self, instance):
+        """
+        Custom representation of the grocery list.
+        When the list is unoptimized, show only 'Default' and other subheadings.
+        When the list is optimized, show only 'Unoptimized' and other subheadings.
+        """
+        representation = super().to_representation(instance)
+
+        optimized_items_exist = any(
+            item['optimized'] for subheading in representation['subheadings'] for item in subheading['items']
+        )
+
+        filtered_subheadings = []
+        for subheading in representation['subheadings']:
+            if optimized_items_exist:
+                # Keep 'Unoptimized' and other subheadings
+                if subheading['name'] == 'Default':
+                    continue  # Exclude 'Default' in the optimized list
+            else:
+                # Keep 'Default' and other subheadings
+                if subheading['name'] == 'Unoptimized':
+                    continue  # Exclude 'Unoptimized' in the unoptimized list
+
+            # Filter items within the subheading
+            if optimized_items_exist:
+                subheading['items'] = [item for item in subheading['items'] if item['optimized']]
+            else:
+                subheading['items'] = [item for item in subheading['items'] if not item['optimized']]
+
+            # Add the filtered subheading to the list
+            filtered_subheadings.append(subheading)
+
+        # Update the representation with the filtered subheadings
+        representation['subheadings'] = filtered_subheadings
+
+        return representation
 
 
 class FavoritedItemSerializer(serializers.ModelSerializer):
@@ -452,6 +500,7 @@ class DietRestrictionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DietRestriction
         fields = '__all__'
+
 
 class FriendRecipeSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()

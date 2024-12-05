@@ -171,6 +171,12 @@ def create_default_subheading(sender, instance, created, **kwargs):
             order=0
             # recipe is null by default, supporting user-defined subheadings
         )
+        Subheading.objects.create(
+            name='Unoptimized',
+            grocery=instance,
+            order=1,
+            # recipe is null by default, supporting user-defined subheadings
+        )
 
 
 class ItemBase(models.Model):
@@ -219,7 +225,8 @@ class GroceryItem(ItemBase):
             units=store_item.units,
             price=store_item.price,
             subheading=subheading,
-            order=order
+            order=order,
+            optimized=True
         )
 
 class StoreItem(models.Model):
